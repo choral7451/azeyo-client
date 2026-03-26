@@ -1,0 +1,513 @@
+// ============================================================
+// 아재요 — Mock Data & Types
+// ============================================================
+
+// --------------- Types ---------------
+
+export type PostType = "TEXT" | "VOTE";
+
+export type Category =
+  | "선물"
+  | "부부싸움"
+  | "어른들 취미"
+  | "육아"
+  | "생활꿀팁"
+  | "자유게시판";
+
+export interface Post {
+  id: string;
+  type: PostType;
+  category: Category;
+  author: string;
+  authorBadge?: string;
+  title: string;
+  content: string;
+  createdAt: string;
+  likeCount: number;
+  commentCount: number;
+  // VOTE specific
+  voteOptionA?: string;
+  voteOptionB?: string;
+  voteCountA?: number;
+  voteCountB?: number;
+}
+
+export interface ScheduleTag {
+  id: string;
+  name: string;
+  color: string;
+  isSystem: boolean;
+}
+
+export interface Schedule {
+  id: string;
+  title: string;
+  date: string; // YYYY-MM-DD
+  tags: ScheduleTag[];
+  memo?: string;
+}
+
+export interface Recommendation {
+  id: string;
+  tagId: string;
+  title: string;
+  items: { rank: number; name: string; description: string; emoji: string }[];
+}
+
+export type TemplateCategory =
+  | "아내 생일 편지"
+  | "장모님 생신 카톡"
+  | "사과 문자"
+  | "기념일 메시지"
+  | "응원 한마디";
+
+export interface Template {
+  id: string;
+  category: TemplateCategory;
+  title: string;
+  content: string;
+  likeCount: number;
+  copyCount: number;
+  author: string;
+}
+
+// --------------- System Tags ---------------
+
+export const systemTags: ScheduleTag[] = [
+  { id: "t1", name: "아내 생일", color: "#e17055", isSystem: true },
+  { id: "t2", name: "장모님 생신", color: "#fdcb6e", isSystem: true },
+  { id: "t3", name: "결혼기념일", color: "#e84393", isSystem: true },
+  { id: "t4", name: "장인어른 생신", color: "#00b894", isSystem: true },
+  { id: "t5", name: "아이 생일", color: "#0984e3", isSystem: true },
+  { id: "t6", name: "부모님 생신", color: "#6c5ce7", isSystem: true },
+];
+
+export const customTags: ScheduleTag[] = [
+  { id: "c1", name: "와이프 꽃 사는 날", color: "#fd79a8", isSystem: false },
+  { id: "c2", name: "장인어른 등산", color: "#55a3a4", isSystem: false },
+];
+
+export const allTags: ScheduleTag[] = [...systemTags, ...customTags];
+
+// --------------- Mock Posts ---------------
+
+export const posts: Post[] = [
+  {
+    id: "p1",
+    type: "TEXT",
+    category: "선물",
+    author: "결혼5년차아빠",
+    authorBadge: "선물왕",
+    title: "아내 생일에 다이슨 에어랩 선물했더니",
+    content:
+      "작년엔 가방 사줬는데 반응이 미지근했거든요. 올해는 에어랩 사줬더니 진심으로 좋아하더라구요. 실용적인 선물이 답인 것 같습니다 형님들.",
+    createdAt: "2026-03-25",
+    likeCount: 142,
+    commentCount: 38,
+  },
+  {
+    id: "p2",
+    type: "VOTE",
+    category: "선물",
+    author: "만년과장",
+    title: "장모님 생신 선물 뭐가 나을까요?",
+    content: "예산 30만원 정도인데 고민입니다",
+    createdAt: "2026-03-24",
+    likeCount: 67,
+    commentCount: 52,
+    voteOptionA: "건강식품 세트",
+    voteOptionB: "백화점 상품권",
+    voteCountA: 234,
+    voteCountB: 189,
+  },
+  {
+    id: "p3",
+    type: "TEXT",
+    category: "부부싸움",
+    author: "반성중인남편",
+    title: "결혼기념일 까먹어서 3일째 냉전 중입니다",
+    content:
+      "캘린더에 분명 적어놨는데 프로젝트 마감에 치여서 깜빡했습니다. 꽃이랑 케이크 사갔는데도 아직 풀리지 않네요. 어떻게 하면 좋을까요...",
+    createdAt: "2026-03-24",
+    likeCount: 203,
+    commentCount: 89,
+  },
+  {
+    id: "p4",
+    type: "VOTE",
+    category: "부부싸움",
+    author: "워킹대디",
+    authorBadge: "조언왕",
+    title: "싸우고 나면 먼저 사과하시나요?",
+    content: "저는 항상 제가 먼저 하는데...",
+    createdAt: "2026-03-23",
+    likeCount: 312,
+    commentCount: 127,
+    voteOptionA: "내가 먼저 사과한다",
+    voteOptionB: "상대가 먼저 할 때까지 기다린다",
+    voteCountA: 567,
+    voteCountB: 234,
+  },
+  {
+    id: "p5",
+    type: "TEXT",
+    category: "어른들 취미",
+    author: "주말골퍼",
+    title: "40대에 시작한 골프, 6개월 후기",
+    content:
+      "처음엔 와이프가 반대했는데 같이 치자고 했더니 오히려 좋아합니다. 부부 공통 취미 생기니까 대화도 많아지고 좋네요.",
+    createdAt: "2026-03-23",
+    likeCount: 98,
+    commentCount: 45,
+  },
+  {
+    id: "p6",
+    type: "TEXT",
+    category: "육아",
+    author: "딸바보파파",
+    authorBadge: "육아고수",
+    title: "아이 재우고 설거지하면 아내가 감동받는 이유",
+    content:
+      "당연한 거라고 생각했는데 아내 말로는 '말 안해도 알아서 해주는 게 제일 고맙다'래요. 사소한 것부터 시작해보세요 형님들.",
+    createdAt: "2026-03-22",
+    likeCount: 445,
+    commentCount: 72,
+  },
+  {
+    id: "p7",
+    type: "TEXT",
+    category: "생활꿀팁",
+    author: "살림왕남편",
+    title: "화장실 청소 이렇게 하면 칭찬 받습니다",
+    content:
+      "구연산 + 베이킹소다 조합이면 끝입니다. 변기, 세면대, 거울까지 30분이면 반짝반짝. 아내가 '오늘 뭐 잘못한 거 있어?' 할 정도로 놀랍니다.",
+    createdAt: "2026-03-22",
+    likeCount: 521,
+    commentCount: 63,
+  },
+  {
+    id: "p8",
+    type: "VOTE",
+    category: "자유게시판",
+    author: "야근전사",
+    title: "퇴근 후 치맥 vs 바로 귀가",
+    content: "금요일 퇴근 후 동료들이 치맥 가자는데...",
+    createdAt: "2026-03-21",
+    likeCount: 178,
+    commentCount: 94,
+    voteOptionA: "한 잔만 하고 간다 (현실: 3차)",
+    voteOptionB: "칼퇴 후 바로 집으로",
+    voteCountA: 342,
+    voteCountB: 567,
+  },
+];
+
+// --------------- Mock Schedules ---------------
+
+export const schedules: Schedule[] = [
+  {
+    id: "s1",
+    title: "아내 생일",
+    date: "2026-04-05",
+    tags: [systemTags[0]],
+    memo: "올해는 깜짝 파티 준비하기",
+  },
+  {
+    id: "s2",
+    title: "장모님 생신",
+    date: "2026-04-12",
+    tags: [systemTags[1]],
+    memo: "건강식품 + 용돈 준비",
+  },
+  {
+    id: "s3",
+    title: "결혼기념일",
+    date: "2026-05-20",
+    tags: [systemTags[2]],
+    memo: "레스토랑 예약 필수",
+  },
+  {
+    id: "s4",
+    title: "아이 생일파티",
+    date: "2026-06-15",
+    tags: [systemTags[4]],
+    memo: "키즈카페 예약",
+  },
+  {
+    id: "s5",
+    title: "와이프에게 꽃 사기",
+    date: "2026-03-28",
+    tags: [customTags[0]],
+  },
+  {
+    id: "s6",
+    title: "장인어른 등산 약속",
+    date: "2026-04-01",
+    tags: [customTags[1], systemTags[3]],
+  },
+];
+
+// --------------- Mock Recommendations ---------------
+
+export const recommendations: Recommendation[] = [
+  {
+    id: "r1",
+    tagId: "t1",
+    title: "아내 생일 선물 TOP 5",
+    items: [
+      {
+        rank: 1,
+        name: "다이슨 에어랩",
+        description: "실용성 + 감동 둘 다 잡는 선물",
+        emoji: "💇‍♀️",
+      },
+      {
+        rank: 2,
+        name: "호텔 스파 이용권",
+        description: "쉬는 시간이 최고의 선물",
+        emoji: "🧖‍♀️",
+      },
+      {
+        rank: 3,
+        name: "명품 향수",
+        description: "디올 미스 디올 블루밍 부케 추천",
+        emoji: "🌸",
+      },
+      {
+        rank: 4,
+        name: "레스토랑 디너",
+        description: "아이는 부모님께 맡기고 둘이서",
+        emoji: "🍽️",
+      },
+      {
+        rank: 5,
+        name: "손편지 + 케이크",
+        description: "진심이 담긴 편지만큼 강력한 건 없다",
+        emoji: "💌",
+      },
+    ],
+  },
+  {
+    id: "r2",
+    tagId: "t2",
+    title: "장모님 생신 선물 TOP 5",
+    items: [
+      {
+        rank: 1,
+        name: "건강식품 세트",
+        description: "홍삼 + 비타민 세트가 정석",
+        emoji: "🎁",
+      },
+      {
+        rank: 2,
+        name: "안마기",
+        description: "어깨/목 안마기 효도 아이템",
+        emoji: "💆",
+      },
+      {
+        rank: 3,
+        name: "백화점 상품권",
+        description: "직접 고르시는 재미를 드리는 센스",
+        emoji: "🏬",
+      },
+      {
+        rank: 4,
+        name: "외식 초대",
+        description: "한정식 코스 + 꽃다발",
+        emoji: "🌺",
+      },
+      {
+        rank: 5,
+        name: "여행 상품권",
+        description: "부모님끼리 여행 보내드리기",
+        emoji: "✈️",
+      },
+    ],
+  },
+];
+
+// --------------- Mock Templates ---------------
+
+export const templates: Template[] = [
+  {
+    id: "tm1",
+    category: "아내 생일 편지",
+    title: "진심 담은 생일 편지",
+    content: `당신이 있어 매일이 감사한 날입니다.
+
+올해도 변함없이 우리 가족을 위해 애써주는 당신에게
+생일 축하한다는 말과 함께 고맙다는 말을 전합니다.
+
+앞으로도 함께 나이 들어가는 게 기대되는 사람,
+당신이 바로 그 사람입니다.
+
+생일 축하해, 여보. 사랑해.`,
+    likeCount: 892,
+    copyCount: 2341,
+    author: "10년차남편",
+  },
+  {
+    id: "tm2",
+    category: "아내 생일 편지",
+    title: "유머 섞인 생일 편지",
+    content: `여보 생일 축하해!
+
+결혼 전엔 '이 사람이랑 평생 살면 재밌겠다' 했는데
+결혼 후엔 '이 사람 덕분에 내가 살아있구나' 합니다.
+
+매일 잔소리하면서도 내 건강 챙겨주고,
+투덜대면서도 맛있는 밥 해주는 당신.
+
+세상에서 제일 예쁘고 (이건 진심)
+세상에서 제일 무서운 (이것도 진심) 우리 와이프,
+올해도 건강하고 행복하자!`,
+    likeCount: 1203,
+    copyCount: 3567,
+    author: "유머아빠",
+  },
+  {
+    id: "tm3",
+    category: "장모님 생신 카톡",
+    title: "정중하고 따뜻한 카톡",
+    content: `어머님, 생신 진심으로 축하드립니다 🎂
+
+항상 저희 가족을 위해 기도해주시고
+따뜻하게 챙겨주셔서 감사합니다.
+
+올해도 건강하시고 행복한 일만 가득하시길
+사위가 진심으로 기원합니다.
+
+생신 축하드립니다, 어머님 ❤️`,
+    likeCount: 567,
+    copyCount: 4521,
+    author: "모범사위",
+  },
+  {
+    id: "tm4",
+    category: "장모님 생신 카톡",
+    title: "센스있는 효도 카톡",
+    content: `어머님~ 생신 축하드립니다! 🎉
+
+맛있는 거 드시러 모시고 갈게요!
+저번에 말씀하신 그 한정식집 예약해놨습니다 😊
+
+건강이 최고니까 올해도 건강하세요!
+항상 감사합니다 어머님 🙏`,
+    likeCount: 432,
+    copyCount: 2890,
+    author: "착한사위",
+  },
+  {
+    id: "tm5",
+    category: "사과 문자",
+    title: "진심 사과 (기념일 깜빡했을 때)",
+    content: `여보, 정말 미안해.
+
+중요한 날을 깜빡한 건 변명의 여지가 없어.
+당신한테 그 날이 얼마나 소중한지 알면서도
+제대로 챙기지 못한 내가 정말 한심해.
+
+앞으로는 절대 이런 일 없도록 할게.
+오늘 저녁에 맛있는 거 먹으러 가자.
+다시 한번 진심으로 미안해, 사랑해.`,
+    likeCount: 1567,
+    copyCount: 5234,
+    author: "반성맨",
+  },
+  {
+    id: "tm6",
+    category: "사과 문자",
+    title: "야근 후 늦은 귀가 사과",
+    content: `여보 미안... 오늘도 늦었어 😢
+
+일이 갑자기 터져서 빨리 못 왔어.
+기다리느라 힘들었지? 내일은 꼭 일찍 갈게.
+
+냉장고에 맥주 있으면 하나 꺼내줄래?
+들어가면서 치킨 사갈게 🍗
+
+미안하고 고마워, 항상.`,
+    likeCount: 876,
+    copyCount: 1678,
+    author: "야근전사",
+  },
+  {
+    id: "tm7",
+    category: "기념일 메시지",
+    title: "결혼기념일 메시지",
+    content: `오늘이 우리가 부부가 된 지 OO년 되는 날이야.
+
+돌이켜보면 좋은 날도, 힘든 날도 있었지만
+당신과 함께여서 다 견딜 수 있었어.
+
+앞으로 남은 날들도 함께 걸어가자.
+당신을 만난 건 내 인생 최고의 행운이야.
+
+OO주년 축하해, 여보. 영원히 사랑해 ❤️`,
+    likeCount: 2103,
+    copyCount: 6789,
+    author: "로맨틱가이",
+  },
+  {
+    id: "tm8",
+    category: "기념일 메시지",
+    title: "100일 / 발렌타인 메시지",
+    content: `같이 밥 먹고, 같이 TV 보고, 같이 잠드는
+평범한 일상이 사실은 가장 특별한 거더라.
+
+오늘 하루도 수고했어, 여보.
+당신이 있어서 집에 오는 길이 항상 기대돼.
+
+사랑해, 오늘도 내일도 모레도.`,
+    likeCount: 987,
+    copyCount: 3456,
+    author: "일상감성",
+  },
+  {
+    id: "tm9",
+    category: "응원 한마디",
+    title: "지친 아내에게 보내는 응원",
+    content: `여보, 오늘 하루도 고생 많았어.
+
+아이들 챙기고 집안일 하면서
+자기 시간도 없이 바쁜 거 알아.
+
+당신은 정말 대단한 사람이야.
+가끔 지쳐도 괜찮아, 내가 있잖아.
+
+오늘 저녁은 내가 할게. 좀 쉬어 ❤️`,
+    likeCount: 1432,
+    copyCount: 2987,
+    author: "응원단장",
+  },
+];
+
+// --------------- Helper Functions ---------------
+
+export function getDday(dateStr: string): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(dateStr);
+  target.setHours(0, 0, 0, 0);
+  return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+export function formatDday(dateStr: string): string {
+  const diff = getDday(dateStr);
+  if (diff === 0) return "D-DAY";
+  if (diff > 0) return `D-${diff}`;
+  return `D+${Math.abs(diff)}`;
+}
+
+export function getUpcomingSchedules(): Schedule[] {
+  return schedules
+    .filter((s) => getDday(s.date) >= 0)
+    .sort((a, b) => getDday(a.date) - getDday(b.date));
+}
+
+export function getRecommendationsForSchedule(
+  schedule: Schedule
+): Recommendation | undefined {
+  const tagIds = schedule.tags.map((t) => t.id);
+  return recommendations.find((r) => tagIds.includes(r.tagId));
+}
