@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ScrollHeader } from "@/components/scroll-header";
 import { posts, type Category, type Post } from "@/data/mock";
 
 const categories: ("전체" | Category)[] = [
@@ -27,16 +28,40 @@ export default function CommunityPage() {
   }
 
   return (
-    <main className="pt-14 pb-6">
-      {/* Header */}
-      <header className="px-5 mb-5 animate-fade-up">
-        <h1 className="text-[22px] font-black tracking-tight text-[var(--warm-900)]">
+    <>
+      <ScrollHeader>
+        <h1 className="text-[17px] font-black tracking-tight text-foreground leading-none mb-2.5">
           커뮤니티
         </h1>
-        <p className="text-[12px] text-[var(--muted-foreground)] mt-0.5">
-          형님들의 진솔한 이야기
-        </p>
-      </header>
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`
+                flex-shrink-0 text-[12px] px-3.5 py-1.5 rounded-full font-medium transition-all duration-200
+                ${
+                  activeCategory === cat
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-secondary text-muted-foreground active:scale-95"
+                }
+              `}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      </ScrollHeader>
+      <main className="pt-4 pb-6">
+        {/* Header */}
+        <header className="px-5 mb-5 animate-fade-up">
+          <h1 className="text-[22px] font-black tracking-tight text-[var(--warm-900)]">
+            커뮤니티
+          </h1>
+          <p className="text-[12px] text-[var(--muted-foreground)] mt-0.5">
+            형님들의 진솔한 이야기
+          </p>
+        </header>
 
       {/* Category Tabs */}
       <div className="flex gap-2 overflow-x-auto scrollbar-hide px-5 mb-5 animate-fade-up" style={{ animationDelay: "0.05s" }}>
@@ -80,7 +105,8 @@ export default function CommunityPage() {
           </div>
         )}
       </div>
-    </main>
+      </main>
+    </>
   );
 }
 

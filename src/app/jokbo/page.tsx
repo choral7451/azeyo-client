@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ScrollHeader } from "@/components/scroll-header";
 import { templates, type TemplateCategory } from "@/data/mock";
 
 const categories: TemplateCategory[] = [
@@ -37,16 +38,40 @@ export default function JokboPage() {
   }
 
   return (
-    <main className="pt-14 pb-6">
-      {/* Header */}
-      <header className="px-5 mb-5 animate-fade-up">
-        <h1 className="text-[22px] font-black tracking-tight text-[var(--warm-900)]">
+    <>
+      <ScrollHeader>
+        <h1 className="text-[17px] font-black tracking-tight text-foreground leading-none mb-2.5">
           족보
         </h1>
-        <p className="text-[12px] text-[var(--muted-foreground)] mt-0.5">
-          검증된 문구를 바로 복사하세요
-        </p>
-      </header>
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`
+                flex-shrink-0 text-[11px] px-3 py-1.5 rounded-full font-medium transition-all duration-200 whitespace-nowrap
+                ${
+                  activeCategory === cat
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-secondary text-muted-foreground active:scale-95"
+                }
+              `}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      </ScrollHeader>
+      <main className="pt-4 pb-6">
+        {/* Header */}
+        <header className="px-5 mb-5 animate-fade-up">
+          <h1 className="text-[22px] font-black tracking-tight text-[var(--warm-900)]">
+            족보
+          </h1>
+          <p className="text-[12px] text-[var(--muted-foreground)] mt-0.5">
+            검증된 문구를 바로 복사하세요
+          </p>
+        </header>
 
       {/* Category Tabs */}
       <div className="flex gap-2 overflow-x-auto scrollbar-hide px-5 mb-5 animate-fade-up" style={{ animationDelay: "0.05s" }}>
@@ -168,6 +193,7 @@ export default function JokboPage() {
           );
         })}
       </div>
-    </main>
+      </main>
+    </>
   );
 }

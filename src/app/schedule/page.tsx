@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ScrollHeader } from "@/components/scroll-header";
 import {
   schedules as initialSchedules,
   allTags,
@@ -29,24 +30,38 @@ export default function SchedulePage() {
     : null;
 
   return (
-    <main className="pt-14 pb-6 px-5">
-      {/* Header */}
-      <header className="mb-6 animate-fade-up flex items-start justify-between">
-        <div>
-          <h1 className="text-[22px] font-black tracking-tight text-foreground">
+    <>
+      <ScrollHeader>
+        <div className="flex items-center justify-between">
+          <h1 className="text-[17px] font-black tracking-tight text-foreground leading-none">
             일정 관리
           </h1>
-          <p className="text-[12px] text-muted-foreground mt-0.5">
-            중요한 날을 놓치지 마세요
-          </p>
+          <button
+            onClick={() => setShowAddDialog(true)}
+            className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-light active:scale-90 transition-transform"
+          >
+            +
+          </button>
         </div>
-        <button
-          onClick={() => setShowAddDialog(true)}
-          className="mt-1 w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-lg font-light shadow-sm active:scale-90 transition-transform"
-        >
-          +
-        </button>
-      </header>
+      </ScrollHeader>
+      <main className="pt-4 pb-6 px-5">
+        {/* Header */}
+        <header className="mb-5 animate-fade-up flex items-start justify-between">
+          <div>
+            <h1 className="text-[22px] font-black tracking-tight text-foreground">
+              일정 관리
+            </h1>
+            <p className="text-[12px] text-muted-foreground mt-0.5">
+              중요한 날을 놓치지 마세요
+            </p>
+          </div>
+          <button
+            onClick={() => setShowAddDialog(true)}
+            className="mt-1 w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-lg font-light shadow-sm active:scale-90 transition-transform"
+          >
+            +
+          </button>
+        </header>
 
       {/* Upcoming */}
       {upcoming.length > 0 && (
@@ -155,7 +170,8 @@ export default function SchedulePage() {
       {showAddDialog && (
         <AddScheduleDialog onClose={() => setShowAddDialog(false)} />
       )}
-    </main>
+      </main>
+    </>
   );
 }
 
