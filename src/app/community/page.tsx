@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { ScrollHeader } from "@/components/scroll-header";
 import { posts, type Category, type Post } from "@/data/mock";
 
@@ -128,34 +128,68 @@ export default function CommunityPage() {
 }
 
 function ImageCarousel({ images, ratio = "4:5" }: { images: string[]; ratio?: "4:5" | "1:1" }) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [activeIdx, setActiveIdx] = useState(0);
   const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
   const touchDeltaX = useRef(0);
   const [offsetX, setOffsetX] = useState(0);
   const isDragging = useRef(false);
+  const directionLocked = useRef<"h" | "v" | null>(null);
+  const activeIdxRef = useRef(activeIdx);
+  activeIdxRef.current = activeIdx;
 
-  function handleTouchStart(e: React.TouchEvent) {
+  const handleTouchStart = useCallback((e: TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
     isDragging.current = true;
-  }
+    directionLocked.current = null;
+  }, []);
 
-  function handleTouchMove(e: React.TouchEvent) {
+  const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!isDragging.current) return;
-    touchDeltaX.current = e.touches[0].clientX - touchStartX.current;
-    setOffsetX(touchDeltaX.current);
-  }
+    const dx = e.touches[0].clientX - touchStartX.current;
+    const dy = e.touches[0].clientY - touchStartY.current;
 
-  function handleTouchEnd() {
+    if (!directionLocked.current) {
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+        directionLocked.current = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
+      }
+      return;
+    }
+
+    if (directionLocked.current === "v") return;
+
+    e.preventDefault();
+    touchDeltaX.current = dx;
+    setOffsetX(dx);
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
     isDragging.current = false;
+    directionLocked.current = null;
     const threshold = 50;
-    if (touchDeltaX.current < -threshold && activeIdx < images.length - 1) {
+    if (touchDeltaX.current < -threshold && activeIdxRef.current < images.length - 1) {
       setActiveIdx((i) => i + 1);
-    } else if (touchDeltaX.current > threshold && activeIdx > 0) {
+    } else if (touchDeltaX.current > threshold && activeIdxRef.current > 0) {
       setActiveIdx((i) => i - 1);
     }
     touchDeltaX.current = 0;
     setOffsetX(0);
-  }
+  }, [images.length]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    el.addEventListener("touchstart", handleTouchStart, { passive: true });
+    el.addEventListener("touchmove", handleTouchMove, { passive: false });
+    el.addEventListener("touchend", handleTouchEnd, { passive: true });
+    return () => {
+      el.removeEventListener("touchstart", handleTouchStart);
+      el.removeEventListener("touchmove", handleTouchMove);
+      el.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   if (images.length === 1) {
     return (
@@ -174,10 +208,8 @@ function ImageCarousel({ images, ratio = "4:5" }: { images: string[]; ratio?: "4
 
   return (
     <div
+      ref={containerRef}
       className="relative overflow-hidden"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
     >
       <div
         className="flex transition-transform duration-300 ease-out"
