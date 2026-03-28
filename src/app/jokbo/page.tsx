@@ -57,7 +57,7 @@ export default function JokboPage() {
       <CategoryTabs
         categories={categories}
         active={activeCategory}
-        onSelect={(cat: TemplateCategory) => setActiveCategory(cat)}
+        onSelect={(cat: TemplateCategory) => { setActiveCategory(cat); window.scrollTo({ top: 0, behavior: "smooth" }); }}
         small
       />
     );
@@ -90,7 +90,7 @@ export default function JokboPage() {
 
       {/* Category Tabs */}
       <div className="animate-fade-up" style={{ animationDelay: "0.05s" }}>
-        <CategoryTabs categories={categories} active={activeCategory} onSelect={setActiveCategory} />
+        <CategoryTabs categories={categories} active={activeCategory} onSelect={(cat) => { setActiveCategory(cat); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
       </div>
 
       {/* Template Cards */}

@@ -25,7 +25,7 @@ export default function CommunityPage() {
       <CategoryTabs
         categories={categories}
         active={activeCategory}
-        onSelect={(cat: "전체" | Category) => setActiveCategory(cat)}
+        onSelect={(cat: "전체" | Category) => { setActiveCategory(cat); window.scrollTo({ top: 0, behavior: "smooth" }); }}
         small
       />
     );
@@ -53,7 +53,7 @@ export default function CommunityPage() {
       <main className="pb-6">
       {/* Category Tabs */}
       <div className="animate-fade-up" style={{ animationDelay: "0.05s" }}>
-        <CategoryTabs categories={categories} active={activeCategory} onSelect={setActiveCategory} />
+        <CategoryTabs categories={categories} active={activeCategory} onSelect={(cat) => { setActiveCategory(cat); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
       </div>
 
       {/* Feed */}
