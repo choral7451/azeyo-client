@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { ScrollHeader } from "@/components/scroll-header";
+import { useState, useEffect } from "react";
 import {
   schedules as initialSchedules,
   allTags,
@@ -17,6 +16,12 @@ export default function SchedulePage() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
 
+  useEffect(() => {
+    const handler = () => setShowAddDialog(true);
+    window.addEventListener("header:create", handler);
+    return () => window.removeEventListener("header:create", handler);
+  }, []);
+
   const sorted = [...scheduleList].sort(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
@@ -31,37 +36,7 @@ export default function SchedulePage() {
 
   return (
     <>
-      <ScrollHeader>
-        <div className="flex items-center justify-between">
-          <h1 className="text-[17px] font-black tracking-tight text-foreground leading-none">
-            일정 관리
-          </h1>
-          <button
-            onClick={() => setShowAddDialog(true)}
-            className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-light active:scale-90 transition-transform"
-          >
-            +
-          </button>
-        </div>
-      </ScrollHeader>
-      <main className="pt-4 pb-6 px-5">
-        {/* Header */}
-        <header className="mb-5 animate-fade-up flex items-start justify-between">
-          <div>
-            <h1 className="text-[22px] font-black tracking-tight text-foreground">
-              일정 관리
-            </h1>
-            <p className="text-[12px] text-muted-foreground mt-0.5">
-              중요한 날을 놓치지 마세요
-            </p>
-          </div>
-          <button
-            onClick={() => setShowAddDialog(true)}
-            className="mt-1 w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-lg font-light shadow-sm active:scale-90 transition-transform"
-          >
-            +
-          </button>
-        </header>
+      <main className="pb-6 px-5">
 
       {/* Upcoming */}
       {upcoming.length > 0 && (

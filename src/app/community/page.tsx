@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { ScrollHeader } from "@/components/scroll-header";
+import { useHeaderExtra } from "@/components/header-context";
 import { posts, type Category, type Post } from "@/data/mock";
 
 const categories: ("전체" | Category)[] = [
@@ -18,6 +18,19 @@ export default function CommunityPage() {
   const [activeCategory, setActiveCategory] = useState<"전체" | Category>("전체");
   const [votedPosts, setVotedPosts] = useState<Record<string, "A" | "B">>({});
   const [commentPost, setCommentPost] = useState<Post | null>(null);
+  const { setStickyExtra } = useHeaderExtra();
+
+  useEffect(() => {
+    setStickyExtra(
+      <CategoryTabs
+        categories={categories}
+        active={activeCategory}
+        onSelect={(cat: "전체" | Category) => setActiveCategory(cat)}
+        small
+      />
+    );
+    return () => setStickyExtra(null);
+  }, [activeCategory, setStickyExtra]);
 
   const filtered =
     activeCategory === "전체"
@@ -37,58 +50,10 @@ export default function CommunityPage() {
 
   return (
     <>
-      <ScrollHeader>
-        <h1 className="text-[17px] font-black tracking-tight text-foreground leading-none mb-2.5">
-          커뮤니티
-        </h1>
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`
-                flex-shrink-0 text-[12px] px-3.5 py-1.5 rounded-full font-medium transition-all duration-200
-                ${
-                  activeCategory === cat
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-secondary text-muted-foreground active:scale-95"
-                }
-              `}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </ScrollHeader>
-      <main className="pt-4 pb-6">
-        {/* Header */}
-        <header className="px-5 mb-5 animate-fade-up">
-          <h1 className="text-[22px] font-black tracking-tight text-[var(--warm-900)]">
-            커뮤니티
-          </h1>
-          <p className="text-[12px] text-[var(--muted-foreground)] mt-0.5">
-            형님들의 진솔한 이야기
-          </p>
-        </header>
-
+      <main className="pb-6">
       {/* Category Tabs */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide px-5 mb-5 animate-fade-up" style={{ animationDelay: "0.05s" }}>
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setActiveCategory(cat)}
-            className={`
-              flex-shrink-0 text-[13px] px-4 py-2 rounded-full font-medium transition-all duration-200
-              ${
-                activeCategory === cat
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-secondary text-muted-foreground active:scale-95"
-              }
-            `}
-          >
-            {cat}
-          </button>
-        ))}
+      <div className="animate-fade-up" style={{ animationDelay: "0.05s" }}>
+        <CategoryTabs categories={categories} active={activeCategory} onSelect={setActiveCategory} />
       </div>
 
       {/* Feed */}
@@ -124,6 +89,40 @@ export default function CommunityPage() {
         />
       )}
     </>
+  );
+}
+
+function CategoryTabs<T extends string>({
+  categories: cats,
+  active,
+  onSelect,
+  small,
+}: {
+  categories: T[];
+  active: T;
+  onSelect: (cat: T) => void;
+  small?: boolean;
+}) {
+  return (
+    <div className={`flex gap-2 overflow-x-auto scrollbar-hide ${small ? "mt-2" : "px-5 mb-5"}`}>
+      {cats.map((cat) => (
+        <button
+          key={cat}
+          onClick={() => onSelect(cat)}
+          className={`
+            flex-shrink-0 rounded-full font-medium transition-all duration-200
+            ${small ? "text-[12px] px-3.5 py-1.5" : "text-[13px] px-4 py-2"}
+            ${
+              active === cat
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-secondary text-muted-foreground active:scale-95"
+            }
+          `}
+        >
+          {cat}
+        </button>
+      ))}
+    </div>
   );
 }
 

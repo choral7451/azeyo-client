@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { BottomNav } from "@/components/bottom-nav";
+import { PageHeader } from "@/components/page-header";
+import { HeaderExtraProvider } from "@/components/header-context";
 
 export const metadata: Metadata = {
   title: "아재요 — 유부남들의 사랑방",
@@ -21,10 +23,13 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className="min-h-dvh pb-20">
-        <div className="mx-auto max-w-[480px] min-h-dvh relative">
-          {children}
-        </div>
-        <BottomNav />
+        <HeaderExtraProvider>
+          <div className="mx-auto max-w-[480px] min-h-dvh relative">
+            <PageHeader />
+            {children}
+          </div>
+          <BottomNav />
+        </HeaderExtraProvider>
       </body>
     </html>
   );

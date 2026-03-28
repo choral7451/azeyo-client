@@ -1,21 +1,10 @@
 "use client";
 
-import { ScrollHeader } from "@/components/scroll-header";
 
 export default function MyPage() {
   return (
     <>
-      <ScrollHeader>
-        <h1 className="text-[17px] font-black tracking-tight text-foreground leading-none">
-          MY
-        </h1>
-      </ScrollHeader>
-      <main className="pt-4 pb-6 px-5">
-        <header className="mb-5 animate-fade-up">
-          <h1 className="text-[22px] font-black tracking-tight text-[var(--warm-900)]">
-            MY
-          </h1>
-        </header>
+      <main className="pb-6 px-5">
 
       {/* Profile Card */}
       <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 mb-6 animate-fade-up" style={{ animationDelay: "0.05s" }}>

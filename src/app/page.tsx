@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { ScrollHeader } from "@/components/scroll-header";
 import {
   posts,
   getUpcomingSchedules,
@@ -22,21 +21,7 @@ export default function HomePage() {
 
   return (
     <>
-      <ScrollHeader>
-        <h1 className="text-[17px] font-black tracking-tight text-foreground leading-none">
-          아재요
-        </h1>
-      </ScrollHeader>
-      <main className="px-5 pt-4 pb-6">
-        {/* Header */}
-        <header className="mb-5 animate-fade-up">
-          <h1 className="text-[26px] font-black tracking-tight text-foreground leading-none">
-            아재요
-          </h1>
-          <p className="text-[13px] text-muted-foreground mt-1.5">
-            유부남들의 사랑방
-          </p>
-        </header>
+      <main className="px-5 pb-6">
 
       {/* Upcoming Schedules */}
       {upcoming.length > 0 && (
