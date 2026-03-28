@@ -25,11 +25,22 @@ export interface Post {
   createdAt: string;
   likeCount: number;
   commentCount: number;
+  images?: string[];
+  imageRatio?: "4:5" | "1:1";
+  comments?: Comment[];
   // VOTE specific
   voteOptionA?: string;
   voteOptionB?: string;
   voteCountA?: number;
   voteCountB?: number;
+}
+
+export interface Comment {
+  id: string;
+  author: string;
+  content: string;
+  createdAt: string;
+  likeCount: number;
 }
 
 export interface ScheduleTag {
@@ -104,6 +115,11 @@ export const posts: Post[] = [
     createdAt: "2026-03-25",
     likeCount: 142,
     commentCount: 38,
+    comments: [
+      { id: "c1-1", author: "10년차남편", content: "에어랩 진짜 반응 좋죠 ㅋㅋ 저도 작년에 사줬는데 매일 쓰더라구요", createdAt: "2026-03-25 14:30", likeCount: 24 },
+      { id: "c1-2", author: "워킹대디", content: "실용적인 선물이 답입니다 형님 인정", createdAt: "2026-03-25 15:10", likeCount: 12 },
+      { id: "c1-3", author: "딸바보파파", content: "저는 로봇청소기 사줬더니 대박이었어요", createdAt: "2026-03-25 18:22", likeCount: 31 },
+    ],
   },
   {
     id: "p2",
@@ -119,6 +135,10 @@ export const posts: Post[] = [
     voteOptionB: "백화점 상품권",
     voteCountA: 234,
     voteCountB: 189,
+    comments: [
+      { id: "c2-1", author: "결혼5년차아빠", content: "건강식품이 무난하지 않나요? 상품권은 좀 성의없어 보일수도", createdAt: "2026-03-24 10:00", likeCount: 18 },
+      { id: "c2-2", author: "모범사위", content: "저는 건강식품+꽃다발 조합으로 갔습니다", createdAt: "2026-03-24 11:30", likeCount: 45 },
+    ],
   },
   {
     id: "p3",
@@ -131,6 +151,12 @@ export const posts: Post[] = [
     createdAt: "2026-03-24",
     likeCount: 203,
     commentCount: 89,
+    comments: [
+      { id: "c3-1", author: "살림왕남편", content: "편지 쓰세요 형님... 진심 담긴 편지 앞에 장사 없습니다", createdAt: "2026-03-24 09:15", likeCount: 67 },
+      { id: "c3-2", author: "야근전사", content: "3일이면 좀 심한데... 여행이라도 보내드리는건 어떨까요", createdAt: "2026-03-24 12:40", likeCount: 23 },
+      { id: "c3-3", author: "주말골퍼", content: "캘린더 알림 필수입니다 형님 저도 한번 당했어요", createdAt: "2026-03-24 14:55", likeCount: 38 },
+      { id: "c3-4", author: "로맨틱가이", content: "꽃+케이크는 기본이고 직접 요리해보세요. 서툴러도 노력하는 모습에 감동받습니다", createdAt: "2026-03-24 20:10", likeCount: 52 },
+    ],
   },
   {
     id: "p4",
@@ -147,6 +173,10 @@ export const posts: Post[] = [
     voteOptionB: "상대가 먼저 할 때까지 기다린다",
     voteCountA: 567,
     voteCountB: 234,
+    comments: [
+      { id: "c4-1", author: "반성중인남편", content: "저도 항상 먼저 합니다... 안하면 일주일 넘게 가요 ㅠ", createdAt: "2026-03-23 08:20", likeCount: 89 },
+      { id: "c4-2", author: "살림왕남편", content: "먼저 사과하는 사람이 더 어른입니다 형님들", createdAt: "2026-03-23 10:45", likeCount: 112 },
+    ],
   },
   {
     id: "p5",
@@ -156,9 +186,19 @@ export const posts: Post[] = [
     title: "40대에 시작한 골프, 6개월 후기",
     content:
       "처음엔 와이프가 반대했는데 같이 치자고 했더니 오히려 좋아합니다. 부부 공통 취미 생기니까 대화도 많아지고 좋네요.",
+    images: [
+      "https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=600&h=750&fit=crop",
+      "https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?w=600&h=750&fit=crop",
+      "https://images.unsplash.com/photo-1592919505780-303950717480?w=600&h=750&fit=crop",
+    ],
+    imageRatio: "4:5",
     createdAt: "2026-03-23",
     likeCount: 98,
     commentCount: 45,
+    comments: [
+      { id: "c5-1", author: "만년과장", content: "부부 공통 취미 진짜 중요합니다. 저도 시작해볼까...", createdAt: "2026-03-23 16:00", likeCount: 15 },
+      { id: "c5-2", author: "결혼5년차아빠", content: "골프 비용이 좀 부담되지 않나요?", createdAt: "2026-03-23 17:30", likeCount: 8 },
+    ],
   },
   {
     id: "p6",
@@ -172,6 +212,10 @@ export const posts: Post[] = [
     createdAt: "2026-03-22",
     likeCount: 445,
     commentCount: 72,
+    comments: [
+      { id: "c6-1", author: "워킹대디", content: "말 안해도 알아서 하는게 핵심이죠. 시킨거 하는건 감동이 없음", createdAt: "2026-03-22 21:00", likeCount: 78 },
+      { id: "c6-2", author: "10년차남편", content: "설거지+빨래 세트로 하면 효과 두배입니다 ㅋㅋ", createdAt: "2026-03-22 22:15", likeCount: 55 },
+    ],
   },
   {
     id: "p7",
@@ -180,10 +224,19 @@ export const posts: Post[] = [
     author: "살림왕남편",
     title: "화장실 청소 이렇게 하면 칭찬 받습니다",
     content:
-      "구연산 + 베이킹소다 조합이면 끝입니다. 변기, 세면대, 거울까지 30분이면 반짝반짝. 아내가 '오늘 뭐 잘못한 거 있어?' 할 정도로 놀랍니다.",
+      "구연산 + 베이킹소다 조합이면 끝입니다. 변기, 세면대, 거울까지 30분이면 반짝반짝. 아내가 '오늘 뭐 잘못한 거 있어?' 할 정도로 놀랍니다. 사실 처음에는 유튜브 보면서 따라했는데 생각보다 쉽고 결과가 확실해서 이제 매주 하고 있습니다. 형님들도 한번 해보세요, 아내 반응이 확 달라집니다.",
+    images: [
+      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&h=600&fit=crop",
+    ],
+    imageRatio: "1:1",
     createdAt: "2026-03-22",
     likeCount: 521,
     commentCount: 63,
+    comments: [
+      { id: "c7-1", author: "딸바보파파", content: "구연산 어디서 사요? 다이소에 있나요?", createdAt: "2026-03-22 10:30", likeCount: 5 },
+      { id: "c7-2", author: "살림왕남편", content: "다이소, 쿠팡 다 있어요! 1000원이면 충분합니다", createdAt: "2026-03-22 11:00", likeCount: 42 },
+      { id: "c7-3", author: "주말골퍼", content: "이거 보고 따라했는데 아내가 놀라서 열 체크했습니다 ㅋㅋㅋ", createdAt: "2026-03-22 15:20", likeCount: 95 },
+    ],
   },
   {
     id: "p8",
@@ -199,6 +252,10 @@ export const posts: Post[] = [
     voteOptionB: "칼퇴 후 바로 집으로",
     voteCountA: 342,
     voteCountB: 567,
+    comments: [
+      { id: "c8-1", author: "반성중인남편", content: "현실: 3차 ㅋㅋㅋㅋ 너무 공감됩니다", createdAt: "2026-03-21 19:00", likeCount: 134 },
+      { id: "c8-2", author: "딸바보파파", content: "금요일만큼은... 한 잔만... (결국 3차)", createdAt: "2026-03-21 20:30", likeCount: 67 },
+    ],
   },
 ];
 
