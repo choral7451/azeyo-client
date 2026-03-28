@@ -139,11 +139,11 @@ function ImageCarousel({ images, ratio = "4:5" }: { images: string[]; ratio?: "4
   }
 
   return (
-    <div className="relative">
+    <div className="relative" onClick={(e) => e.stopPropagation()}>
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+        className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide touch-pan-x overscroll-x-contain"
       >
         {images.map((src, i) => (
           <div key={i} className={`flex-shrink-0 w-full snap-center relative ${ratio === "1:1" ? "aspect-square" : "aspect-[4/5]"}`}>
@@ -151,8 +151,9 @@ function ImageCarousel({ images, ratio = "4:5" }: { images: string[]; ratio?: "4
             <img
               src={src}
               alt=""
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none"
               loading="lazy"
+              draggable={false}
             />
           </div>
         ))}
