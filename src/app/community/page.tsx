@@ -128,50 +128,89 @@ export default function CommunityPage() {
 }
 
 function ImageCarousel({ images, ratio = "4:5" }: { images: string[]; ratio?: "4:5" | "1:1" }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIdx, setActiveIdx] = useState(0);
+  const touchStartX = useRef(0);
+  const touchDeltaX = useRef(0);
+  const [offsetX, setOffsetX] = useState(0);
+  const isDragging = useRef(false);
 
-  function handleScroll() {
-    const el = scrollRef.current;
-    if (!el) return;
-    const idx = Math.round(el.scrollLeft / el.clientWidth);
-    setActiveIdx(idx);
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+    isDragging.current = true;
+  }
+
+  function handleTouchMove(e: React.TouchEvent) {
+    if (!isDragging.current) return;
+    touchDeltaX.current = e.touches[0].clientX - touchStartX.current;
+    setOffsetX(touchDeltaX.current);
+  }
+
+  function handleTouchEnd() {
+    isDragging.current = false;
+    const threshold = 50;
+    if (touchDeltaX.current < -threshold && activeIdx < images.length - 1) {
+      setActiveIdx((i) => i + 1);
+    } else if (touchDeltaX.current > threshold && activeIdx > 0) {
+      setActiveIdx((i) => i - 1);
+    }
+    touchDeltaX.current = 0;
+    setOffsetX(0);
+  }
+
+  if (images.length === 1) {
+    return (
+      <div className={`relative w-full ${ratio === "1:1" ? "aspect-square" : "aspect-[4/5]"}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={images[0]}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+          loading="lazy"
+          draggable={false}
+        />
+      </div>
+    );
   }
 
   return (
-    <div className="relative" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="relative overflow-hidden"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide touch-pan-x overscroll-x-contain"
+        className="flex transition-transform duration-300 ease-out"
+        style={{
+          transform: `translateX(calc(-${activeIdx * 100}% + ${offsetX}px))`,
+          transition: offsetX !== 0 ? "none" : "transform 0.3s ease-out",
+        }}
       >
         {images.map((src, i) => (
-          <div key={i} className={`flex-shrink-0 w-full snap-center relative ${ratio === "1:1" ? "aspect-square" : "aspect-[4/5]"}`}>
+          <div key={i} className={`flex-shrink-0 w-full relative ${ratio === "1:1" ? "aspect-square" : "aspect-[4/5]"}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={src}
               alt=""
-              className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none"
+              className="absolute inset-0 w-full h-full object-cover select-none"
               loading="lazy"
               draggable={false}
             />
           </div>
         ))}
       </div>
-      {images.length > 1 && (
-        <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
-          {images.map((_, i) => (
-            <div
-              key={i}
-              className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${
-                i === activeIdx
-                  ? "bg-white w-3"
-                  : "bg-white/50"
-              }`}
-            />
-          ))}
-        </div>
-      )}
+      <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
+        {images.map((_, i) => (
+          <div
+            key={i}
+            className={`h-1.5 rounded-full transition-all duration-200 ${
+              i === activeIdx
+                ? "bg-white w-3"
+                : "bg-white/50 w-1.5"
+            }`}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -195,7 +234,7 @@ function PostCard({
   const isLong = post.content.length > CONTENT_MAX_LENGTH;
 
   return (
-    <article className="bg-[var(--card)] border border-[var(--border)] rounded-2xl overflow-hidden transition-transform duration-200 active:scale-[0.98]">
+    <article className="bg-[var(--card)] border border-[var(--border)] rounded-2xl overflow-hidden transition-transform duration-200">
       {/* Images */}
       {post.images && post.images.length > 0 && (
         <ImageCarousel images={post.images} ratio={post.imageRatio ?? "4:5"} />
