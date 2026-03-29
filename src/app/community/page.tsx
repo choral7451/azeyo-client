@@ -70,10 +70,10 @@ export default function CommunityPage() {
         {filtered.length === 0 && (
           <div className="text-center py-16">
             <p className="text-[40px] mb-2">📝</p>
-            <p className="text-[14px] text-[var(--muted-foreground)]">
+            <p className="text-[14px] text-muted-foreground">
               아직 게시글이 없어요
             </p>
-            <p className="text-[12px] text-[var(--muted-foreground)] mt-1">
+            <p className="text-[12px] text-muted-foreground mt-1">
               첫 번째 글을 작성해보세요!
             </p>
           </div>
@@ -265,7 +265,10 @@ function PostCard({
   const isLong = post.content.length > CONTENT_MAX_LENGTH;
 
   return (
-    <article className="bg-[var(--card)] border border-[var(--border)] rounded-2xl overflow-hidden transition-transform duration-200">
+    <article
+      className="rounded-2xl overflow-hidden transition-transform duration-200"
+      style={{ backgroundColor: "hsl(40 30% 96%)" }}
+    >
       {/* Images */}
       {post.images && post.images.length > 0 && (
         <ImageCarousel images={post.images} ratio={post.imageRatio ?? "4:5"} />
@@ -274,40 +277,43 @@ function PostCard({
       <div className="p-4">
         {/* Meta */}
         <div className="flex items-center gap-2 mb-2.5">
-          <div className="w-8 h-8 rounded-full bg-[var(--secondary)] flex items-center justify-center text-[12px] font-bold text-[var(--primary)]">
+          <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[12px] font-bold text-primary">
             {post.author[0]}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="text-[13px] font-semibold text-[var(--foreground)]">
+              <span className="text-[13px] font-semibold text-foreground">
                 {post.author}
               </span>
               {post.authorBadge && (
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)]" style={{ backgroundColor: "var(--primary)", color: "white", opacity: 0.9 }}>
+                <span
+                  className="text-[9px] font-bold px-1.5 py-0.5 rounded-full text-primary"
+                  style={{ backgroundColor: "hsl(22 60% 42% / 0.1)" }}
+                >
                   {post.authorBadge}
                 </span>
               )}
             </div>
-            <span className="text-[10px] text-[var(--muted-foreground)]">
+            <span className="text-[10px] text-muted-foreground">
               {post.createdAt}
             </span>
           </div>
-          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[var(--secondary)] text-[var(--secondary-foreground)]">
+          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
             {post.category}
           </span>
         </div>
 
         {/* Content */}
-        <h3 className="text-[15px] font-bold text-[var(--foreground)] leading-snug mb-1.5">
+        <h3 className="text-[15px] font-bold text-foreground leading-snug mb-1.5">
           {post.title}
         </h3>
-        <p className="text-[13px] text-[var(--muted-foreground)] leading-relaxed">
+        <p className="text-[13px] text-muted-foreground leading-relaxed">
           {isLong && !expanded ? (
             <>
               {post.content.slice(0, CONTENT_MAX_LENGTH)}...
               <button
                 onClick={(e) => { e.stopPropagation(); setExpanded(true); }}
-                className="text-[var(--primary)] font-semibold ml-1"
+                className="text-primary font-semibold ml-1"
               >
                 더보기
               </button>
@@ -330,11 +336,11 @@ function PostCard({
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[var(--border)]">
+        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
           <button
             onClick={() => setLiked(!liked)}
             className={`flex items-center gap-1.5 text-[12px] font-medium transition-colors ${
-              liked ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]"
+              liked ? "text-primary" : "text-muted-foreground"
             }`}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill={liked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
@@ -344,7 +350,7 @@ function PostCard({
           </button>
           <button
             onClick={onComment}
-            className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--muted-foreground)]"
+            className="flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" />
@@ -380,13 +386,13 @@ function VoteSection({
   const hasVoted = !!voted;
 
   return (
-    <div className="mt-3 rounded-xl border border-[var(--border)] overflow-hidden bg-[var(--secondary)]/50">
+    <div className="mt-3 rounded-xl border border-border overflow-hidden bg-secondary/50">
       {/* Header */}
-      <div className="flex items-center justify-between px-3.5 py-2 border-b border-[var(--border)]">
-        <span className="text-[11px] font-bold text-[var(--primary)] tracking-wide">
+      <div className="flex items-center justify-between px-3.5 py-2 border-b border-border">
+        <span className="text-[11px] font-bold text-primary tracking-wide">
           {hasVoted ? "투표 완료" : "눌러서 투표하기"}
         </span>
-        <span className="text-[10px] text-[var(--muted-foreground)]">
+        <span className="text-[10px] text-muted-foreground">
           {total.toLocaleString()}명 참여
         </span>
       </div>
@@ -399,24 +405,28 @@ function VoteSection({
           className={`
             relative w-full text-left rounded-lg overflow-hidden h-10 transition-all duration-200
             active:scale-[0.98] cursor-pointer
-            ${voted === "A" ? "ring-1.5 ring-[var(--primary)]" : ""}
+            ${voted === "A" ? "ring-[1.5px] ring-primary" : ""}
           `}
         >
           <div
             className={`absolute inset-y-0 left-0 rounded-lg ${
               voted === "A"
-                ? "bg-[var(--primary)]/15"
+                ? ""
                 : hasVoted
-                  ? "bg-[var(--muted)]/80"
-                  : "bg-[var(--secondary)]"
+                  ? "bg-muted/80"
+                  : "bg-secondary"
             }`}
-            style={{ width: hasVoted ? `${pctA}%` : "100%", transition: "width 0.5s cubic-bezier(0.16, 1, 0.3, 1)" }}
+            style={{
+              width: hasVoted ? `${pctA}%` : "100%",
+              transition: "width 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
+              ...(voted === "A" ? { backgroundColor: "hsl(22 60% 42% / 0.15)" } : {}),
+            }}
           />
           <div className="relative z-10 flex items-center justify-between h-full px-3.5">
-            <span className={`text-[13px] ${voted === "A" ? "font-bold text-[var(--primary)]" : "font-medium text-[var(--foreground)]"}`}>
+            <span className={`text-[13px] ${voted === "A" ? "font-bold text-primary" : "font-medium text-foreground"}`}>
               {optionA}
             </span>
-            <span className={`text-[12px] font-bold tabular-nums ${voted === "A" ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]"}`}>
+            <span className={`text-[12px] font-bold tabular-nums ${voted === "A" ? "text-primary" : "text-muted-foreground"}`}>
               {pctA}%
             </span>
           </div>
@@ -428,24 +438,28 @@ function VoteSection({
           className={`
             relative w-full text-left rounded-lg overflow-hidden h-10 transition-all duration-200
             active:scale-[0.98] cursor-pointer
-            ${voted === "B" ? "ring-1.5 ring-[var(--primary)]" : ""}
+            ${voted === "B" ? "ring-[1.5px] ring-primary" : ""}
           `}
         >
           <div
             className={`absolute inset-y-0 left-0 rounded-lg ${
               voted === "B"
-                ? "bg-[var(--primary)]/15"
+                ? ""
                 : hasVoted
-                  ? "bg-[var(--muted)]/80"
-                  : "bg-[var(--secondary)]"
+                  ? "bg-muted/80"
+                  : "bg-secondary"
             }`}
-            style={{ width: hasVoted ? `${pctB}%` : "100%", transition: "width 0.5s cubic-bezier(0.16, 1, 0.3, 1)" }}
+            style={{
+              width: hasVoted ? `${pctB}%` : "100%",
+              transition: "width 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
+              ...(voted === "B" ? { backgroundColor: "hsl(22 60% 42% / 0.15)" } : {}),
+            }}
           />
           <div className="relative z-10 flex items-center justify-between h-full px-3.5">
-            <span className={`text-[13px] ${voted === "B" ? "font-bold text-[var(--primary)]" : "font-medium text-[var(--foreground)]"}`}>
+            <span className={`text-[13px] ${voted === "B" ? "font-bold text-primary" : "font-medium text-foreground"}`}>
               {optionB}
             </span>
-            <span className={`text-[12px] font-bold tabular-nums ${voted === "B" ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]"}`}>
+            <span className={`text-[12px] font-bold tabular-nums ${voted === "B" ? "text-primary" : "text-muted-foreground"}`}>
               {pctB}%
             </span>
           </div>
@@ -472,7 +486,7 @@ function CommentSheet({ post, onClose }: { post: Post; onClose: () => void }) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Handle + Header */}
-        <div className="px-5 pt-4 pb-3 border-b border-[var(--border)] flex-shrink-0">
+        <div className="px-5 pt-4 pb-3 border-b border-border flex-shrink-0">
           <div className="w-10 h-1 bg-border rounded-full mx-auto mb-4" />
           <div className="flex items-center justify-between">
             <h3 className="text-[16px] font-bold text-foreground">
@@ -480,7 +494,7 @@ function CommentSheet({ post, onClose }: { post: Post; onClose: () => void }) {
             </h3>
             <button
               onClick={onClose}
-              className="text-[var(--muted-foreground)] p-1"
+              className="text-muted-foreground p-1"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18" />
@@ -495,32 +509,32 @@ function CommentSheet({ post, onClose }: { post: Post; onClose: () => void }) {
           {comments.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-[28px] mb-2">💬</p>
-              <p className="text-[13px] text-[var(--muted-foreground)]">
+              <p className="text-[13px] text-muted-foreground">
                 아직 댓글이 없어요
               </p>
-              <p className="text-[11px] text-[var(--muted-foreground)] mt-1">
+              <p className="text-[11px] text-muted-foreground mt-1">
                 첫 번째 댓글을 남겨보세요!
               </p>
             </div>
           ) : (
             comments.map((comment) => (
               <div key={comment.id} className="flex gap-2.5">
-                <div className="w-7 h-7 rounded-full bg-[var(--secondary)] flex items-center justify-center text-[10px] font-bold text-[var(--primary)] flex-shrink-0 mt-0.5">
+                <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-primary flex-shrink-0 mt-0.5">
                   {comment.author[0]}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[12px] font-semibold text-[var(--foreground)]">
+                    <span className="text-[12px] font-semibold text-foreground">
                       {comment.author}
                     </span>
-                    <span className="text-[10px] text-[var(--muted-foreground)]">
+                    <span className="text-[10px] text-muted-foreground">
                       {comment.createdAt.split(" ")[1] ?? comment.createdAt}
                     </span>
                   </div>
-                  <p className="text-[13px] text-[var(--foreground)] leading-relaxed mt-0.5">
+                  <p className="text-[13px] text-foreground leading-relaxed mt-0.5">
                     {comment.content}
                   </p>
-                  <button className="flex items-center gap-1 mt-1 text-[10px] text-[var(--muted-foreground)]">
+                  <button className="flex items-center gap-1 mt-1 text-[10px] text-muted-foreground">
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
                     </svg>
@@ -533,20 +547,20 @@ function CommentSheet({ post, onClose }: { post: Post; onClose: () => void }) {
         </div>
 
         {/* Comment Input */}
-        <div className="flex-shrink-0 px-5 py-3 pb-8 border-t border-[var(--border)] bg-background">
+        <div className="flex-shrink-0 px-5 py-3 pb-8 border-t border-border bg-background">
           <div className="flex items-center gap-2">
             <input
               type="text"
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="댓글을 입력하세요..."
-              className="flex-1 text-[13px] px-4 py-2.5 rounded-full bg-[var(--secondary)] text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] outline-none focus:ring-2 focus:ring-[var(--primary)]/30"
+              className="flex-1 text-[13px] px-4 py-2.5 rounded-full bg-secondary text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30"
             />
             <button
               className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
                 newComment.trim()
-                  ? "bg-[var(--primary)] text-white"
-                  : "bg-[var(--secondary)] text-[var(--muted-foreground)]"
+                  ? "bg-primary text-white"
+                  : "bg-secondary text-muted-foreground"
               }`}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

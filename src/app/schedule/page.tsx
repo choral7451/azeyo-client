@@ -41,7 +41,7 @@ export default function SchedulePage() {
       {/* Upcoming */}
       {upcoming.length > 0 && (
         <section className="mb-8 animate-fade-up" style={{ animationDelay: "0.05s" }}>
-          <h2 className="text-[13px] font-bold text-muted-foreground mb-3 uppercase tracking-widest">
+          <h2 className="text-[13px] font-semibold text-muted-foreground mb-3">
             예정된 일정
           </h2>
           <div className="space-y-2.5">
@@ -59,7 +59,7 @@ export default function SchedulePage() {
       {/* Past */}
       {past.length > 0 && (
         <section className="animate-fade-up" style={{ animationDelay: "0.1s" }}>
-          <h2 className="text-[13px] font-bold text-muted-foreground mb-3 uppercase tracking-widest">
+          <h2 className="text-[13px] font-semibold text-muted-foreground mb-3">
             지난 일정
           </h2>
           <div className="space-y-2.5 opacity-60">
@@ -78,10 +78,14 @@ export default function SchedulePage() {
         >
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
           <div
-            className="relative w-full max-w-[480px] bg-background rounded-t-3xl p-6 pb-24 animate-fade-up shadow-2xl max-h-[85dvh] overflow-y-auto"
+            className="relative w-full max-w-[480px] rounded-t-3xl p-6 pb-24 animate-fade-up shadow-2xl max-h-[85dvh] overflow-y-auto"
+            style={{ backgroundColor: "hsl(40 30% 99%)" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-10 h-1 bg-border rounded-full mx-auto mb-5 sticky top-0" />
+            <div
+              className="w-10 h-1 rounded-full mx-auto mb-5 sticky top-0"
+              style={{ backgroundColor: "hsl(35 20% 85%)" }}
+            />
             <div className="flex items-center justify-between mb-1">
               <h3 className="text-[18px] font-bold text-foreground">
                 {selectedSchedule.title}
@@ -104,9 +108,13 @@ export default function SchedulePage() {
                   {selectedRec.items.map((item) => (
                     <li
                       key={item.rank}
-                      className="flex items-center gap-3 bg-secondary rounded-xl px-4 py-3"
+                      className="flex items-center gap-3 rounded-xl px-4 py-3"
+                      style={{ backgroundColor: "hsl(40 30% 96%)" }}
                     >
-                      <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-background flex items-center justify-center text-[12px] font-bold text-primary">
+                      <span
+                        className="flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center text-[12px] font-bold text-primary"
+                        style={{ backgroundColor: "hsl(40 30% 99%)" }}
+                      >
                         {item.rank}
                       </span>
                       <span className="text-base">{item.emoji}</span>
@@ -133,7 +141,8 @@ export default function SchedulePage() {
 
             <button
               onClick={() => setSelectedSchedule(null)}
-              className="w-full mt-5 py-3 rounded-xl bg-secondary text-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform"
+              className="w-full mt-5 py-3 rounded-xl text-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform"
+              style={{ backgroundColor: "hsl(40 30% 93%)" }}
             >
               닫기
             </button>
@@ -164,7 +173,8 @@ function ScheduleCard({
   return (
     <button
       onClick={onSelect}
-      className="w-full text-left bg-card border border-border rounded-2xl px-4 py-3.5 flex items-center gap-4 shadow-sm transition-transform duration-200 active:scale-[0.98]"
+      className="w-full text-left rounded-2xl px-4 py-3.5 flex items-center gap-4 shadow-sm transition-transform duration-200 active:scale-[0.98]"
+      style={{ backgroundColor: "hsl(40 30% 96%)" }}
     >
       {/* D-day badge */}
       <div
@@ -258,10 +268,14 @@ function AddScheduleDialog({ onClose }: { onClose: () => void }) {
     >
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       <div
-        className="relative w-full max-w-[480px] bg-background rounded-t-3xl p-6 pb-24 animate-fade-up shadow-2xl max-h-[85dvh] overflow-y-auto"
+        className="relative w-full max-w-[480px] rounded-t-3xl p-6 pb-24 animate-fade-up shadow-2xl max-h-[85dvh] overflow-y-auto"
+        style={{ backgroundColor: "hsl(40 30% 99%)" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="w-10 h-1 bg-border rounded-full mx-auto mb-5" />
+        <div
+          className="w-10 h-1 rounded-full mx-auto mb-5"
+          style={{ backgroundColor: "hsl(35 20% 85%)" }}
+        />
         <h3 className="text-[18px] font-bold text-foreground mb-5">
           일정 등록
         </h3>
@@ -276,7 +290,19 @@ function AddScheduleDialog({ onClose }: { onClose: () => void }) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="예: 아내 생일"
-            className="w-full rounded-xl border border-border bg-secondary px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary/30 transition"
+            className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none transition"
+            style={{
+              backgroundColor: "hsl(40 30% 96%)",
+              border: "1px solid hsl(35 20% 90%)",
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.boxShadow = "0 0 0 2px hsl(22 60% 42% / 0.2)";
+              e.currentTarget.style.borderColor = "hsl(22 60% 42% / 0.4)";
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.boxShadow = "none";
+              e.currentTarget.style.borderColor = "hsl(35 20% 90%)";
+            }}
           />
         </label>
 
@@ -289,7 +315,19 @@ function AddScheduleDialog({ onClose }: { onClose: () => void }) {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full rounded-xl border border-border bg-secondary px-4 py-3 text-[14px] text-foreground outline-none focus:ring-2 focus:ring-primary/30 transition"
+            className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground outline-none transition"
+            style={{
+              backgroundColor: "hsl(40 30% 96%)",
+              border: "1px solid hsl(35 20% 90%)",
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.boxShadow = "0 0 0 2px hsl(22 60% 42% / 0.2)";
+              e.currentTarget.style.borderColor = "hsl(22 60% 42% / 0.4)";
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.boxShadow = "none";
+              e.currentTarget.style.borderColor = "hsl(35 20% 90%)";
+            }}
           />
         </label>
 
@@ -323,12 +361,30 @@ function AddScheduleDialog({ onClose }: { onClose: () => void }) {
                 setTagSearch(e.target.value);
                 setShowTagDropdown(true);
               }}
-              onFocus={() => setShowTagDropdown(true)}
+              onFocus={(e) => {
+                setShowTagDropdown(true);
+                e.currentTarget.style.boxShadow = "0 0 0 2px hsl(22 60% 42% / 0.2)";
+                e.currentTarget.style.borderColor = "hsl(22 60% 42% / 0.4)";
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.boxShadow = "none";
+                e.currentTarget.style.borderColor = "hsl(35 20% 90%)";
+              }}
               placeholder="태그 검색 또는 새로 만들기"
-              className="w-full rounded-xl border border-border bg-secondary px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary/30 transition"
+              className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none transition"
+              style={{
+                backgroundColor: "hsl(40 30% 96%)",
+                border: "1px solid hsl(35 20% 90%)",
+              }}
             />
             {showTagDropdown && (tagSearch || filteredTags.length > 0) && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-xl shadow-lg overflow-hidden z-10 max-h-48 overflow-y-auto">
+              <div
+                className="absolute top-full left-0 right-0 mt-1 rounded-xl shadow-lg overflow-hidden z-10 max-h-48 overflow-y-auto"
+                style={{
+                  backgroundColor: "hsl(40 30% 99%)",
+                  border: "1px solid hsl(35 20% 90%)",
+                }}
+              >
                 {filteredTags.map((tag) => (
                   <button
                     key={tag.id}
@@ -337,7 +393,10 @@ function AddScheduleDialog({ onClose }: { onClose: () => void }) {
                       setTagSearch("");
                       setShowTagDropdown(false);
                     }}
-                    className="w-full text-left px-4 py-2.5 text-[13px] flex items-center gap-2 hover:bg-secondary transition-colors"
+                    className="w-full text-left px-4 py-2.5 text-[13px] flex items-center gap-2 transition-colors"
+                    style={{ }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "hsl(40 30% 96%)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
                   >
                     <span
                       className="w-2.5 h-2.5 rounded-full"
@@ -365,7 +424,9 @@ function AddScheduleDialog({ onClose }: { onClose: () => void }) {
                         setTagSearch("");
                         setShowTagDropdown(false);
                       }}
-                      className="w-full text-left px-4 py-2.5 text-[13px] text-primary font-medium hover:bg-secondary transition-colors"
+                      className="w-full text-left px-4 py-2.5 text-[13px] text-primary font-medium transition-colors"
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "hsl(40 30% 96%)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
                     >
                       &ldquo;{tagSearch}&rdquo; 새 태그 만들기
                     </button>
@@ -379,7 +440,8 @@ function AddScheduleDialog({ onClose }: { onClose: () => void }) {
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-3 rounded-xl bg-secondary text-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform"
+            className="flex-1 py-3 rounded-xl text-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform"
+            style={{ backgroundColor: "hsl(40 30% 93%)" }}
           >
             취소
           </button>

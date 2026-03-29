@@ -20,8 +20,7 @@ export default function HomePage() {
     : null;
 
   return (
-    <>
-      <main className="px-5 pb-6">
+    <main className="px-5 pb-6">
 
       {/* Upcoming Schedules */}
       {upcoming.length > 0 && (
@@ -46,9 +45,10 @@ export default function HomePage() {
                     ${
                       isUrgent
                         ? "bg-primary text-primary-foreground shadow-md"
-                        : "bg-card border border-border shadow-sm"
+                        : ""
                     }
                   `}
+                  style={!isUrgent ? { backgroundColor: "hsl(40 30% 96%)" } : undefined}
                 >
                   <span
                     className={`
@@ -112,7 +112,8 @@ export default function HomePage() {
             {matchedRec.items.slice(0, 3).map((item) => (
               <div
                 key={item.rank}
-                className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3 shadow-sm"
+                className="flex items-center gap-3 rounded-xl px-4 py-3"
+                style={{ backgroundColor: "hsl(40 30% 96%)" }}
               >
                 <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-secondary flex items-center justify-center text-[12px] font-bold text-primary">
                   {item.rank}
@@ -146,7 +147,8 @@ export default function HomePage() {
           {trending.map((post) => (
             <article
               key={post.id}
-              className="bg-card border border-border rounded-xl px-4 py-3.5 shadow-sm transition-transform duration-200 active:scale-[0.98]"
+              className="rounded-xl px-4 py-3.5 transition-transform duration-200 active:scale-[0.98]"
+              style={{ backgroundColor: "hsl(40 30% 96%)" }}
             >
               <div className="flex items-center gap-2 mb-1.5">
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
@@ -174,8 +176,7 @@ export default function HomePage() {
           ))}
         </div>
       </section>
-      </main>
-    </>
+    </main>
   );
 }
 
