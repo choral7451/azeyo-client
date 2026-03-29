@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useHeaderExtra } from "@/components/header-context";
-import { posts, type Category, type Post } from "@/data/mock";
+import { posts as initialPosts, type Category, type Post, type PostType } from "@/data/mock";
 
 const categories: ("전체" | Category)[] = [
   "전체",
@@ -14,11 +14,21 @@ const categories: ("전체" | Category)[] = [
   "자유게시판",
 ];
 
+const writeCategories: Category[] = ["선물", "부부싸움", "어른들 취미", "육아", "생활꿀팁", "자유게시판"];
+
 export default function CommunityPage() {
   const [activeCategory, setActiveCategory] = useState<"전체" | Category>("전체");
   const [votedPosts, setVotedPosts] = useState<Record<string, "A" | "B">>({});
   const [commentPost, setCommentPost] = useState<Post | null>(null);
+  const [showWrite, setShowWrite] = useState(false);
+  const [postList, setPostList] = useState<Post[]>(initialPosts);
   const { setStickyExtra } = useHeaderExtra();
+
+  useEffect(() => {
+    const handler = () => setShowWrite(true);
+    window.addEventListener("header:create", handler);
+    return () => window.removeEventListener("header:create", handler);
+  }, []);
 
   useEffect(() => {
     setStickyExtra(
@@ -34,8 +44,17 @@ export default function CommunityPage() {
 
   const filtered =
     activeCategory === "전체"
-      ? posts
-      : posts.filter((p) => p.category === activeCategory);
+      ? postList
+      : postList.filter((p) => p.category === activeCategory);
+
+  function handleNewPost(post: Post) {
+    setPostList((prev) => [post, ...prev]);
+    setShowWrite(false);
+    if (activeCategory !== "전체" && activeCategory !== post.category) {
+      setActiveCategory("전체");
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   function handleVote(postId: string, option: "A" | "B") {
     setVotedPosts((prev) => {
@@ -86,6 +105,14 @@ export default function CommunityPage() {
         <CommentSheet
           post={commentPost}
           onClose={() => setCommentPost(null)}
+        />
+      )}
+
+      {/* Write Bottom Sheet */}
+      {showWrite && (
+        <WriteSheet
+          onClose={() => setShowWrite(false)}
+          onSubmit={handleNewPost}
         />
       )}
     </>
@@ -570,6 +597,288 @@ function CommentSheet({ post, onClose }: { post: Post; onClose: () => void }) {
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function WriteSheet({ onClose, onSubmit }: { onClose: () => void; onSubmit: (post: Post) => void }) {
+  const [postType, setPostType] = useState<PostType>("TEXT");
+  const [category, setCategory] = useState<Category>("자유게시판");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [voteOptionA, setVoteOptionA] = useState("");
+  const [voteOptionB, setVoteOptionB] = useState("");
+  const [images, setImages] = useState<string[]>([]);
+  const [imageRatio, setImageRatio] = useState<"4:5" | "1:1">("4:5");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isValid = postType === "TEXT"
+    ? title.trim().length > 0 && content.trim().length > 0
+    : title.trim().length > 0 && voteOptionA.trim().length > 0 && voteOptionB.trim().length > 0;
+
+  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files) return;
+    const newImages = Array.from(files).slice(0, 5 - images.length).map((f) => URL.createObjectURL(f));
+    setImages((prev) => [...prev, ...newImages].slice(0, 5));
+    e.target.value = "";
+  }
+
+  function removeImage(idx: number) {
+    setImages((prev) => {
+      URL.revokeObjectURL(prev[idx]);
+      return prev.filter((_, i) => i !== idx);
+    });
+  }
+
+  function handleSubmit() {
+    if (!isValid) return;
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    const newPost: Post = {
+      id: `user-${Date.now()}`,
+      type: postType,
+      category,
+      author: "김아재",
+      title: title.trim(),
+      content: content.trim(),
+      createdAt: dateStr,
+      likeCount: 0,
+      commentCount: 0,
+      comments: [],
+      ...(images.length > 0 ? { images, imageRatio } : {}),
+      ...(postType === "VOTE" ? {
+        voteOptionA: voteOptionA.trim(),
+        voteOptionB: voteOptionB.trim(),
+        voteCountA: 0,
+        voteCountB: 0,
+      } : {}),
+    };
+    onSubmit(newPost);
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-end justify-center"
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      <div
+        className="relative w-full max-w-[480px] bg-background rounded-t-3xl animate-fade-up shadow-2xl max-h-[90dvh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="px-5 pt-4 pb-3 border-b border-border flex-shrink-0">
+          <div className="w-10 h-1 bg-border rounded-full mx-auto mb-4" />
+          <div className="flex items-center justify-between">
+            <button onClick={onClose} className="text-[14px] text-muted-foreground font-medium">
+              취소
+            </button>
+            <h3 className="text-[16px] font-bold text-foreground">글쓰기</h3>
+            <button
+              onClick={handleSubmit}
+              disabled={!isValid}
+              className={`text-[14px] font-semibold transition-colors ${
+                isValid ? "text-primary" : "text-muted-foreground/40"
+              }`}
+            >
+              등록
+            </button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+          {/* Post Type Toggle */}
+          <div className="flex gap-2">
+            {(["TEXT", "VOTE"] as PostType[]).map((type) => (
+              <button
+                key={type}
+                onClick={() => setPostType(type)}
+                className={`flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition-all active:scale-[0.97] ${
+                  postType === type
+                    ? "bg-primary text-white"
+                    : "bg-secondary text-muted-foreground"
+                }`}
+              >
+                {type === "TEXT" ? "일반 글" : "투표"}
+              </button>
+            ))}
+          </div>
+
+          {/* Category */}
+          <div>
+            <label className="text-[12px] font-semibold text-muted-foreground block mb-2">카테고리</label>
+            <div className="flex flex-wrap gap-2">
+              {writeCategories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setCategory(cat)}
+                  className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${
+                    category === cat
+                      ? "bg-primary text-white"
+                      : "bg-secondary text-muted-foreground active:scale-95"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Title */}
+          <div>
+            <label className="text-[12px] font-semibold text-muted-foreground block mb-2">
+              {postType === "VOTE" ? "투표 질문" : "제목"}
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={postType === "VOTE" ? "형님들에게 물어볼 질문" : "제목을 입력하세요"}
+              className="w-full rounded-xl bg-secondary px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary/30 transition"
+            />
+          </div>
+
+          {postType === "TEXT" ? (
+            <>
+              {/* Content */}
+              <div>
+                <label className="text-[12px] font-semibold text-muted-foreground block mb-2">내용</label>
+                <textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="내용을 입력하세요"
+                  rows={5}
+                  className="w-full rounded-xl bg-secondary px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary/30 transition resize-none leading-relaxed"
+                />
+              </div>
+
+              {/* Images */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-[12px] font-semibold text-muted-foreground">
+                    사진 ({images.length}/5)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    {images.length > 0 && (
+                      <div className="flex bg-secondary rounded-lg overflow-hidden">
+                        {(["4:5", "1:1"] as const).map((ratio) => (
+                          <button
+                            key={ratio}
+                            onClick={() => setImageRatio(ratio)}
+                            className={`px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                              imageRatio === ratio
+                                ? "bg-primary text-white"
+                                : "text-muted-foreground"
+                            }`}
+                          >
+                            {ratio}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-secondary text-muted-foreground text-[11px] font-semibold active:scale-95 transition-transform"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                      </svg>
+                      추가
+                    </button>
+                  </div>
+                </div>
+
+                {images.length > 0 && (
+                  <div className="rounded-xl overflow-hidden">
+                    <ImageCarousel images={images} ratio={imageRatio} />
+                    <div className="flex gap-1.5 mt-2">
+                      {images.map((src, i) => (
+                        <div key={i} className="relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={src} alt="" className="w-full h-full object-cover" />
+                          <button
+                            onClick={() => removeImage(i)}
+                            className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/50 text-white flex items-center justify-center text-[8px] leading-none"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Vote Options */}
+              <div>
+                <label className="text-[12px] font-semibold text-muted-foreground block mb-2">선택지</label>
+                <div className="space-y-2">
+                  <div
+                    className="flex items-center gap-3 rounded-xl px-4 py-3.5"
+                    style={{ backgroundColor: "hsl(22 60% 42% / 0.06)" }}
+                  >
+                    <span className="text-[13px] font-bold text-primary">A</span>
+                    <input
+                      type="text"
+                      value={voteOptionA}
+                      onChange={(e) => setVoteOptionA(e.target.value)}
+                      placeholder="첫 번째 선택지"
+                      className="flex-1 bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none"
+                    />
+                  </div>
+                  <div className="flex items-center justify-center">
+                    <span className="text-[11px] font-bold text-muted-foreground/40">VS</span>
+                  </div>
+                  <div
+                    className="flex items-center gap-3 rounded-xl px-4 py-3.5"
+                    style={{ backgroundColor: "hsl(22 60% 42% / 0.06)" }}
+                  >
+                    <span className="text-[13px] font-bold text-primary">B</span>
+                    <input
+                      type="text"
+                      value={voteOptionB}
+                      onChange={(e) => setVoteOptionB(e.target.value)}
+                      placeholder="두 번째 선택지"
+                      className="flex-1 bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Optional description */}
+              <div>
+                <label className="text-[12px] font-semibold text-muted-foreground block mb-2">
+                  부연 설명 <span className="font-normal text-muted-foreground/50">(선택)</span>
+                </label>
+                <textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="투표 배경이나 고민을 적어주세요"
+                  rows={3}
+                  className="w-full rounded-xl bg-secondary px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary/30 transition resize-none leading-relaxed"
+                />
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Bottom safe area */}
+        <div className="h-8 flex-shrink-0" />
       </div>
     </div>
   );
