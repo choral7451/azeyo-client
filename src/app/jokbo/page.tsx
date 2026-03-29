@@ -50,6 +50,7 @@ export default function JokboPage() {
   const [activeCategory, setActiveCategory] = useState<TemplateCategory>(categories[0]);
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const { setStickyExtra } = useHeaderExtra();
 
   useEffect(() => {
@@ -85,115 +86,141 @@ export default function JokboPage() {
   }
 
   return (
-    <>
-      <main className="pb-6">
-
+    <main className="pb-6">
       {/* Category Tabs */}
       <div className="animate-fade-up" style={{ animationDelay: "0.05s" }}>
         <CategoryTabs categories={categories} active={activeCategory} onSelect={(cat) => { setActiveCategory(cat); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
       </div>
 
-      {/* Template Cards */}
-      <div className="px-5 space-y-3 animate-fade-up" style={{ animationDelay: "0.1s" }}>
+      {/* Template List */}
+      <div className="px-5 space-y-4 animate-fade-up" style={{ animationDelay: "0.1s" }}>
         {filtered.map((template) => {
           const isLiked = likedIds.has(template.id);
           const isCopied = copiedId === template.id;
+          const isExpanded = expandedIds.has(template.id);
           const displayLikes = template.likeCount + (isLiked ? 1 : 0);
-          const displayCopies = template.copyCount + (isCopied ? 1 : 0);
 
           return (
-            <div
+            <article
               key={template.id}
-              className="bg-[var(--card)] border border-[var(--border)] rounded-2xl overflow-hidden"
+              className="rounded-2xl overflow-hidden"
+              style={{ backgroundColor: "hsl(40 30% 96%)" }}
             >
-              {/* Header */}
-              <div className="px-4 pt-4 pb-2 flex items-start justify-between">
-                <div>
-                  <h3 className="text-[14px] font-bold text-[var(--foreground)]">
-                    {template.title}
-                  </h3>
-                  <p className="text-[11px] text-[var(--muted-foreground)] mt-0.5">
-                    by {template.author}
-                  </p>
+              {/* Content — the hero */}
+              <div className="px-5 pt-5">
+                <div
+                  className={`text-[13px] leading-[1.8] text-foreground whitespace-pre-line overflow-hidden transition-[max-height] duration-300 ease-out ${
+                    isExpanded ? "max-h-[2000px]" : "max-h-[100px]"
+                  } ${!isExpanded ? "relative" : ""}`}
+                >
+                  {template.content}
+                  {!isExpanded && (
+                    <div
+                      className="absolute inset-x-0 bottom-0 h-12 pointer-events-none"
+                      style={{ background: "linear-gradient(to top, hsl(40 30% 96%), transparent)" }}
+                    />
+                  )}
                 </div>
-                <div className="flex items-center gap-3 text-[11px] text-[var(--muted-foreground)]">
-                  <span className="flex items-center gap-1">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+
+                {/* Expand toggle */}
+                <button
+                  onClick={() =>
+                    setExpandedIds((prev) => {
+                      const next = new Set(prev);
+                      if (isExpanded) next.delete(template.id);
+                      else next.add(template.id);
+                      return next;
+                    })
+                  }
+                  className="flex items-center gap-0.5 mt-1 mb-3 text-[11px] font-medium text-muted-foreground active:opacity-60 transition-opacity"
+                >
+                  {isExpanded ? "접기" : "전체 보기"}
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className={`transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                  >
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Footer: meta + actions */}
+              <div
+                className="px-5 py-3 flex items-center justify-between"
+                style={{ borderTop: "1px solid hsl(35 20% 90%)" }}
+              >
+                {/* Meta — left */}
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="text-[12px] font-semibold text-foreground truncate">
+                    {template.title}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground flex-shrink-0">
+                    {template.author}
+                  </span>
+                </div>
+
+                {/* Actions — right */}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {/* Like */}
+                  <button
+                    onClick={() => handleLike(template.id)}
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-150 active:scale-95 ${
+                      isLiked
+                        ? "text-primary"
+                        : "text-muted-foreground"
+                    }`}
+                    style={isLiked ? { backgroundColor: "hsl(22 60% 42% / 0.08)" } : undefined}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill={isLiked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
                       <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
                     </svg>
                     {displayLikes.toLocaleString()}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="9" y="9" width="13" height="13" rx="2" />
-                      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-                    </svg>
-                    {displayCopies.toLocaleString()}
-                  </span>
-                </div>
-              </div>
+                  </button>
 
-              {/* Content Preview */}
-              <div className="px-4 pb-3">
-                <div className="bg-[var(--secondary)] rounded-xl p-4 text-[12px] text-[var(--foreground)] leading-relaxed whitespace-pre-line max-h-[160px] overflow-hidden relative">
-                  {template.content}
-                  <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-[var(--secondary)] to-transparent" />
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="px-4 pb-4 flex gap-2">
-                <button
-                  onClick={() => handleLike(template.id)}
-                  className={`
-                    flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 active:scale-[0.97]
-                    ${
-                      isLiked
-                        ? "bg-[var(--primary)]/10 text-[var(--primary)]"
-                        : "bg-[var(--secondary)] text-[var(--muted-foreground)]"
-                    }
-                  `}
-                  style={isLiked ? { backgroundColor: "var(--primary)", color: "white", opacity: 0.9 } : undefined}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill={isLiked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
-                    <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
-                  </svg>
-                  좋아요
-                </button>
-                <button
-                  onClick={() => handleCopy(template)}
-                  className={`
-                    flex-[2] flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 active:scale-[0.97]
-                    ${
+                  {/* Copy */}
+                  <button
+                    onClick={() => handleCopy(template)}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all duration-150 active:scale-95 ${
                       isCopied
-                        ? "bg-[var(--sage)] text-white"
-                        : "bg-[var(--primary)] text-white"
-                    }
-                  `}
-                >
-                  {isCopied ? (
-                    <>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M20 6L9 17l-5-5" />
-                      </svg>
-                      복사 완료!
-                    </>
-                  ) : (
-                    <>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="9" y="9" width="13" height="13" rx="2" />
-                        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-                      </svg>
-                      복사하기
-                    </>
-                  )}
-                </button>
+                        ? "text-white"
+                        : "text-white"
+                    }`}
+                    style={{
+                      backgroundColor: isCopied
+                        ? "hsl(150 20% 55%)"
+                        : "hsl(22 60% 42%)",
+                    }}
+                  >
+                    {isCopied ? (
+                      <>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20 6L9 17l-5-5" />
+                        </svg>
+                        완료
+                      </>
+                    ) : (
+                      <>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="9" y="9" width="13" height="13" rx="2" />
+                          <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                        </svg>
+                        복사
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
-            </div>
+            </article>
           );
         })}
       </div>
-      </main>
-    </>
+    </main>
   );
 }
