@@ -38,7 +38,7 @@ function HeaderContent({ compact, config }: { compact: boolean; config: typeof P
       {hasCreate ? (
         <button
           onClick={emitCreate}
-          className="w-9 h-9 flex items-center justify-center rounded-full text-[var(--foreground)] active:scale-90 transition-transform"
+          className="w-9 h-9 flex items-center justify-center rounded-full text-foreground active:scale-90 transition-transform"
         >
           <WriteIcon />
         </button>
@@ -50,9 +50,12 @@ function HeaderContent({ compact, config }: { compact: boolean; config: typeof P
       }`}>
         {title}
       </h1>
-      <button className="w-9 h-9 flex items-center justify-center rounded-full text-[var(--foreground)] active:scale-90 transition-transform relative">
+      <button
+        onClick={() => window.dispatchEvent(new CustomEvent("header:notify"))}
+        className="w-9 h-9 flex items-center justify-center rounded-full text-foreground active:scale-90 transition-transform relative"
+      >
         <BellIcon />
-        <span className="absolute top-1 right-1 w-2 h-2 bg-[var(--destructive)] rounded-full" />
+        <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
       </button>
     </div>
   );
@@ -105,7 +108,7 @@ export function PageHeader() {
       <div className="px-5 pt-4 pb-3 animate-fade-up">
         <HeaderContent compact={false} config={config} />
         {config.subtitle && (
-          <p className="text-[12px] text-[var(--muted-foreground)] mt-1 text-center">
+          <p className="text-[12px] text-muted-foreground mt-1 text-center">
             {config.subtitle}
           </p>
         )}

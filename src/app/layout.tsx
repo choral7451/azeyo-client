@@ -3,6 +3,7 @@ import "./globals.css";
 import { BottomNav } from "@/components/bottom-nav";
 import { PageHeader } from "@/components/page-header";
 import { HeaderExtraProvider } from "@/components/header-context";
+import { NotificationListener } from "@/components/notification-listener";
 
 export const metadata: Metadata = {
   title: "아재요 — 유부남들의 사랑방",
@@ -29,6 +30,7 @@ export default function RootLayout({
             {children}
           </div>
           <BottomNav />
+          <NotificationListener />
         </HeaderExtraProvider>
       </body>
     </html>
