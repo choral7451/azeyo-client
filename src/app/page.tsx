@@ -7,6 +7,8 @@ import {
   formatDday,
   getDday,
   recommendations,
+  getTopMonthlyUsers,
+  getGrade,
 } from "@/data/mock";
 
 export default function HomePage() {
@@ -133,8 +135,53 @@ export default function HomePage() {
         </section>
       )}
 
+      {/* Monthly Top Users */}
+      <section className="mb-10 animate-fade-up" style={{ animationDelay: "0.15s" }}>
+        <h2 className="text-[15px] font-bold text-foreground mb-4">
+          이달의 활동왕 🔥
+        </h2>
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-2">
+          {getTopMonthlyUsers(3).map((user, index) => {
+            const grade = getGrade(user.activityPoints);
+            const rankColors = [
+              "hsl(35 80% 50%)",   // 1st: gold
+              "hsl(220 10% 65%)",  // 2nd: silver
+              "hsl(25 50% 55%)",   // 3rd: bronze
+            ];
+            return (
+              <div
+                key={user.id}
+                className="flex-shrink-0 w-[150px] rounded-2xl p-4 text-center"
+                style={{ backgroundColor: "hsl(40 30% 96%)" }}
+              >
+                <div className="relative inline-block mb-2">
+                  <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white text-sm font-black">
+                    {user.initials}
+                  </div>
+                  <span
+                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white"
+                    style={{ backgroundColor: rankColors[index] }}
+                  >
+                    {index + 1}
+                  </span>
+                </div>
+                <p className="text-[13px] font-semibold text-foreground">
+                  {user.name}
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {grade.emoji} {grade.name}
+                </p>
+                <p className="text-[11px] text-primary font-bold mt-1.5">
+                  {user.monthlyPoints}점
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
       {/* Trending */}
-      <section className="animate-fade-up" style={{ animationDelay: "0.15s" }}>
+      <section className="animate-fade-up" style={{ animationDelay: "0.2s" }}>
         <div className="flex items-baseline justify-between mb-4">
           <h2 className="text-[15px] font-bold text-foreground">
             인기 게시글

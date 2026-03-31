@@ -6,6 +6,25 @@
 
 export type PostType = "TEXT" | "VOTE";
 
+export interface UserGrade {
+  level: number;
+  name: string;
+  emoji: string;
+  minPoints: number;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  initials: string;
+  subtitle: string;
+  gradeLevel: number;
+  activityPoints: number;
+  monthlyPoints: number; // 이달 활동점수
+  stats: { posts: number; likes: number; jokbo: number };
+  badges: string[];
+}
+
 export type Category =
   | "선물"
   | "부부싸움"
@@ -538,6 +557,110 @@ OO주년 축하해, 여보. 영원히 사랑해 ❤️`,
     author: "응원단장",
   },
 ];
+
+// --------------- Grades ---------------
+
+export const grades: UserGrade[] = [
+  { level: 1, name: "새내기 남편", emoji: "🐣", minPoints: 0 },
+  { level: 2, name: "초보 유부남", emoji: "👔", minPoints: 50 },
+  { level: 3, name: "동네 아재", emoji: "🧢", minPoints: 200 },
+  { level: 4, name: "베테랑 남편", emoji: "🏆", minPoints: 500 },
+  { level: 5, name: "아재 마스터", emoji: "👑", minPoints: 1500 },
+];
+
+export const gradeRules = [
+  { action: "게시글 작성", points: 10 },
+  { action: "댓글 작성", points: 3 },
+  { action: "족보 등록", points: 15 },
+  { action: "족보 복사됨 (내 글)", points: 5 },
+  { action: "좋아요 받음", points: 2 },
+  { action: "좋아요 누름", points: 1 },
+  { action: "투표 참여", points: 2 },
+  { action: "일정 등록", points: 3 },
+  { action: "출석 (일 1회)", points: 2 },
+];
+
+export function getGrade(points: number): UserGrade {
+  return [...grades].reverse().find((g) => points >= g.minPoints) ?? grades[0];
+}
+
+// --------------- Mock Users ---------------
+
+export const users: User[] = [
+  {
+    id: "u1",
+    name: "김아재",
+    initials: "김",
+    subtitle: "결혼 7년차 · 아이 2명",
+    gradeLevel: 4,
+    activityPoints: 720,
+    monthlyPoints: 185,
+    stats: { posts: 12, likes: 89, jokbo: 5 },
+    badges: ["선물왕", "족보 기여자"],
+  },
+  {
+    id: "u2",
+    name: "살림왕남편",
+    initials: "살",
+    subtitle: "결혼 10년차 · 아이 1명",
+    gradeLevel: 5,
+    activityPoints: 1820,
+    monthlyPoints: 312,
+    stats: { posts: 45, likes: 521, jokbo: 12 },
+    badges: ["생활달인", "인기왕"],
+  },
+  {
+    id: "u3",
+    name: "딸바보파파",
+    initials: "딸",
+    subtitle: "결혼 8년차 · 딸 2명",
+    gradeLevel: 4,
+    activityPoints: 680,
+    monthlyPoints: 245,
+    stats: { posts: 28, likes: 445, jokbo: 3 },
+    badges: ["육아고수"],
+  },
+  {
+    id: "u4",
+    name: "워킹대디",
+    initials: "워",
+    subtitle: "결혼 6년차 · 아이 1명",
+    gradeLevel: 3,
+    activityPoints: 350,
+    monthlyPoints: 198,
+    stats: { posts: 15, likes: 312, jokbo: 1 },
+    badges: ["조언왕"],
+  },
+  {
+    id: "u5",
+    name: "결혼5년차아빠",
+    initials: "결",
+    subtitle: "결혼 5년차 · 아이 1명",
+    gradeLevel: 3,
+    activityPoints: 290,
+    monthlyPoints: 156,
+    stats: { posts: 10, likes: 142, jokbo: 2 },
+    badges: ["선물왕"],
+  },
+  {
+    id: "u6",
+    name: "로맨틱가이",
+    initials: "로",
+    subtitle: "결혼 12년차",
+    gradeLevel: 5,
+    activityPoints: 2100,
+    monthlyPoints: 278,
+    stats: { posts: 52, likes: 2103, jokbo: 8 },
+    badges: ["족보장인", "로맨티스트"],
+  },
+];
+
+// 현재 로그인 유저 (김아재)
+export const currentUser = users[0];
+
+export function getTopMonthlyUsers(count: number = 3): User[] {
+  return [...users].sort((a, b) => b.monthlyPoints - a.monthlyPoints).slice(0, count);
+}
 
 // --------------- Helper Functions ---------------
 
