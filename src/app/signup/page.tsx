@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/auth-context";
 
 type Step = "terms" | "info" | "done";
 
@@ -20,6 +21,7 @@ const terms: TermItem[] = [
 
 export default function SignupPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [step, setStep] = useState<Step>("terms");
 
   // Terms state
@@ -255,7 +257,7 @@ export default function SignupPage() {
           </p>
 
           <button
-            onClick={() => router.push("/")}
+            onClick={() => { login(); router.push("/"); }}
             className="w-full mt-10 py-3.5 rounded-xl text-[14px] font-semibold text-white active:scale-[0.97] transition-all"
             style={{ backgroundColor: "hsl(22 60% 42%)" }}
           >

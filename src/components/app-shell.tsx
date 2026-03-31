@@ -5,6 +5,8 @@ import { BottomNav } from "@/components/bottom-nav";
 import { PageHeader } from "@/components/page-header";
 import { HeaderExtraProvider } from "@/components/header-context";
 import { NotificationListener } from "@/components/notification-listener";
+import { AuthProvider } from "@/components/auth-context";
+import { ToastProvider } from "@/components/toast";
 
 const AUTH_ROUTES = ["/login", "/signup"];
 
@@ -14,20 +16,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (isAuth) {
     return (
-      <div className="mx-auto max-w-[480px] min-h-dvh relative">
-        {children}
-      </div>
+      <AuthProvider>
+        <div className="mx-auto max-w-[480px] min-h-dvh relative">
+          {children}
+        </div>
+      </AuthProvider>
     );
   }
 
   return (
-    <HeaderExtraProvider>
-      <div className="mx-auto max-w-[480px] min-h-dvh relative pb-20">
-        <PageHeader />
-        {children}
-      </div>
-      <BottomNav />
-      <NotificationListener />
-    </HeaderExtraProvider>
+    <AuthProvider>
+      <ToastProvider>
+        <HeaderExtraProvider>
+          <div className="mx-auto max-w-[480px] min-h-dvh relative pb-20">
+            <PageHeader />
+            {children}
+          </div>
+          <BottomNav />
+          <NotificationListener />
+        </HeaderExtraProvider>
+      </ToastProvider>
+    </AuthProvider>
   );
 }

@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useAuth } from "@/components/auth-context";
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { logout } = useAuth();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   return (
@@ -28,20 +30,12 @@ export default function SettingsPage() {
         <div className="mb-6">
           <h3 className="text-[12px] font-medium text-muted-foreground mb-2 px-1">앱 정보</h3>
           <div className="space-y-1">
-            <div className="flex items-center justify-between px-4 py-3.5 rounded-xl" style={{ backgroundColor: "hsl(40 30% 96%)" }}>
-              <span className="text-[14px] font-medium text-foreground">앱 버전</span>
-              <span className="text-[13px] text-muted-foreground">1.0.0</span>
-            </div>
             <button className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-left hover:bg-secondary/50 active:scale-[0.98] transition-all" style={{ backgroundColor: "hsl(40 30% 96%)" }}>
               <span className="text-[14px] font-medium text-foreground">이용약관</span>
               <ChevronIcon />
             </button>
             <button className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-left hover:bg-secondary/50 active:scale-[0.98] transition-all" style={{ backgroundColor: "hsl(40 30% 96%)" }}>
               <span className="text-[14px] font-medium text-foreground">개인정보 처리방침</span>
-              <ChevronIcon />
-            </button>
-            <button className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-left hover:bg-secondary/50 active:scale-[0.98] transition-all" style={{ backgroundColor: "hsl(40 30% 96%)" }}>
-              <span className="text-[14px] font-medium text-foreground">오픈소스 라이센스</span>
               <ChevronIcon />
             </button>
           </div>
@@ -55,10 +49,6 @@ export default function SettingsPage() {
               <span className="text-[14px] font-medium text-foreground">문의하기</span>
               <ChevronIcon />
             </button>
-            <button className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-left hover:bg-secondary/50 active:scale-[0.98] transition-all" style={{ backgroundColor: "hsl(40 30% 96%)" }}>
-              <span className="text-[14px] font-medium text-foreground">자주 묻는 질문</span>
-              <ChevronIcon />
-            </button>
           </div>
         </div>
 
@@ -66,10 +56,6 @@ export default function SettingsPage() {
         <div className="mb-6">
           <h3 className="text-[12px] font-medium text-muted-foreground mb-2 px-1">계정</h3>
           <div className="space-y-1">
-            <button className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-left hover:bg-secondary/50 active:scale-[0.98] transition-all" style={{ backgroundColor: "hsl(40 30% 96%)" }}>
-              <span className="text-[14px] font-medium text-foreground">캐시 삭제</span>
-              <ChevronIcon />
-            </button>
             <button
               onClick={() => setShowLogoutConfirm(true)}
               className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-left hover:bg-secondary/50 active:scale-[0.98] transition-all"
@@ -113,7 +99,7 @@ export default function SettingsPage() {
                 취소
               </button>
               <button
-                onClick={() => router.push("/login")}
+                onClick={() => { logout(); router.push("/"); }}
                 className="flex-1 py-3 rounded-xl text-[14px] font-semibold text-white active:scale-[0.97] transition-all"
                 style={{ backgroundColor: "hsl(22 60% 42%)" }}
               >

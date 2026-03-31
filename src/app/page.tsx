@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useAuth } from "@/components/auth-context";
 import {
   posts,
   getUpcomingSchedules,
@@ -12,6 +13,7 @@ import {
 } from "@/data/mock";
 
 export default function HomePage() {
+  const { isLoggedIn } = useAuth();
   const upcoming = getUpcomingSchedules().slice(0, 4);
   const trending = [...posts].sort((a, b) => b.likeCount - a.likeCount).slice(0, 4);
   const nearestSchedule = upcoming[0];
@@ -24,8 +26,59 @@ export default function HomePage() {
   return (
     <main className="px-5 pb-6">
 
-      {/* Upcoming Schedules */}
-      {upcoming.length > 0 && (
+      {/* Logged-out CTA Banner */}
+      {!isLoggedIn && (
+        <section className="mb-10 animate-fade-up" style={{ animationDelay: "0.05s" }}>
+          <div
+            className="rounded-2xl px-5 pt-5 pb-5"
+            style={{ backgroundColor: "hsl(38 35% 93%)" }}
+          >
+            {/* Conversational heading */}
+            <p className="text-[13px] font-medium mb-1" style={{ color: "hsl(22 60% 42%)" }}>
+              형님, 혹시...
+            </p>
+            <h2 className="text-[17px] font-bold leading-snug mb-3" style={{ color: "hsl(25 25% 18%)" }}>
+              기념일 까먹어서<br />혼난 적 있으시죠?
+            </h2>
+            <p className="text-[12px] leading-relaxed mb-5" style={{ color: "hsl(25 12% 48%)" }}>
+              여기 등록해두면 미리 알려드립니다.<br />
+              선물 추천은 덤이에요.
+            </p>
+
+            {/* Feature tags */}
+            <div className="flex gap-2 mb-5 flex-wrap">
+              {[
+                { emoji: "📅", text: "일정 알림" },
+                { emoji: "🎁", text: "선물 추천" },
+                { emoji: "💌", text: "메시지 족보" },
+              ].map((tag) => (
+                <span
+                  key={tag.text}
+                  className="inline-flex items-center gap-1.5 text-[11px] font-medium px-3 py-1.5 rounded-full"
+                  style={{
+                    backgroundColor: "hsl(30 30% 88%)",
+                    color: "hsl(25 25% 30%)",
+                  }}
+                >
+                  {tag.emoji} {tag.text}
+                </span>
+              ))}
+            </div>
+
+            {/* CTA */}
+            <Link
+              href="/login"
+              className="flex items-center justify-center w-full py-3 rounded-xl text-[13px] font-semibold text-white active:scale-[0.97] transition-all"
+              style={{ backgroundColor: "hsl(22 60% 42%)" }}
+            >
+              3초만에 시작하기
+            </Link>
+          </div>
+        </section>
+      )}
+
+      {/* Upcoming Schedules (logged-in only) */}
+      {isLoggedIn && upcoming.length > 0 && (
         <section className="mb-10 animate-fade-up" style={{ animationDelay: "0.05s" }}>
           <div className="flex items-baseline justify-between mb-4">
             <h2 className="text-[15px] font-bold text-foreground">
@@ -104,8 +157,8 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* Recommendation */}
-      {matchedRec && (
+      {/* Recommendation (logged-in only) */}
+      {isLoggedIn && matchedRec && (
         <section className="mb-10 animate-fade-up" style={{ animationDelay: "0.1s" }}>
           <h2 className="text-[15px] font-bold text-foreground mb-4">
             {matchedRec.title}

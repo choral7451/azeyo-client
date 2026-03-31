@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/components/auth-context";
+import { useToast } from "@/components/toast";
+
+const AUTH_REQUIRED = ["/schedule", "/mypage"];
 
 const tabs = [
   {
@@ -102,6 +106,17 @@ const tabs = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { isLoggedIn } = useAuth();
+  const { show } = useToast();
+
+  function handleTab(e: React.MouseEvent, href: string) {
+    if (!isLoggedIn && AUTH_REQUIRED.includes(href)) {
+      e.preventDefault();
+      show("로그인이 필요한 기능이에요");
+      setTimeout(() => router.push("/login"), 1200);
+    }
+  }
 
   return (
     <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-background border-t border-border z-50 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
@@ -116,6 +131,7 @@ export function BottomNav() {
             <Link
               key={tab.href}
               href={tab.href}
+              onClick={(e) => handleTab(e, tab.href)}
               className={`
                 flex flex-col items-center justify-center gap-0.5 flex-1 h-full
                 transition-colors duration-200
