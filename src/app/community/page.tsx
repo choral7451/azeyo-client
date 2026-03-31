@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useHeaderExtra } from "@/components/header-context";
 import { posts as initialPosts, type Category, type Post, type PostType } from "@/data/mock";
+import { BottomSheet } from "@/components/bottom-sheet";
 
 const categories: ("전체" | Category)[] = [
   "전체",
@@ -503,18 +504,9 @@ function CommentSheet({ post, onClose }: { post: Post; onClose: () => void }) {
   );
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-end justify-center"
-      onClick={onClose}
-    >
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-      <div
-        className="relative w-full max-w-[480px] bg-background rounded-t-3xl animate-fade-up shadow-2xl max-h-[80dvh] flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Handle + Header */}
-        <div className="px-5 pt-4 pb-3 border-b border-border flex-shrink-0">
-          <div className="w-10 h-1 bg-border rounded-full mx-auto mb-4" />
+    <BottomSheet onClose={onClose} className="max-h-[80dvh] flex flex-col">
+        {/* Header */}
+        <div className="px-5 pb-3 border-b border-border flex-shrink-0">
           <div className="flex items-center justify-between">
             <h3 className="text-[16px] font-bold text-foreground">
               댓글 {comments.length}
@@ -597,8 +589,7 @@ function CommentSheet({ post, onClose }: { post: Post; onClose: () => void }) {
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </BottomSheet>
   );
 }
 
@@ -659,18 +650,9 @@ function WriteSheet({ onClose, onSubmit }: { onClose: () => void; onSubmit: (pos
   }
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-end justify-center"
-      onClick={onClose}
-    >
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-      <div
-        className="relative w-full max-w-[480px] bg-background rounded-t-3xl animate-fade-up shadow-2xl max-h-[90dvh] flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <BottomSheet onClose={onClose} className="max-h-[90dvh] flex flex-col">
         {/* Header */}
-        <div className="px-5 pt-4 pb-3 border-b border-border flex-shrink-0">
-          <div className="w-10 h-1 bg-border rounded-full mx-auto mb-4" />
+        <div className="px-5 pb-3 border-b border-border flex-shrink-0">
           <div className="flex items-center justify-between">
             <button onClick={onClose} className="text-[14px] text-muted-foreground font-medium">
               취소
@@ -879,7 +861,6 @@ function WriteSheet({ onClose, onSubmit }: { onClose: () => void; onSubmit: (pos
 
         {/* Bottom safe area */}
         <div className="h-8 flex-shrink-0" />
-      </div>
-    </div>
+    </BottomSheet>
   );
 }

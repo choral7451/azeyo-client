@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { BottomSheet } from "@/components/bottom-sheet";
 import {
   schedules as initialSchedules,
   allTags,
@@ -72,20 +73,8 @@ export default function SchedulePage() {
 
       {/* Recommendation Detail Sheet */}
       {selectedSchedule && (
-        <div
-          className="fixed inset-0 z-[60] flex items-end justify-center"
-          onClick={() => setSelectedSchedule(null)}
-        >
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-          <div
-            className="relative w-full max-w-[480px] rounded-t-3xl p-6 pb-24 animate-fade-up shadow-2xl max-h-[85dvh] overflow-y-auto"
-            style={{ backgroundColor: "hsl(40 30% 99%)" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div
-              className="w-10 h-1 rounded-full mx-auto mb-5 sticky top-0"
-              style={{ backgroundColor: "hsl(35 20% 85%)" }}
-            />
+        <BottomSheet onClose={() => setSelectedSchedule(null)} className="max-h-[85dvh] overflow-y-auto" style={{ backgroundColor: "hsl(40 30% 99%)" }}>
+          <div className="px-6 pb-24">
             <div className="flex items-center justify-between mb-1">
               <h3 className="text-[18px] font-bold text-foreground">
                 {selectedSchedule.title}
@@ -147,7 +136,7 @@ export default function SchedulePage() {
               닫기
             </button>
           </div>
-        </div>
+        </BottomSheet>
       )}
 
       {/* Add Schedule Dialog */}
@@ -262,20 +251,8 @@ function AddScheduleDialog({ onClose }: { onClose: () => void }) {
   );
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-end justify-center"
-      onClick={onClose}
-    >
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-      <div
-        className="relative w-full max-w-[480px] rounded-t-3xl p-6 pb-24 animate-fade-up shadow-2xl max-h-[85dvh] overflow-y-auto"
-        style={{ backgroundColor: "hsl(40 30% 99%)" }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div
-          className="w-10 h-1 rounded-full mx-auto mb-5"
-          style={{ backgroundColor: "hsl(35 20% 85%)" }}
-        />
+    <BottomSheet onClose={onClose} className="max-h-[85dvh] overflow-y-auto" style={{ backgroundColor: "hsl(40 30% 99%)" }}>
+      <div className="px-6 pb-24">
         <h3 className="text-[18px] font-bold text-foreground mb-5">
           일정 등록
         </h3>
@@ -453,6 +430,6 @@ function AddScheduleDialog({ onClose }: { onClose: () => void }) {
           </button>
         </div>
       </div>
-    </div>
+    </BottomSheet>
   );
 }

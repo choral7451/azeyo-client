@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-context";
+import { BottomSheet } from "@/components/bottom-sheet";
 import {
   posts,
   getUpcomingSchedules,
@@ -310,22 +311,10 @@ function UserProfileSheet({ user, onClose }: { user: User; onClose: () => void }
     .slice(0, 3);
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-end justify-center"
-      onClick={onClose}
-    >
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-      <div
-        className="relative w-full max-w-[480px] rounded-t-3xl bg-background px-5 pt-3 pb-8 animate-fade-up"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Drag Handle */}
-        <div className="flex justify-center mb-5">
-          <div className="w-10 h-1 rounded-full bg-muted-foreground/20" />
-        </div>
-
+    <BottomSheet onClose={onClose}>
+      <div className="px-5 pb-8">
         {/* Profile Header */}
-        <div className="flex items-center gap-4 mb-5">
+        <div className="flex items-center gap-4 mb-5 mt-2">
           <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-white text-lg font-black">
             {user.initials}
           </div>
@@ -410,7 +399,7 @@ function UserProfileSheet({ user, onClose }: { user: User; onClose: () => void }
           </p>
         )}
       </div>
-    </div>
+    </BottomSheet>
   );
 }
 
@@ -431,22 +420,9 @@ function PostDetailSheet({ post, onClose }: { post: Post; onClose: () => void })
   const aWins = countA >= countB;
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-end justify-center"
-      onClick={onClose}
-    >
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-      <div
-        className="relative w-full max-w-[480px] rounded-t-3xl bg-background animate-fade-up max-h-[85dvh] flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Handle */}
-        <div className="px-5 pt-3 pb-0 flex-shrink-0">
-          <div className="w-10 h-1 rounded-full bg-muted-foreground/20 mx-auto mb-4" />
-        </div>
-
-        {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto px-5 pb-6">
+    <BottomSheet onClose={onClose} className="max-h-[85dvh] flex flex-col">
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto px-5 pb-6">
           {/* Author */}
           <div className="flex items-center gap-2.5 mb-4">
             <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-[12px] font-bold text-primary">
@@ -584,8 +560,7 @@ function PostDetailSheet({ post, onClose }: { post: Post; onClose: () => void })
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </BottomSheet>
   );
 }
 

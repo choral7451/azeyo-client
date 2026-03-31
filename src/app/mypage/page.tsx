@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { BottomSheet } from "@/components/bottom-sheet";
 import { currentUser, getGrade, grades, gradeRules } from "@/data/mock";
 
 export default function MyPage() {
@@ -153,20 +154,8 @@ export default function MyPage() {
 
       {/* Grade Info Bottom Sheet */}
       {showGradeSheet && (
-        <div
-          className="fixed inset-0 z-[60] flex items-end justify-center"
-          onClick={() => setShowGradeSheet(false)}
-        >
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-          <div
-            className="relative w-full max-w-[480px] rounded-t-3xl bg-background px-5 pt-3 pb-8 animate-fade-up"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Drag Handle */}
-            <div className="flex justify-center mb-4">
-              <div className="w-10 h-1 rounded-full bg-muted-foreground/20" />
-            </div>
-
+        <BottomSheet onClose={() => setShowGradeSheet(false)}>
+          <div className="px-5 pb-8">
             <h3 className="text-[17px] font-bold text-foreground mb-1">
               등급 안내
             </h3>
@@ -223,7 +212,7 @@ export default function MyPage() {
               ))}
             </div>
           </div>
-        </div>
+        </BottomSheet>
       )}
     </main>
   );

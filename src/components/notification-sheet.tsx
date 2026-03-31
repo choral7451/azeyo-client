@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { BottomSheet } from "@/components/bottom-sheet";
 
 interface Notification {
   id: string;
@@ -78,18 +79,9 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-end justify-center"
-      onClick={onClose}
-    >
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-      <div
-        className="relative w-full max-w-[480px] bg-background rounded-t-3xl animate-fade-up shadow-2xl max-h-[85dvh] flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <BottomSheet onClose={onClose} className="max-h-[85dvh] flex flex-col">
         {/* Header */}
-        <div className="px-5 pt-4 pb-3 border-b border-border flex-shrink-0">
-          <div className="w-10 h-1 bg-border rounded-full mx-auto mb-4" />
+        <div className="px-5 pb-3 border-b border-border flex-shrink-0">
           <div className="flex items-center justify-between">
             <h3 className="text-[16px] font-bold text-foreground">
               알림
@@ -160,7 +152,6 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
 
         {/* Bottom safe area */}
         <div className="h-8 flex-shrink-0" />
-      </div>
-    </div>
+    </BottomSheet>
   );
 }

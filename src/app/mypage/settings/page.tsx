@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-context";
+import { BottomSheet } from "@/components/bottom-sheet";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -73,18 +74,8 @@ export default function SettingsPage() {
 
       {/* Logout Confirm Sheet */}
       {showLogoutConfirm && (
-        <div
-          className="fixed inset-0 z-[60] flex items-end justify-center"
-          onClick={() => setShowLogoutConfirm(false)}
-        >
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-          <div
-            className="relative w-full max-w-[480px] rounded-t-3xl bg-background px-5 pt-3 pb-8 animate-fade-up"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-center mb-4">
-              <div className="w-10 h-1 rounded-full bg-muted-foreground/20" />
-            </div>
+        <BottomSheet onClose={() => setShowLogoutConfirm(false)}>
+          <div className="px-5 pb-8">
             <h3 className="text-[17px] font-bold text-foreground text-center mb-2">
               로그아웃
             </h3>
@@ -107,7 +98,7 @@ export default function SettingsPage() {
               </button>
             </div>
           </div>
-        </div>
+        </BottomSheet>
       )}
     </main>
   );
