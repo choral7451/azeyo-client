@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+
 interface BottomSheetProps {
   onClose: () => void;
   children: React.ReactNode;
@@ -8,6 +10,23 @@ interface BottomSheetProps {
 }
 
 export function BottomSheet({ onClose, children, className = "", style }: BottomSheetProps) {
+  useEffect(() => {
+    const scrollY = window.scrollY;
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.left = "";
+      document.body.style.right = "";
+      document.body.style.overflow = "";
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
   return (
     <div
       className="fixed inset-0 z-[60] flex items-end justify-center"
