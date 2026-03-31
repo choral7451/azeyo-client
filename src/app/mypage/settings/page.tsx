@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   return (
@@ -111,7 +113,7 @@ export default function SettingsPage() {
                 취소
               </button>
               <button
-                onClick={() => setShowLogoutConfirm(false)}
+                onClick={() => router.push("/login")}
                 className="flex-1 py-3 rounded-xl text-[14px] font-semibold text-white active:scale-[0.97] transition-all"
                 style={{ backgroundColor: "hsl(22 60% 42%)" }}
               >
