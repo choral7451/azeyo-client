@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { currentUser, getGrade, grades, gradeRules } from "@/data/mock";
 
 export default function MyPage() {
@@ -17,6 +18,15 @@ export default function MyPage() {
         )
       )
     : 100;
+
+  const menuItems = [
+    { icon: "📝", label: "내 게시글", href: "/mypage/posts" },
+    { icon: "📋", label: "내가 올린 족보", href: "/mypage/jokbo" },
+    { icon: "🏅", label: "등급 안내", action: () => setShowGradeSheet(true) },
+    { icon: "🔔", label: "알림 설정", href: "/mypage/notification" },
+    { icon: "👤", label: "프로필 수정", href: "/mypage/profile" },
+    { icon: "⚙️", label: "설정", href: "/mypage/settings" },
+  ];
 
   return (
     <main className="pb-6 px-5">
@@ -106,39 +116,39 @@ export default function MyPage() {
 
       {/* Menu */}
       <div className="space-y-1 animate-fade-up" style={{ animationDelay: "0.15s" }}>
-        {[
-          { icon: "📝", label: "내 게시글" },
-          { icon: "❤️", label: "좋아요 한 글" },
-          { icon: "📋", label: "내가 올린 족보" },
-          { icon: "🏅", label: "등급 안내", action: () => setShowGradeSheet(true) },
-          { icon: "🔔", label: "알림 설정" },
-          { icon: "👤", label: "프로필 수정" },
-          { icon: "💍", label: "기념일 정보 수정" },
-          { icon: "⚙️", label: "설정" },
-        ].map((item) => (
-          <button
-            key={item.label}
-            onClick={"action" in item ? item.action : undefined}
-            className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left hover:bg-secondary active:scale-[0.98] transition-all"
-          >
-            <span className="text-base">{item.icon}</span>
-            <span className="text-[14px] font-medium text-foreground">
-              {item.label}
-            </span>
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              className="ml-auto opacity-30 text-muted-foreground"
-            >
-              <path d="M9 18l6-6-6-6" />
-            </svg>
-          </button>
-        ))}
+        {menuItems.map((item) => {
+          const content = (
+            <>
+              <span className="text-base">{item.icon}</span>
+              <span className="text-[14px] font-medium text-foreground">
+                {item.label}
+              </span>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                className="ml-auto opacity-30 text-muted-foreground"
+              >
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </>
+          );
+          const className = "w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left hover:bg-secondary active:scale-[0.98] transition-all";
+
+          return "href" in item && item.href ? (
+            <Link key={item.label} href={item.href} className={className}>
+              {content}
+            </Link>
+          ) : (
+            <button key={item.label} onClick={item.action} className={className}>
+              {content}
+            </button>
+          );
+        })}
       </div>
 
       {/* Grade Info Bottom Sheet */}

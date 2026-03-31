@@ -276,6 +276,56 @@ export const posts: Post[] = [
       { id: "c8-2", author: "딸바보파파", content: "금요일만큼은... 한 잔만... (결국 3차)", createdAt: "2026-03-21 20:30", likeCount: 67 },
     ],
   },
+  {
+    id: "p9",
+    type: "TEXT",
+    category: "선물",
+    author: "김아재",
+    title: "결혼기념일에 깜짝 여행 예약했습니다",
+    content:
+      "올해 결혼기념일에 제주도 2박3일 깜짝 여행 예약했습니다. 아내한테 아직 안 말했는데 반응이 기대되네요. 아이들은 장모님께 맡기기로 했습니다.",
+    createdAt: "2026-03-20",
+    likeCount: 34,
+    commentCount: 12,
+    comments: [
+      { id: "c9-1", author: "로맨틱가이", content: "제주도 어디로 가세요? 추천 좀 해드릴게요", createdAt: "2026-03-20 14:00", likeCount: 8 },
+      { id: "c9-2", author: "10년차남편", content: "깜짝 여행 진짜 좋죠. 저도 작년에 했는데 반응 최고였습니다", createdAt: "2026-03-20 16:30", likeCount: 15 },
+    ],
+  },
+  {
+    id: "p10",
+    type: "TEXT",
+    category: "육아",
+    author: "김아재",
+    title: "주말마다 아이들이랑 공원 가는 아빠입니다",
+    content:
+      "토요일 오전마다 아이들 데리고 집 근처 공원 가는데, 아내가 그 시간에 좀 쉴 수 있어서 좋다고 하더라구요. 아이들도 좋아하고 일석이조입니다.",
+    createdAt: "2026-03-18",
+    likeCount: 56,
+    commentCount: 18,
+    comments: [
+      { id: "c10-1", author: "딸바보파파", content: "저도 매주 공원 가요! 아이들 체력 소모에 최고", createdAt: "2026-03-18 11:00", likeCount: 12 },
+    ],
+  },
+  {
+    id: "p11",
+    type: "VOTE",
+    category: "자유게시판",
+    author: "김아재",
+    title: "아내 잔소리 줄이는 법 있나요?",
+    content: "잔소리가 사랑인 건 아는데... 가끔 힘들 때가 있습니다 형님들",
+    createdAt: "2026-03-15",
+    likeCount: 87,
+    commentCount: 31,
+    voteOptionA: "미리미리 알아서 한다",
+    voteOptionB: "그냥 감수한다",
+    voteCountA: 412,
+    voteCountB: 198,
+    comments: [
+      { id: "c11-1", author: "살림왕남편", content: "미리 알아서 하면 진짜 줄어듭니다. 경험담입니다", createdAt: "2026-03-15 20:00", likeCount: 45 },
+      { id: "c11-2", author: "워킹대디", content: "감수하는 게 편합니다 형님... 맞서면 더 커져요", createdAt: "2026-03-15 21:30", likeCount: 38 },
+    ],
+  },
 ];
 
 // --------------- Mock Schedules ---------------
@@ -555,6 +605,58 @@ OO주년 축하해, 여보. 영원히 사랑해 ❤️`,
     likeCount: 1432,
     copyCount: 2987,
     author: "응원단장",
+  },
+  {
+    id: "tm10",
+    category: "사과 문자",
+    title: "깜빡한 날의 진심 사과",
+    content: `여보, 오늘 진짜 미안해.
+
+바쁘다는 핑계로 중요한 걸 놓쳤어.
+당신이 얼마나 서운했을지 생각하면 마음이 아파.
+
+내일부터 캘린더 알림 3개 걸어놓을게.
+같은 실수 두 번 안 한다, 약속해.
+
+미안하고 사랑해, 항상.`,
+    likeCount: 234,
+    copyCount: 876,
+    author: "김아재",
+  },
+  {
+    id: "tm11",
+    category: "아내 생일 편지",
+    title: "아이들 아빠가 쓰는 생일 편지",
+    content: `여보 생일 축하해!
+
+우리 아이들의 엄마이자
+나의 가장 든든한 동반자인 당신.
+
+올해도 고생 많았어.
+아이들 키우면서 자기 시간도 없는데
+항상 웃으면서 해내는 당신이 대단해.
+
+오늘은 아이들이랑 준비한 깜짝 선물 있어.
+기대해도 좋아 😊
+
+생일 축하해, 세상에서 제일 예쁜 우리 와이프!`,
+    likeCount: 156,
+    copyCount: 543,
+    author: "김아재",
+  },
+  {
+    id: "tm12",
+    category: "응원 한마디",
+    title: "퇴근 후 보내는 응원 한마디",
+    content: `여보, 오늘도 수고했어.
+
+집에 가면 맛있는 거 시켜먹자.
+아이들 재우고 나서 둘이 커피 한잔 하자.
+
+매일 고맙고, 매일 사랑해.`,
+    likeCount: 98,
+    copyCount: 312,
+    author: "김아재",
   },
 ];
 
