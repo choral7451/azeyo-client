@@ -28,7 +28,7 @@ export default function MyPostsPage() {
           <article
             key={post.id}
             className="rounded-2xl p-4 active:scale-[0.98] transition-all"
-            style={{ backgroundColor: "hsl(40 30% 96%)" }}
+            style={{ backgroundColor: "hsl(36 30% 93%)" }}
           >
             {/* Category & Type Badge */}
             <div className="flex items-center gap-2 mb-2">

@@ -109,7 +109,7 @@ export default function SchedulePage() {
                     <li
                       key={item.rank}
                       className="flex items-center gap-3 rounded-xl px-4 py-3"
-                      style={{ backgroundColor: "hsl(40 30% 96%)" }}
+                      style={{ backgroundColor: "hsl(36 30% 93%)" }}
                     >
                       <span
                         className="flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center text-[12px] font-bold text-primary"
@@ -174,7 +174,7 @@ function ScheduleCard({
     <button
       onClick={onSelect}
       className="w-full text-left rounded-2xl px-4 py-3.5 flex items-center gap-4 shadow-sm transition-transform duration-200 active:scale-[0.98]"
-      style={{ backgroundColor: "hsl(40 30% 96%)" }}
+      style={{ backgroundColor: "hsl(36 30% 93%)" }}
     >
       {/* D-day badge */}
       <div
@@ -292,7 +292,7 @@ function AddScheduleDialog({ onClose }: { onClose: () => void }) {
             placeholder="예: 아내 생일"
             className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none transition"
             style={{
-              backgroundColor: "hsl(40 30% 96%)",
+              backgroundColor: "hsl(36 30% 93%)",
               border: "1px solid hsl(35 20% 90%)",
             }}
             onFocus={(e) => {
@@ -317,7 +317,7 @@ function AddScheduleDialog({ onClose }: { onClose: () => void }) {
             onChange={(e) => setDate(e.target.value)}
             className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground outline-none transition"
             style={{
-              backgroundColor: "hsl(40 30% 96%)",
+              backgroundColor: "hsl(36 30% 93%)",
               border: "1px solid hsl(35 20% 90%)",
             }}
             onFocus={(e) => {
@@ -373,7 +373,7 @@ function AddScheduleDialog({ onClose }: { onClose: () => void }) {
               placeholder="태그 검색 또는 새로 만들기"
               className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none transition"
               style={{
-                backgroundColor: "hsl(40 30% 96%)",
+                backgroundColor: "hsl(36 30% 93%)",
                 border: "1px solid hsl(35 20% 90%)",
               }}
             />
@@ -395,7 +395,7 @@ function AddScheduleDialog({ onClose }: { onClose: () => void }) {
                     }}
                     className="w-full text-left px-4 py-2.5 text-[13px] flex items-center gap-2 transition-colors"
                     style={{ }}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "hsl(40 30% 96%)"; }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "hsl(36 30% 93%)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
                   >
                     <span
@@ -425,7 +425,7 @@ function AddScheduleDialog({ onClose }: { onClose: () => void }) {
                         setShowTagDropdown(false);
                       }}
                       className="w-full text-left px-4 py-2.5 text-[13px] text-primary font-medium transition-colors"
-                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "hsl(40 30% 96%)"; }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "hsl(36 30% 93%)"; }}
                       onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
                     >
                       &ldquo;{tagSearch}&rdquo; 새 태그 만들기

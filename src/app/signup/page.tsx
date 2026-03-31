@@ -85,7 +85,7 @@ export default function SignupPage() {
           <button
             onClick={toggleAll}
             className="flex items-center gap-3 px-4 py-4 rounded-xl mb-3 active:scale-[0.98] transition-all"
-            style={{ backgroundColor: "hsl(40 30% 96%)" }}
+            style={{ backgroundColor: "hsl(36 30% 93%)" }}
           >
             <CheckCircle checked={allChecked} />
             <span className="text-[15px] font-bold text-foreground">
@@ -168,7 +168,7 @@ export default function SignupPage() {
                 placeholder="2~12자 닉네임"
                 maxLength={12}
                 className="w-full px-4 py-3 rounded-xl text-[14px] text-foreground outline-none transition-all focus:ring-2 focus:ring-primary/20"
-                style={{ backgroundColor: "hsl(40 30% 96%)" }}
+                style={{ backgroundColor: "hsl(36 30% 93%)" }}
               />
               <p className="text-[10px] text-muted-foreground mt-1 text-right">
                 {nickname.length}/12
@@ -184,7 +184,7 @@ export default function SignupPage() {
                 value={marriageYear}
                 onChange={(e) => setMarriageYear(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl text-[14px] text-foreground outline-none transition-all focus:ring-2 focus:ring-primary/20 appearance-none"
-                style={{ backgroundColor: "hsl(40 30% 96%)" }}
+                style={{ backgroundColor: "hsl(36 30% 93%)" }}
               >
                 <option value="">선택해주세요</option>
                 {Array.from({ length: 30 }, (_, i) => 2026 - i).map((y) => (

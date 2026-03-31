@@ -30,11 +30,11 @@ export default function SettingsPage() {
         <div className="mb-6">
           <h3 className="text-[12px] font-medium text-muted-foreground mb-2 px-1">앱 정보</h3>
           <div className="space-y-1">
-            <button className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-left hover:bg-secondary/50 active:scale-[0.98] transition-all" style={{ backgroundColor: "hsl(40 30% 96%)" }}>
+            <button className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-left hover:bg-secondary/50 active:scale-[0.98] transition-all" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
               <span className="text-[14px] font-medium text-foreground">이용약관</span>
               <ChevronIcon />
             </button>
-            <button className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-left hover:bg-secondary/50 active:scale-[0.98] transition-all" style={{ backgroundColor: "hsl(40 30% 96%)" }}>
+            <button className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-left hover:bg-secondary/50 active:scale-[0.98] transition-all" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
               <span className="text-[14px] font-medium text-foreground">개인정보 처리방침</span>
               <ChevronIcon />
             </button>
@@ -45,7 +45,7 @@ export default function SettingsPage() {
         <div className="mb-6">
           <h3 className="text-[12px] font-medium text-muted-foreground mb-2 px-1">지원</h3>
           <div className="space-y-1">
-            <button className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-left hover:bg-secondary/50 active:scale-[0.98] transition-all" style={{ backgroundColor: "hsl(40 30% 96%)" }}>
+            <button className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-left hover:bg-secondary/50 active:scale-[0.98] transition-all" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
               <span className="text-[14px] font-medium text-foreground">문의하기</span>
               <ChevronIcon />
             </button>
@@ -59,7 +59,7 @@ export default function SettingsPage() {
             <button
               onClick={() => setShowLogoutConfirm(true)}
               className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-left hover:bg-secondary/50 active:scale-[0.98] transition-all"
-              style={{ backgroundColor: "hsl(40 30% 96%)" }}
+              style={{ backgroundColor: "hsl(36 30% 93%)" }}
             >
               <span className="text-[14px] font-medium text-foreground">로그아웃</span>
               <ChevronIcon />

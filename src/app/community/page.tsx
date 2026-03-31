@@ -294,7 +294,7 @@ function PostCard({
   return (
     <article
       className="rounded-2xl overflow-hidden transition-transform duration-200"
-      style={{ backgroundColor: "hsl(40 30% 96%)" }}
+      style={{ backgroundColor: "hsl(36 30% 93%)" }}
     >
       {/* Images */}
       {post.images && post.images.length > 0 && (

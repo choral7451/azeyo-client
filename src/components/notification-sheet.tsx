@@ -132,7 +132,7 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
                   className={`px-5 py-3.5 flex items-start gap-3 transition-colors ${
                     !n.read ? "" : "opacity-60"
                   }`}
-                  style={!n.read ? { backgroundColor: "hsl(40 30% 96%)" } : undefined}
+                  style={!n.read ? { backgroundColor: "hsl(36 30% 93%)" } : undefined}
                 >
                   <div
                     className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-[14px]"

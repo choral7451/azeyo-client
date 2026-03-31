@@ -103,7 +103,7 @@ export default function HomePage() {
                         : ""
                     }
                   `}
-                  style={!isUrgent ? { backgroundColor: "hsl(40 30% 96%)" } : undefined}
+                  style={!isUrgent ? { backgroundColor: "hsl(36 30% 93%)" } : undefined}
                 >
                   <span
                     className={`
@@ -168,7 +168,7 @@ export default function HomePage() {
               <div
                 key={item.rank}
                 className="flex items-center gap-3 rounded-xl px-4 py-3"
-                style={{ backgroundColor: "hsl(40 30% 96%)" }}
+                style={{ backgroundColor: "hsl(36 30% 93%)" }}
               >
                 <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-secondary flex items-center justify-center text-[12px] font-bold text-primary">
                   {item.rank}
@@ -205,7 +205,7 @@ export default function HomePage() {
               <div
                 key={user.id}
                 className="flex-shrink-0 w-[150px] rounded-2xl p-4 text-center"
-                style={{ backgroundColor: "hsl(40 30% 96%)" }}
+                style={{ backgroundColor: "hsl(36 30% 93%)" }}
               >
                 <div className="relative inline-block mb-2">
                   <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white text-sm font-black">
@@ -248,7 +248,7 @@ export default function HomePage() {
             <article
               key={post.id}
               className="rounded-xl px-4 py-3.5 transition-transform duration-200 active:scale-[0.98]"
-              style={{ backgroundColor: "hsl(40 30% 96%)" }}
+              style={{ backgroundColor: "hsl(36 30% 93%)" }}
             >
               <div className="flex items-center gap-2 mb-1.5">
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">

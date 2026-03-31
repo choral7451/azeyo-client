@@ -104,7 +104,7 @@ export default function JokboPage() {
             <article
               key={template.id}
               className="rounded-2xl overflow-hidden"
-              style={{ backgroundColor: "hsl(40 30% 96%)" }}
+              style={{ backgroundColor: "hsl(36 30% 93%)" }}
             >
               {/* Content — the hero */}
               <div className="px-5 pt-5">
@@ -117,7 +117,7 @@ export default function JokboPage() {
                   {!isExpanded && (
                     <div
                       className="absolute inset-x-0 bottom-0 h-12 pointer-events-none"
-                      style={{ background: "linear-gradient(to top, hsl(40 30% 96%), transparent)" }}
+                      style={{ background: "linear-gradient(to top, hsl(36 30% 93%), transparent)" }}
                     />
                   )}
                 </div>

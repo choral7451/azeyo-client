@@ -34,7 +34,7 @@ export default function MyPage() {
       {/* Profile Card */}
       <div
         className="rounded-2xl p-5 mb-6 animate-fade-up"
-        style={{ backgroundColor: "hsl(40 30% 96%)", animationDelay: "0.05s" }}
+        style={{ backgroundColor: "hsl(36 30% 93%)", animationDelay: "0.05s" }}
       >
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white text-xl font-black">
@@ -102,7 +102,7 @@ export default function MyPage() {
           <div
             key={stat.label}
             className="rounded-xl p-4 text-center"
-            style={{ backgroundColor: "hsl(40 30% 96%)" }}
+            style={{ backgroundColor: "hsl(36 30% 93%)" }}
           >
             <p className="text-[15px] font-bold text-foreground">
               {stat.value}
@@ -187,7 +187,7 @@ export default function MyPage() {
                     style={{
                       backgroundColor: isCurrent
                         ? "hsl(22 60% 42% / 0.08)"
-                        : "hsl(40 30% 96%)",
+                        : "hsl(36 30% 93%)",
                     }}
                   >
                     <span className="text-xl">{g.emoji}</span>
@@ -213,7 +213,7 @@ export default function MyPage() {
             </h4>
             <div
               className="rounded-xl px-4 py-3 space-y-2.5"
-              style={{ backgroundColor: "hsl(40 30% 96%)" }}
+              style={{ backgroundColor: "hsl(36 30% 93%)" }}
             >
               {gradeRules.map((rule) => (
                 <div key={rule.action} className="flex items-center justify-between">

@@ -51,7 +51,7 @@ export default function ProfileEditPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full px-4 py-3 rounded-xl text-[14px] text-foreground outline-none transition-all focus:ring-2 focus:ring-primary/20"
-              style={{ backgroundColor: "hsl(40 30% 96%)" }}
+              style={{ backgroundColor: "hsl(36 30% 93%)" }}
               maxLength={12}
             />
             <p className="text-[10px] text-muted-foreground mt-1 text-right">
@@ -68,7 +68,7 @@ export default function ProfileEditPage() {
               value={subtitle}
               onChange={(e) => setSubtitle(e.target.value)}
               className="w-full px-4 py-3 rounded-xl text-[14px] text-foreground outline-none transition-all focus:ring-2 focus:ring-primary/20"
-              style={{ backgroundColor: "hsl(40 30% 96%)" }}
+              style={{ backgroundColor: "hsl(36 30% 93%)" }}
               placeholder="결혼 N년차 · 아이 N명"
               maxLength={20}
             />
