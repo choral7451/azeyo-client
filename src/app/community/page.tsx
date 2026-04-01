@@ -640,7 +640,7 @@ function CommentSheet({
 
   function handleReply(commentId: number, author: string) {
     setReplyTarget({ commentId, author });
-    setNewComment("");
+    setNewComment(`@${author} `);
     inputRef.current?.focus();
   }
 

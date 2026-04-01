@@ -8,7 +8,6 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 interface AuthContextValue {
   isLoggedIn: boolean;
   accessToken: string | null;
-  accessTokenRef: React.RefObject<string | null>;
   isLoading: boolean;
   logout: () => void;
   loginWithTokens: (accessToken: string, refreshToken: string) => void;
@@ -17,45 +16,36 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue>({
   isLoggedIn: false,
   accessToken: null,
-  accessTokenRef: { current: null },
   isLoading: true,
   logout: () => {},
   loginWithTokens: () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // Read cookie synchronously for immediate auth state
-  const [accessToken, setAccessToken] = useState<string | null>(() => {
-    if (typeof document === "undefined") return null;
-    return getCookie("accessToken");
-  });
-  const [isLoading, setIsLoading] = useState(() => {
-    if (typeof document === "undefined") return true;
-    return !!getCookie("accessToken");
-  });
-  const accessTokenRef = useRef<string | null>(accessToken);
-  const validatedRef = useRef(false);
-
-  // Keep ref in sync with state
-  accessTokenRef.current = accessToken;
+  // Start with null on both server & client to avoid hydration mismatch
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const initializedRef = useRef(false);
 
   const isLoggedIn = accessToken !== null;
 
-  // Validate token on mount (async, but UI is already usable)
+  // Read cookie + validate on client mount
   useEffect(() => {
-    if (validatedRef.current) return;
-    validatedRef.current = true;
+    if (initializedRef.current) return;
+    initializedRef.current = true;
 
     const storedAccessToken = getCookie("accessToken");
     const storedRefreshToken = getCookie("refreshToken");
 
     if (!storedAccessToken || !storedRefreshToken) {
-      setAccessToken(null);
       setIsLoading(false);
       return;
     }
 
-    // Validate tokens by calling refresh endpoint
+    // Set token immediately from cookie (so UI is usable right away)
+    setAccessToken(storedAccessToken);
+
+    // Then validate in background
     fetch(`${API_BASE}/azeyo/auths/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -93,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, accessToken, accessTokenRef, isLoading, logout, loginWithTokens }}>
+    <AuthContext.Provider value={{ isLoggedIn, accessToken, isLoading, logout, loginWithTokens }}>
       {children}
     </AuthContext.Provider>
   );
