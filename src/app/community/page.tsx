@@ -499,9 +499,67 @@ function VoteSection({
 
 function CommentSheet({ post, onClose }: { post: Post; onClose: () => void }) {
   const [newComment, setNewComment] = useState("");
-  const comments = [...(post.comments ?? [])].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  const [replyTarget, setReplyTarget] = useState<{ commentId: string; author: string } | null>(null);
+  const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
+  const [localComments, setLocalComments] = useState(() =>
+    [...(post.comments ?? [])].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
   );
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const totalCount = localComments.reduce(
+    (sum, c) => sum + 1 + (c.replies?.length ?? 0),
+    0
+  );
+
+  function handleReply(commentId: string, author: string) {
+    setReplyTarget({ commentId, author });
+    setNewComment(`@${author} `);
+    inputRef.current?.focus();
+  }
+
+  function cancelReply() {
+    setReplyTarget(null);
+    setNewComment("");
+  }
+
+  function toggleReplies(commentId: string) {
+    setExpandedReplies((prev) => {
+      const next = new Set(prev);
+      if (next.has(commentId)) next.delete(commentId);
+      else next.add(commentId);
+      return next;
+    });
+  }
+
+  function handleSubmit() {
+    if (!newComment.trim()) return;
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    const newC = {
+      id: `c-${Date.now()}`,
+      author: "김아재",
+      content: newComment.trim(),
+      createdAt: dateStr,
+      likeCount: 0,
+    };
+
+    if (replyTarget) {
+      setLocalComments((prev) =>
+        prev.map((c) =>
+          c.id === replyTarget.commentId
+            ? { ...c, replies: [...(c.replies ?? []), newC] }
+            : c
+        )
+      );
+      setExpandedReplies((prev) => new Set(prev).add(replyTarget.commentId));
+    } else {
+      setLocalComments((prev) => [newC, ...prev]);
+    }
+    setNewComment("");
+    setReplyTarget(null);
+  }
 
   return (
     <BottomSheet onClose={onClose} className="max-h-[80dvh] flex flex-col">
@@ -509,7 +567,7 @@ function CommentSheet({ post, onClose }: { post: Post; onClose: () => void }) {
         <div className="px-5 pb-3 border-b border-border flex-shrink-0">
           <div className="flex items-center justify-between">
             <h3 className="text-[16px] font-bold text-foreground">
-              댓글 {comments.length}
+              댓글 {totalCount}
             </h3>
             <button
               onClick={onClose}
@@ -525,7 +583,7 @@ function CommentSheet({ post, onClose }: { post: Post; onClose: () => void }) {
 
         {/* Comments List */}
         <div className="flex-1 overflow-y-auto px-5 py-3 space-y-4">
-          {comments.length === 0 ? (
+          {localComments.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-[28px] mb-2">💬</p>
               <p className="text-[13px] text-muted-foreground">
@@ -536,46 +594,141 @@ function CommentSheet({ post, onClose }: { post: Post; onClose: () => void }) {
               </p>
             </div>
           ) : (
-            comments.map((comment) => (
-              <div key={comment.id} className="flex gap-2.5">
-                <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-primary flex-shrink-0 mt-0.5">
-                  {comment.author[0]}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[12px] font-semibold text-foreground">
-                      {comment.author}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">
-                      {comment.createdAt.split(" ")[1] ?? comment.createdAt}
-                    </span>
+            localComments.map((comment) => {
+              const replies = comment.replies ?? [];
+              const isExpanded = expandedReplies.has(comment.id);
+
+              return (
+                <div key={comment.id}>
+                  {/* Parent Comment */}
+                  <div className="flex gap-2.5">
+                    <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-primary flex-shrink-0 mt-0.5">
+                      {comment.author[0]}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[12px] font-semibold text-foreground">
+                          {comment.author}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {comment.createdAt.split(" ")[1] ?? comment.createdAt}
+                        </span>
+                      </div>
+                      <p className="text-[13px] text-foreground leading-relaxed mt-0.5">
+                        {comment.content}
+                      </p>
+                      <div className="flex items-center gap-3 mt-1">
+                        <button className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+                          </svg>
+                          {comment.likeCount}
+                        </button>
+                        <button
+                          onClick={() => handleReply(comment.id, comment.author)}
+                          className="text-[10px] font-medium text-muted-foreground"
+                        >
+                          답글 달기
+                        </button>
+                      </div>
+
+                      {/* Replies Toggle */}
+                      {replies.length > 0 && !isExpanded && (
+                        <button
+                          onClick={() => toggleReplies(comment.id)}
+                          className="flex items-center gap-1 mt-2 text-[11px] font-semibold text-primary"
+                        >
+                          <span className="w-5 border-t border-primary/30" />
+                          답글 {replies.length}개 더 보기
+                        </button>
+                      )}
+
+                      {/* Expanded Replies */}
+                      {isExpanded && replies.length > 0 && (
+                        <div className="mt-3 space-y-3">
+                          {replies.map((reply) => (
+                            <div key={reply.id} className="flex gap-2">
+                              <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-[9px] font-bold text-primary flex-shrink-0 mt-0.5">
+                                {reply.author[0]}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[11px] font-semibold text-foreground">
+                                    {reply.author}
+                                  </span>
+                                  <span className="text-[9px] text-muted-foreground">
+                                    {reply.createdAt.split(" ")[1] ?? reply.createdAt}
+                                  </span>
+                                </div>
+                                <p className="text-[12px] text-foreground leading-relaxed mt-0.5">
+                                  {reply.content.split(/(@\S+)/).map((part, i) =>
+                                    part.startsWith("@") ? (
+                                      <span key={i} className="text-primary font-semibold">{part}</span>
+                                    ) : (
+                                      <span key={i}>{part}</span>
+                                    )
+                                  )}
+                                </p>
+                                <div className="flex items-center gap-3 mt-1">
+                                  <button className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+                                    </svg>
+                                    {reply.likeCount}
+                                  </button>
+                                  <button
+                                    onClick={() => handleReply(comment.id, reply.author)}
+                                    className="text-[10px] font-medium text-muted-foreground"
+                                  >
+                                    답글 달기
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+
+                          {/* Collapse button */}
+                          <button
+                            onClick={() => toggleReplies(comment.id)}
+                            className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground"
+                          >
+                            <span className="w-5 border-t border-muted-foreground/30" />
+                            답글 숨기기
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-[13px] text-foreground leading-relaxed mt-0.5">
-                    {comment.content}
-                  </p>
-                  <button className="flex items-center gap-1 mt-1 text-[10px] text-muted-foreground">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
-                    </svg>
-                    {comment.likeCount}
-                  </button>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
         {/* Comment Input */}
         <div className="flex-shrink-0 px-5 py-3 pb-8 border-t border-border bg-background">
+          {replyTarget && (
+            <div className="flex items-center justify-between mb-2 px-1">
+              <span className="text-[11px] text-muted-foreground">
+                <span className="font-semibold text-primary">{replyTarget.author}</span>님에게 답글 작성 중
+              </span>
+              <button onClick={cancelReply} className="text-[11px] text-muted-foreground font-medium">
+                취소
+              </button>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <input
+              ref={inputRef}
               type="text"
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              placeholder="댓글을 입력하세요..."
+              onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
+              placeholder={replyTarget ? "답글을 입력하세요..." : "댓글을 입력하세요..."}
               className="flex-1 text-[13px] px-4 py-2.5 rounded-full bg-secondary text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30"
             />
             <button
+              onClick={handleSubmit}
               className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
                 newComment.trim()
                   ? "bg-primary text-white"

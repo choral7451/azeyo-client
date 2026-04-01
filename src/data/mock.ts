@@ -60,6 +60,7 @@ export interface Comment {
   content: string;
   createdAt: string;
   likeCount: number;
+  replies?: Comment[];
 }
 
 export interface ScheduleTag {
@@ -135,9 +136,14 @@ export const posts: Post[] = [
     likeCount: 142,
     commentCount: 38,
     comments: [
-      { id: "c1-1", author: "10년차남편", content: "에어랩 진짜 반응 좋죠 ㅋㅋ 저도 작년에 사줬는데 매일 쓰더라구요", createdAt: "2026-03-25 14:30", likeCount: 24 },
+      { id: "c1-1", author: "10년차남편", content: "에어랩 진짜 반응 좋죠 ㅋㅋ 저도 작년에 사줬는데 매일 쓰더라구요", createdAt: "2026-03-25 14:30", likeCount: 24, replies: [
+        { id: "c1-1-1", author: "살림왕남편", content: "@10년차남편 에어랩 몇 사셨어요? 저도 사려고 하는데", createdAt: "2026-03-25 14:45", likeCount: 3 },
+        { id: "c1-1-2", author: "워킹대디", content: "@10년차남편 매일 쓴다니 가성비 최고네요", createdAt: "2026-03-25 15:00", likeCount: 5 },
+      ] },
       { id: "c1-2", author: "워킹대디", content: "실용적인 선물이 답입니다 형님 인정", createdAt: "2026-03-25 15:10", likeCount: 12 },
-      { id: "c1-3", author: "딸바보파파", content: "저는 로봇청소기 사줬더니 대박이었어요", createdAt: "2026-03-25 18:22", likeCount: 31 },
+      { id: "c1-3", author: "딸바보파파", content: "저는 로봇청소기 사줬더니 대박이었어요", createdAt: "2026-03-25 18:22", likeCount: 31, replies: [
+        { id: "c1-3-1", author: "결혼5년차아빠", content: "@딸바보파파 어떤 브랜드요? 저도 관심있어요", createdAt: "2026-03-25 19:00", likeCount: 2 },
+      ] },
     ],
   },
   {
@@ -155,7 +161,10 @@ export const posts: Post[] = [
     voteCountA: 234,
     voteCountB: 189,
     comments: [
-      { id: "c2-1", author: "결혼5년차아빠", content: "건강식품이 무난하지 않나요? 상품권은 좀 성의없어 보일수도", createdAt: "2026-03-24 10:00", likeCount: 18 },
+      { id: "c2-1", author: "결혼5년차아빠", content: "건강식품이 무난하지 않나요? 상품권은 좀 성의없어 보일수도", createdAt: "2026-03-24 10:00", likeCount: 18, replies: [
+        { id: "c2-1-1", author: "만년과장", content: "@결혼5년차아빠 그쵸? 저도 건강식품 쪽으로 기울고 있어요", createdAt: "2026-03-24 10:20", likeCount: 4 },
+        { id: "c2-1-2", author: "로맨틱가이", content: "@결혼5년차아빠 홍삼 어떠세요? 어르신들 좋아하시더라구요", createdAt: "2026-03-24 10:35", likeCount: 8 },
+      ] },
       { id: "c2-2", author: "모범사위", content: "저는 건강식품+꽃다발 조합으로 갔습니다", createdAt: "2026-03-24 11:30", likeCount: 45 },
     ],
   },
