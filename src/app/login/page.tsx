@@ -2,6 +2,21 @@
 
 import Link from "next/link";
 
+function getGoogleOAuthUrl() {
+  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+  const redirectUri = `${window.location.origin}/auth/callback/google`;
+  const scope = "openid email profile";
+  const params = new URLSearchParams({
+    client_id: clientId!,
+    redirect_uri: redirectUri,
+    response_type: "code",
+    scope,
+    access_type: "offline",
+    prompt: "consent",
+  });
+  return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+}
+
 export default function LoginPage() {
   return (
     <main className="min-h-dvh flex flex-col items-center justify-center px-8">
@@ -46,8 +61,10 @@ export default function LoginPage() {
         </Link>
 
         {/* Google */}
-        <Link
-          href="/signup"
+        <button
+          onClick={() => {
+            window.location.href = getGoogleOAuthUrl();
+          }}
           className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl text-[14px] font-semibold border active:scale-[0.97] transition-all"
           style={{ backgroundColor: "white", color: "#333", borderColor: "hsl(30 10% 85%)" }}
         >
@@ -58,7 +75,7 @@ export default function LoginPage() {
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
           </svg>
           Google로 시작하기
-        </Link>
+        </button>
       </div>
 
       {/* Footer */}
