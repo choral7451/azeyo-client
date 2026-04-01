@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth-context";
 
 type Step = "terms" | "info" | "done";
@@ -19,10 +19,17 @@ const terms: TermItem[] = [
   { id: "marketing", label: "마케팅 정보 수신 동의", required: false },
 ];
 
-export default function SignupPage() {
+function SignupContent() {
   const router = useRouter();
-  const { login } = useAuth();
+  const searchParams = useSearchParams();
+  const { loginWithTokens } = useAuth();
+
+  const snsToken = searchParams.get("snsToken") || "";
+  const snsType = searchParams.get("snsType") || "";
+
   const [step, setStep] = useState<Step>("terms");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Terms state
   const [agreed, setAgreed] = useState<Set<string>>(new Set());
@@ -50,6 +57,53 @@ export default function SignupPage() {
       setAgreed(new Set());
     } else {
       setAgreed(new Set(terms.map((t) => t.id)));
+    }
+  }
+
+  async function handleSignup() {
+    if (!snsToken || !snsType) {
+      setSubmitError("인증 정보가 없습니다. 다시 로그인해주세요.");
+      setTimeout(() => router.push("/login"), 2000);
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+      const res = await fetch(`${apiBaseUrl}/azeyo/auths/sign-up`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nickname: nickname.trim(),
+          marriageYear: Number(marriageYear),
+          children,
+          snsToken,
+          snsType,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorBody = await res.json().catch(() => null);
+        const errorCode = errorBody?.code;
+
+        if (errorCode === "AZEYO-USER-002") {
+          setSubmitError("이미 사용 중인 닉네임이에요.");
+          setIsSubmitting(false);
+          return;
+        }
+
+        throw new Error(errorBody?.message || "회원가입에 실패했습니다.");
+      }
+
+      const data = await res.json();
+      loginWithTokens(data.accessToken, data.refreshToken);
+      setStep("done");
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "회원가입 중 오류가 발생했습니다.");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -164,15 +218,25 @@ export default function SignupPage() {
               <input
                 type="text"
                 value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
+                onChange={(e) => {
+                  setNickname(e.target.value);
+                  setSubmitError(null);
+                }}
                 placeholder="2~12자 닉네임"
                 maxLength={12}
                 className="w-full px-4 py-3 rounded-xl text-[14px] text-foreground outline-none transition-all focus:ring-2 focus:ring-primary/20"
                 style={{ backgroundColor: "hsl(36 30% 93%)" }}
               />
-              <p className="text-[10px] text-muted-foreground mt-1 text-right">
-                {nickname.length}/12
-              </p>
+              <div className="flex justify-between mt-1">
+                {submitError ? (
+                  <p className="text-[10px] text-red-500">{submitError}</p>
+                ) : (
+                  <span />
+                )}
+                <p className="text-[10px] text-muted-foreground">
+                  {nickname.length}/12
+                </p>
+              </div>
             </div>
 
             {/* Marriage Year */}
@@ -226,12 +290,12 @@ export default function SignupPage() {
               이전
             </button>
             <button
-              onClick={() => setStep("done")}
-              disabled={!infoValid}
+              onClick={handleSignup}
+              disabled={!infoValid || isSubmitting}
               className="flex-1 py-3.5 rounded-xl text-[14px] font-semibold text-white transition-all duration-200 active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100"
               style={{ backgroundColor: "hsl(22 60% 42%)" }}
             >
-              가입하기
+              {isSubmitting ? "가입 중..." : "가입하기"}
             </button>
           </div>
         </div>
@@ -257,7 +321,7 @@ export default function SignupPage() {
           </p>
 
           <button
-            onClick={() => { login(); router.push("/"); }}
+            onClick={() => router.push("/")}
             className="w-full mt-10 py-3.5 rounded-xl text-[14px] font-semibold text-white active:scale-[0.97] transition-all"
             style={{ backgroundColor: "hsl(22 60% 42%)" }}
           >
@@ -266,6 +330,30 @@ export default function SignupPage() {
         </div>
       )}
     </main>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-dvh flex flex-col items-center justify-center px-8">
+          <div className="text-center">
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse"
+              style={{ backgroundColor: "hsl(22 60% 42% / 0.1)" }}
+            >
+              <div
+                className="w-8 h-8 rounded-full"
+                style={{ backgroundColor: "hsl(22 60% 42% / 0.3)" }}
+              />
+            </div>
+          </div>
+        </main>
+      }
+    >
+      <SignupContent />
+    </Suspense>
   );
 }
 

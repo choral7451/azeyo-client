@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth-context";
 
@@ -9,8 +9,13 @@ function GoogleCallbackContent() {
   const searchParams = useSearchParams();
   const { loginWithTokens } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const calledRef = useRef(false);
 
   useEffect(() => {
+    // Prevent double execution in StrictMode (OAuth code is single-use)
+    if (calledRef.current) return;
+    calledRef.current = true;
+
     const code = searchParams.get("code");
     const errorParam = searchParams.get("error");
 
@@ -35,14 +40,24 @@ function GoogleCallbackContent() {
     })
       .then(async (res) => {
         if (!res.ok) {
-          const data = await res.json();
+          const data = await res.json().catch(() => ({}));
           throw new Error(data.detail || "로그인에 실패했습니다.");
         }
         return res.json();
       })
       .then((data) => {
-        loginWithTokens(data.accessToken, data.refreshToken);
-        router.push("/");
+        if (data.notRegistered) {
+          // Not registered → go to signup with SNS token
+          const params = new URLSearchParams({
+            snsToken: data.snsToken,
+            snsType: data.snsType,
+          });
+          router.replace(`/signup?${params.toString()}`);
+        } else {
+          // Existing user → login
+          loginWithTokens(data.accessToken, data.refreshToken);
+          router.replace("/");
+        }
       })
       .catch((err) => {
         setError(err.message || "로그인 중 오류가 발생했습니다.");
