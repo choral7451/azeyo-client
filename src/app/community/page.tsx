@@ -2,28 +2,137 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useHeaderExtra } from "@/components/header-context";
-import { posts as initialPosts, type Category, type Post, type PostType } from "@/data/mock";
+import { useAuth } from "@/components/auth-context";
 import { BottomSheet } from "@/components/bottom-sheet";
+import type { Category, PostType } from "@/data/mock";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+// Category mapping: frontend display → backend enum
+const CATEGORY_MAP: Record<Category, string> = {
+  "선물": "GIFT",
+  "부부싸움": "COUPLE_FIGHT",
+  "어른들 취미": "HOBBY",
+  "육아": "PARENTING",
+  "생활꿀팁": "LIFE_TIP",
+  "자유게시판": "FREE",
+};
+
+const CATEGORY_REVERSE: Record<string, Category> = Object.fromEntries(
+  Object.entries(CATEGORY_MAP).map(([k, v]) => [v, k as Category])
+) as Record<string, Category>;
 
 const categories: ("전체" | Category)[] = [
-  "전체",
-  "선물",
-  "부부싸움",
-  "어른들 취미",
-  "육아",
-  "생활꿀팁",
-  "자유게시판",
+  "전체", "선물", "부부싸움", "어른들 취미", "육아", "생활꿀팁", "자유게시판",
 ];
-
 const writeCategories: Category[] = ["선물", "부부싸움", "어른들 취미", "육아", "생활꿀팁", "자유게시판"];
 
+// API response types
+interface ApiPost {
+  id: number;
+  type: "TEXT" | "VOTE";
+  category: string;
+  authorId: number;
+  authorName: string;
+  authorIconImageUrl: string | null;
+  title: string;
+  contents: string;
+  imageUrls: string[] | null;
+  imageRatio: string | null;
+  voteOptionA: string | null;
+  voteOptionB: string | null;
+  voteCountA: number;
+  voteCountB: number;
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
+  isLiked: boolean;
+  userVote: "A" | "B" | null;
+  createdAt: string;
+}
+
+interface ApiComment {
+  id: number;
+  contents: string;
+  userId: number;
+  userNickname: string;
+  userIconImageUrl: string | null;
+  childrenCount: number;
+  createdAt: string;
+}
+
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "방금 전";
+  if (minutes < 60) return `${minutes}분 전`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}시간 전`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}일 전`;
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
 export default function CommunityPage() {
+  const { accessToken } = useAuth();
   const [activeCategory, setActiveCategory] = useState<"전체" | Category>("전체");
-  const [votedPosts, setVotedPosts] = useState<Record<string, "A" | "B">>({});
-  const [commentPost, setCommentPost] = useState<Post | null>(null);
+  const [posts, setPosts] = useState<ApiPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [commentPost, setCommentPost] = useState<ApiPost | null>(null);
   const [showWrite, setShowWrite] = useState(false);
-  const [postList, setPostList] = useState<Post[]>(initialPosts);
   const { setStickyExtra } = useHeaderExtra();
+  const loadingRef = useRef(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  const fetchPosts = useCallback(async (pageNum: number, category: "전체" | Category, reset = false) => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
+    if (reset) setLoading(true);
+
+    try {
+      const params = new URLSearchParams({ page: String(pageNum), size: "20" });
+      if (category !== "전체") params.set("category", CATEGORY_MAP[category]);
+
+      const headers: Record<string, string> = {};
+      if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
+
+      const res = await fetch(`${API_BASE}/azeyo/communities?${params}`, { headers });
+      if (!res.ok) throw new Error("Failed to fetch posts");
+      const data: { posts: ApiPost[]; totalCount: number } = await res.json();
+
+      setPosts(prev => reset ? data.posts : [...prev, ...data.posts]);
+      setHasMore(reset ? data.posts.length < data.totalCount : (posts.length + data.posts.length) < data.totalCount);
+      setPage(pageNum);
+    } catch {
+      // silently fail
+    } finally {
+      setLoading(false);
+      loadingRef.current = false;
+    }
+  }, [accessToken, posts.length]);
+
+  // Initial load & category change
+  useEffect(() => {
+    fetchPosts(1, activeCategory, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCategory, accessToken]);
+
+  // Infinite scroll
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && hasMore && !loadingRef.current) {
+        fetchPosts(page + 1, activeCategory);
+      }
+    }, { rootMargin: "200px" });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, page, activeCategory, fetchPosts]);
 
   useEffect(() => {
     const handler = () => setShowWrite(true);
@@ -43,75 +152,108 @@ export default function CommunityPage() {
     return () => setStickyExtra(null);
   }, [activeCategory, setStickyExtra]);
 
-  const filtered =
-    activeCategory === "전체"
-      ? postList
-      : postList.filter((p) => p.category === activeCategory);
-
-  function handleNewPost(post: Post) {
-    setPostList((prev) => [post, ...prev]);
-    setShowWrite(false);
-    if (activeCategory !== "전체" && activeCategory !== post.category) {
-      setActiveCategory("전체");
-    }
+  function handleCategoryChange(cat: "전체" | Category) {
+    setActiveCategory(cat);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function handleVote(postId: string, option: "A" | "B") {
-    setVotedPosts((prev) => {
-      if (prev[postId] === option) {
-        const next = { ...prev };
-        delete next[postId];
-        return next;
-      }
-      return { ...prev, [postId]: option };
+  function handleVote(postId: number, option: "A" | "B") {
+    if (!accessToken) return;
+    fetch(`${API_BASE}/azeyo/communities/${postId}/vote`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({ option }),
+    }).then(async () => {
+      // Optimistic update
+      setPosts(prev => prev.map(p => {
+        if (p.id !== postId) return p;
+        const wasSame = p.userVote === option;
+        return {
+          ...p,
+          userVote: wasSame ? null : option,
+          voteCountA: p.voteCountA + (option === "A" ? (wasSame ? -1 : 1) : (p.userVote === "A" ? -1 : 0)),
+          voteCountB: p.voteCountB + (option === "B" ? (wasSame ? -1 : 1) : (p.userVote === "B" ? -1 : 0)),
+        };
+      }));
     });
+  }
+
+  function handleLike(postId: number, isLike: boolean) {
+    if (!accessToken) return;
+    fetch(`${API_BASE}/azeyo/communities/${postId}/like`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({ isLike }),
+    }).then(() => {
+      setPosts(prev => prev.map(p => {
+        if (p.id !== postId) return p;
+        return { ...p, isLiked: isLike, likeCount: p.likeCount + (isLike ? 1 : -1) };
+      }));
+    });
+  }
+
+  function handleNewPost() {
+    setShowWrite(false);
+    fetchPosts(1, activeCategory, true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   return (
     <>
       <main className="pb-6">
-      {/* Category Tabs */}
-      <div className="animate-fade-up" style={{ animationDelay: "0.05s" }}>
-        <CategoryTabs categories={categories} active={activeCategory} onSelect={(cat) => { setActiveCategory(cat); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
-      </div>
+        {/* Category Tabs */}
+        <div className="animate-fade-up" style={{ animationDelay: "0.05s" }}>
+          <CategoryTabs categories={categories} active={activeCategory} onSelect={handleCategoryChange} />
+        </div>
 
-      {/* Feed */}
-      <div className="px-5 space-y-3 animate-fade-up" style={{ animationDelay: "0.1s" }}>
-        {filtered.map((post) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            voted={votedPosts[post.id]}
-            onVote={(option) => handleVote(post.id, option)}
-            onComment={() => setCommentPost(post)}
-          />
-        ))}
-        {filtered.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-[40px] mb-2">📝</p>
-            <p className="text-[14px] text-muted-foreground">
-              아직 게시글이 없어요
-            </p>
-            <p className="text-[12px] text-muted-foreground mt-1">
-              첫 번째 글을 작성해보세요!
-            </p>
-          </div>
-        )}
-      </div>
+        {/* Feed */}
+        <div className="px-5 space-y-3 animate-fade-up" style={{ animationDelay: "0.1s" }}>
+          {loading ? (
+            <div className="text-center py-16">
+              <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto mb-3" />
+              <p className="text-[13px] text-muted-foreground">불러오는 중...</p>
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-[40px] mb-2">📝</p>
+              <p className="text-[14px] text-muted-foreground">아직 게시글이 없어요</p>
+              <p className="text-[12px] text-muted-foreground mt-1">첫 번째 글을 작성해보세요!</p>
+            </div>
+          ) : (
+            posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                onVote={(option) => handleVote(post.id, option)}
+                onLike={(isLike) => handleLike(post.id, isLike)}
+                onComment={() => setCommentPost(post)}
+              />
+            ))
+          )}
+          {/* Infinite scroll sentinel */}
+          <div ref={sentinelRef} className="h-1" />
+          {!loading && hasMore && posts.length > 0 && (
+            <div className="text-center py-4">
+              <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
+            </div>
+          )}
+        </div>
       </main>
 
-      {/* Comment Bottom Sheet */}
       {commentPost && (
         <CommentSheet
           post={commentPost}
+          accessToken={accessToken}
           onClose={() => setCommentPost(null)}
+          onCommentCountChange={(count) => {
+            setPosts(prev => prev.map(p => p.id === commentPost.id ? { ...p, commentCount: count } : p));
+          }}
         />
       )}
 
-      {/* Write Bottom Sheet */}
       {showWrite && (
         <WriteSheet
+          accessToken={accessToken}
           onClose={() => setShowWrite(false)}
           onSubmit={handleNewPost}
         />
@@ -121,15 +263,9 @@ export default function CommunityPage() {
 }
 
 function CategoryTabs<T extends string>({
-  categories: cats,
-  active,
-  onSelect,
-  small,
+  categories: cats, active, onSelect, small,
 }: {
-  categories: T[];
-  active: T;
-  onSelect: (cat: T) => void;
-  small?: boolean;
+  categories: T[]; active: T; onSelect: (cat: T) => void; small?: boolean;
 }) {
   return (
     <div className={`flex gap-2 overflow-x-auto scrollbar-hide ${small ? "mt-2" : "px-5 mb-5"}`}>
@@ -137,15 +273,9 @@ function CategoryTabs<T extends string>({
         <button
           key={cat}
           onClick={() => onSelect(cat)}
-          className={`
-            flex-shrink-0 rounded-full font-medium transition-all duration-200
+          className={`flex-shrink-0 rounded-full font-medium transition-all duration-200
             ${small ? "text-[12px] px-3.5 py-1.5" : "text-[13px] px-4 py-2"}
-            ${
-              active === cat
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "bg-secondary text-muted-foreground active:scale-95"
-            }
-          `}
+            ${active === cat ? "bg-primary text-primary-foreground shadow-sm" : "bg-secondary text-muted-foreground active:scale-95"}`}
         >
           {cat}
         </button>
@@ -154,7 +284,7 @@ function CategoryTabs<T extends string>({
   );
 }
 
-function ImageCarousel({ images, ratio = "4:5" }: { images: string[]; ratio?: "4:5" | "1:1" }) {
+function ImageCarousel({ images, ratio = "4:5" }: { images: string[]; ratio?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIdx, setActiveIdx] = useState(0);
   const touchStartX = useRef(0);
@@ -177,16 +307,13 @@ function ImageCarousel({ images, ratio = "4:5" }: { images: string[]; ratio?: "4
     if (!isDragging.current) return;
     const dx = e.touches[0].clientX - touchStartX.current;
     const dy = e.touches[0].clientY - touchStartY.current;
-
     if (!directionLocked.current) {
       if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
         directionLocked.current = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
       }
       return;
     }
-
     if (directionLocked.current === "v") return;
-
     e.preventDefault();
     touchDeltaX.current = dx;
     setOffsetX(dx);
@@ -218,26 +345,19 @@ function ImageCarousel({ images, ratio = "4:5" }: { images: string[]; ratio?: "4
     };
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
+  const aspectClass = ratio === "1:1" ? "aspect-square" : "aspect-[4/5]";
+
   if (images.length === 1) {
     return (
-      <div className={`relative w-full ${ratio === "1:1" ? "aspect-square" : "aspect-[4/5]"}`}>
+      <div className={`relative w-full ${aspectClass}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={images[0]}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
-          loading="lazy"
-          draggable={false}
-        />
+        <img src={images[0]} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" draggable={false} />
       </div>
     );
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="relative overflow-hidden"
-    >
+    <div ref={containerRef} className="relative overflow-hidden">
       <div
         className="flex transition-transform duration-300 ease-out"
         style={{
@@ -246,28 +366,15 @@ function ImageCarousel({ images, ratio = "4:5" }: { images: string[]; ratio?: "4
         }}
       >
         {images.map((src, i) => (
-          <div key={i} className={`flex-shrink-0 w-full relative ${ratio === "1:1" ? "aspect-square" : "aspect-[4/5]"}`}>
+          <div key={i} className={`flex-shrink-0 w-full relative ${aspectClass}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={src}
-              alt=""
-              className="absolute inset-0 w-full h-full object-cover select-none"
-              loading="lazy"
-              draggable={false}
-            />
+            <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover select-none" loading="lazy" draggable={false} />
           </div>
         ))}
       </div>
       <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
         {images.map((_, i) => (
-          <div
-            key={i}
-            className={`h-1.5 rounded-full transition-all duration-200 ${
-              i === activeIdx
-                ? "bg-white w-3"
-                : "bg-white/50 w-1.5"
-            }`}
-          />
+          <div key={i} className={`h-1.5 rounded-full transition-all duration-200 ${i === activeIdx ? "bg-white w-3" : "bg-white/50 w-1.5"}`} />
         ))}
       </div>
     </div>
@@ -277,77 +384,55 @@ function ImageCarousel({ images, ratio = "4:5" }: { images: string[]; ratio?: "4
 const CONTENT_MAX_LENGTH = 80;
 
 function PostCard({
-  post,
-  voted,
-  onVote,
-  onComment,
+  post, onVote, onLike, onComment,
 }: {
-  post: Post;
-  voted?: "A" | "B";
+  post: ApiPost;
   onVote: (option: "A" | "B") => void;
+  onLike: (isLike: boolean) => void;
   onComment: () => void;
 }) {
-  const [liked, setLiked] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const likeCount = post.likeCount + (liked ? 1 : 0);
-  const isLong = post.content.length > CONTENT_MAX_LENGTH;
+  const isLong = post.contents.length > CONTENT_MAX_LENGTH;
+  const displayCategory = CATEGORY_REVERSE[post.category] || post.category;
 
   return (
-    <article
-      className="rounded-2xl overflow-hidden transition-transform duration-200"
-      style={{ backgroundColor: "hsl(36 30% 93%)" }}
-    >
-      {/* Images */}
-      {post.images && post.images.length > 0 && (
-        <ImageCarousel images={post.images} ratio={post.imageRatio ?? "4:5"} />
+    <article className="rounded-2xl overflow-hidden transition-transform duration-200" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
+      {post.imageUrls && post.imageUrls.length > 0 && (
+        <ImageCarousel images={post.imageUrls} ratio={post.imageRatio ?? "4:5"} />
       )}
 
       <div className="p-4">
         {/* Meta */}
         <div className="flex items-center gap-2 mb-2.5">
-          <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[12px] font-bold text-primary">
-            {post.author[0]}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[13px] font-semibold text-foreground">
-                {post.author}
-              </span>
-              {post.authorBadge && (
-                <span
-                  className="text-[9px] font-bold px-1.5 py-0.5 rounded-full text-primary"
-                  style={{ backgroundColor: "hsl(22 60% 42% / 0.1)" }}
-                >
-                  {post.authorBadge}
-                </span>
-              )}
+          {post.authorIconImageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={post.authorIconImageUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[12px] font-bold text-primary">
+              {post.authorName?.[0] || "?"}
             </div>
-            <span className="text-[10px] text-muted-foreground">
-              {post.createdAt}
-            </span>
+          )}
+          <div className="flex-1 min-w-0">
+            <span className="text-[13px] font-semibold text-foreground">{post.authorName}</span>
+            <div>
+              <span className="text-[10px] text-muted-foreground">{formatDate(post.createdAt)}</span>
+            </div>
           </div>
           <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-            {post.category}
+            {displayCategory}
           </span>
         </div>
 
         {/* Content */}
-        <h3 className="text-[15px] font-bold text-foreground leading-snug mb-1.5">
-          {post.title}
-        </h3>
+        <h3 className="text-[15px] font-bold text-foreground leading-snug mb-1.5">{post.title}</h3>
         <p className="text-[13px] text-muted-foreground leading-relaxed">
           {isLong && !expanded ? (
             <>
-              {post.content.slice(0, CONTENT_MAX_LENGTH)}...
-              <button
-                onClick={(e) => { e.stopPropagation(); setExpanded(true); }}
-                className="text-primary font-semibold ml-1"
-              >
-                더보기
-              </button>
+              {post.contents.slice(0, CONTENT_MAX_LENGTH)}...
+              <button onClick={(e) => { e.stopPropagation(); setExpanded(true); }} className="text-primary font-semibold ml-1">더보기</button>
             </>
           ) : (
-            post.content
+            post.contents
           )}
         </p>
 
@@ -356,9 +441,9 @@ function PostCard({
           <VoteSection
             optionA={post.voteOptionA}
             optionB={post.voteOptionB}
-            countA={post.voteCountA ?? 0}
-            countB={post.voteCountB ?? 0}
-            voted={voted}
+            countA={post.voteCountA}
+            countB={post.voteCountB}
+            voted={post.userVote}
             onVote={onVote}
           />
         )}
@@ -366,20 +451,15 @@ function PostCard({
         {/* Actions */}
         <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
           <button
-            onClick={() => setLiked(!liked)}
-            className={`flex items-center gap-1.5 text-[12px] font-medium transition-colors ${
-              liked ? "text-primary" : "text-muted-foreground"
-            }`}
+            onClick={() => onLike(!post.isLiked)}
+            className={`flex items-center gap-1.5 text-[12px] font-medium transition-colors ${post.isLiked ? "text-primary" : "text-muted-foreground"}`}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill={liked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill={post.isLiked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
               <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
             </svg>
-            {likeCount}
+            {post.likeCount}
           </button>
-          <button
-            onClick={onComment}
-            className="flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground"
-          >
+          <button onClick={onComment} className="flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" />
             </svg>
@@ -392,369 +472,322 @@ function PostCard({
 }
 
 function VoteSection({
-  optionA,
-  optionB,
-  countA,
-  countB,
-  voted,
-  onVote,
+  optionA, optionB, countA, countB, voted, onVote,
 }: {
-  optionA: string;
-  optionB: string;
-  countA: number;
-  countB: number;
-  voted?: "A" | "B";
-  onVote: (option: "A" | "B") => void;
+  optionA: string; optionB: string; countA: number; countB: number;
+  voted: "A" | "B" | null; onVote: (option: "A" | "B") => void;
 }) {
-  const totalA = countA + (voted === "A" ? 1 : 0);
-  const totalB = countB + (voted === "B" ? 1 : 0);
-  const total = totalA + totalB;
-  const pctA = total > 0 ? Math.round((totalA / total) * 100) : 50;
+  const total = countA + countB;
+  const pctA = total > 0 ? Math.round((countA / total) * 100) : 50;
   const pctB = 100 - pctA;
   const hasVoted = !!voted;
 
   return (
     <div className="mt-3 rounded-xl border border-border overflow-hidden bg-secondary/50">
-      {/* Header */}
       <div className="flex items-center justify-between px-3.5 py-2 border-b border-border">
         <span className="text-[11px] font-bold text-primary tracking-wide">
           {hasVoted ? "투표 완료" : "눌러서 투표하기"}
         </span>
-        <span className="text-[10px] text-muted-foreground">
-          {total.toLocaleString()}명 참여
-        </span>
+        <span className="text-[10px] text-muted-foreground">{total.toLocaleString()}명 참여</span>
       </div>
-
-      {/* Options */}
       <div className="p-2 space-y-1.5">
-        {/* Option A */}
-        <button
-          onClick={() => onVote("A")}
-          className={`
-            relative w-full text-left rounded-lg overflow-hidden h-10 transition-all duration-200
-            active:scale-[0.98] cursor-pointer
-            ${voted === "A" ? "ring-[1.5px] ring-primary" : ""}
-          `}
-        >
-          <div
-            className={`absolute inset-y-0 left-0 rounded-lg ${
-              voted === "A"
-                ? ""
-                : hasVoted
-                  ? "bg-muted/80"
-                  : "bg-secondary"
-            }`}
-            style={{
-              width: hasVoted ? `${pctA}%` : "100%",
-              transition: "width 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
-              ...(voted === "A" ? { backgroundColor: "hsl(22 60% 42% / 0.15)" } : {}),
-            }}
-          />
-          <div className="relative z-10 flex items-center justify-between h-full px-3.5">
-            <span className={`text-[13px] ${voted === "A" ? "font-bold text-primary" : "font-medium text-foreground"}`}>
-              {optionA}
-            </span>
-            <span className={`text-[12px] font-bold tabular-nums ${voted === "A" ? "text-primary" : "text-muted-foreground"}`}>
-              {pctA}%
-            </span>
-          </div>
-        </button>
-
-        {/* Option B */}
-        <button
-          onClick={() => onVote("B")}
-          className={`
-            relative w-full text-left rounded-lg overflow-hidden h-10 transition-all duration-200
-            active:scale-[0.98] cursor-pointer
-            ${voted === "B" ? "ring-[1.5px] ring-primary" : ""}
-          `}
-        >
-          <div
-            className={`absolute inset-y-0 left-0 rounded-lg ${
-              voted === "B"
-                ? ""
-                : hasVoted
-                  ? "bg-muted/80"
-                  : "bg-secondary"
-            }`}
-            style={{
-              width: hasVoted ? `${pctB}%` : "100%",
-              transition: "width 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
-              ...(voted === "B" ? { backgroundColor: "hsl(22 60% 42% / 0.15)" } : {}),
-            }}
-          />
-          <div className="relative z-10 flex items-center justify-between h-full px-3.5">
-            <span className={`text-[13px] ${voted === "B" ? "font-bold text-primary" : "font-medium text-foreground"}`}>
-              {optionB}
-            </span>
-            <span className={`text-[12px] font-bold tabular-nums ${voted === "B" ? "text-primary" : "text-muted-foreground"}`}>
-              {pctB}%
-            </span>
-          </div>
-        </button>
+        {(["A", "B"] as const).map((opt) => {
+          const label = opt === "A" ? optionA : optionB;
+          const pct = opt === "A" ? pctA : pctB;
+          const isSelected = voted === opt;
+          return (
+            <button
+              key={opt}
+              onClick={() => onVote(opt)}
+              className={`relative w-full text-left rounded-lg overflow-hidden h-10 transition-all duration-200 active:scale-[0.98] cursor-pointer ${isSelected ? "ring-[1.5px] ring-primary" : ""}`}
+            >
+              <div
+                className={`absolute inset-y-0 left-0 rounded-lg ${isSelected ? "" : hasVoted ? "bg-muted/80" : "bg-secondary"}`}
+                style={{
+                  width: hasVoted ? `${pct}%` : "100%",
+                  transition: "width 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
+                  ...(isSelected ? { backgroundColor: "hsl(22 60% 42% / 0.15)" } : {}),
+                }}
+              />
+              <div className="relative z-10 flex items-center justify-between h-full px-3.5">
+                <span className={`text-[13px] ${isSelected ? "font-bold text-primary" : "font-medium text-foreground"}`}>{label}</span>
+                <span className={`text-[12px] font-bold tabular-nums ${isSelected ? "text-primary" : "text-muted-foreground"}`}>{pct}%</span>
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function CommentSheet({ post, onClose }: { post: Post; onClose: () => void }) {
+function CommentSheet({
+  post, accessToken, onClose, onCommentCountChange,
+}: {
+  post: ApiPost; accessToken: string | null; onClose: () => void;
+  onCommentCountChange: (count: number) => void;
+}) {
+  const [comments, setComments] = useState<ApiComment[]>([]);
+  const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState("");
-  const [replyTarget, setReplyTarget] = useState<{ commentId: string; author: string } | null>(null);
-  const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
-  const [localComments, setLocalComments] = useState(() =>
-    [...(post.comments ?? [])].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )
-  );
+  const [replyTarget, setReplyTarget] = useState<{ commentId: number; author: string } | null>(null);
+  const [expandedReplies, setExpandedReplies] = useState<Record<number, ApiComment[]>>({});
+  const [loadingReplies, setLoadingReplies] = useState<Set<number>>(new Set());
+  const [submitting, setSubmitting] = useState(false);
+  const [totalCount, setTotalCount] = useState(post.commentCount);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const totalCount = localComments.reduce(
-    (sum, c) => sum + 1 + (c.replies?.length ?? 0),
-    0
-  );
+  // Fetch parent comments
+  useEffect(() => {
+    const headers: Record<string, string> = {};
+    if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
 
-  function handleReply(commentId: string, author: string) {
-    setReplyTarget({ commentId, author });
-    setNewComment(`@${author} `);
-    inputRef.current?.focus();
-  }
+    fetch(`${API_BASE}/azeyo/communities/${post.id}/comments?page=1&size=100`, { headers })
+      .then(r => r.json())
+      .then((data: { comments: ApiComment[]; totalCount: number }) => {
+        setComments(data.comments);
+        setTotalCount(data.totalCount);
+      })
+      .finally(() => setLoading(false));
+  }, [post.id, accessToken]);
 
-  function cancelReply() {
-    setReplyTarget(null);
-    setNewComment("");
-  }
-
-  function toggleReplies(commentId: string) {
-    setExpandedReplies((prev) => {
-      const next = new Set(prev);
-      if (next.has(commentId)) next.delete(commentId);
-      else next.add(commentId);
-      return next;
-    });
-  }
-
-  function handleSubmit() {
-    if (!newComment.trim()) return;
-    const now = new Date();
-    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-    const newC = {
-      id: `c-${Date.now()}`,
-      author: "김아재",
-      content: newComment.trim(),
-      createdAt: dateStr,
-      likeCount: 0,
-    };
-
-    if (replyTarget) {
-      setLocalComments((prev) =>
-        prev.map((c) =>
-          c.id === replyTarget.commentId
-            ? { ...c, replies: [...(c.replies ?? []), newC] }
-            : c
-        )
-      );
-      setExpandedReplies((prev) => new Set(prev).add(replyTarget.commentId));
-    } else {
-      setLocalComments((prev) => [newC, ...prev]);
+  async function loadReplies(parentId: number) {
+    if (expandedReplies[parentId]) {
+      // Toggle off
+      setExpandedReplies(prev => {
+        const next = { ...prev };
+        delete next[parentId];
+        return next;
+      });
+      return;
     }
+
+    setLoadingReplies(prev => new Set(prev).add(parentId));
+    try {
+      const headers: Record<string, string> = {};
+      if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
+
+      const res = await fetch(`${API_BASE}/azeyo/communities/${post.id}/comments?page=1&size=100&parentId=${parentId}`, { headers });
+      const data: { comments: ApiComment[]; totalCount: number } = await res.json();
+      setExpandedReplies(prev => ({ ...prev, [parentId]: data.comments }));
+    } finally {
+      setLoadingReplies(prev => { const next = new Set(prev); next.delete(parentId); return next; });
+    }
+  }
+
+  async function handleSubmit() {
+    if (!newComment.trim() || !accessToken || submitting) return;
+    setSubmitting(true);
+
+    try {
+      const res = await fetch(`${API_BASE}/azeyo/communities/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({
+          postId: post.id,
+          parentId: replyTarget?.commentId ?? null,
+          contents: newComment.trim(),
+        }),
+      });
+
+      if (!res.ok) throw new Error();
+
+      // Refresh comments
+      const headers: Record<string, string> = { Authorization: `Bearer ${accessToken}` };
+      const refreshRes = await fetch(`${API_BASE}/azeyo/communities/${post.id}/comments?page=1&size=100`, { headers });
+      const data: { comments: ApiComment[]; totalCount: number } = await refreshRes.json();
+      setComments(data.comments);
+      setTotalCount(data.totalCount);
+      onCommentCountChange(data.totalCount);
+
+      // Refresh replies if replying
+      if (replyTarget) {
+        const replyRes = await fetch(`${API_BASE}/azeyo/communities/${post.id}/comments?page=1&size=100&parentId=${replyTarget.commentId}`, { headers });
+        const replyData: { comments: ApiComment[]; totalCount: number } = await replyRes.json();
+        setExpandedReplies(prev => ({ ...prev, [replyTarget.commentId]: replyData.comments }));
+      }
+
+      setNewComment("");
+      setReplyTarget(null);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function handleReply(commentId: number, author: string) {
+    setReplyTarget({ commentId, author });
     setNewComment("");
-    setReplyTarget(null);
+    inputRef.current?.focus();
   }
 
   return (
     <BottomSheet onClose={onClose} className="max-h-[80dvh] flex flex-col">
-        {/* Header */}
-        <div className="px-5 pb-3 border-b border-border flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <h3 className="text-[16px] font-bold text-foreground">
-              댓글 {totalCount}
-            </h3>
-            <button
-              onClick={onClose}
-              className="text-muted-foreground p-1"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          </div>
+      <div className="px-5 pb-3 border-b border-border flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <h3 className="text-[16px] font-bold text-foreground">댓글 {totalCount}</h3>
+          <button onClick={onClose} className="text-muted-foreground p-1">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
         </div>
+      </div>
 
-        {/* Comments List */}
-        <div className="flex-1 overflow-y-auto px-5 py-3 space-y-4">
-          {localComments.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-[28px] mb-2">💬</p>
-              <p className="text-[13px] text-muted-foreground">
-                아직 댓글이 없어요
-              </p>
-              <p className="text-[11px] text-muted-foreground mt-1">
-                첫 번째 댓글을 남겨보세요!
-              </p>
-            </div>
-          ) : (
-            localComments.map((comment) => {
-              const replies = comment.replies ?? [];
-              const isExpanded = expandedReplies.has(comment.id);
+      <div className="flex-1 overflow-y-auto px-5 py-3 space-y-4">
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto mb-2" />
+            <p className="text-[13px] text-muted-foreground">댓글 불러오는 중...</p>
+          </div>
+        ) : comments.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-[28px] mb-2">💬</p>
+            <p className="text-[13px] text-muted-foreground">아직 댓글이 없어요</p>
+            <p className="text-[11px] text-muted-foreground mt-1">첫 번째 댓글을 남겨보세요!</p>
+          </div>
+        ) : (
+          comments.map((comment) => {
+            const replies = expandedReplies[comment.id];
+            const isLoadingReplies = loadingReplies.has(comment.id);
 
-              return (
-                <div key={comment.id}>
-                  {/* Parent Comment */}
-                  <div className="flex gap-2.5">
+            return (
+              <div key={comment.id}>
+                <div className="flex gap-2.5">
+                  {comment.userIconImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={comment.userIconImageUrl} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0 mt-0.5" />
+                  ) : (
                     <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-primary flex-shrink-0 mt-0.5">
-                      {comment.author[0]}
+                      {comment.userNickname?.[0] || "?"}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[12px] font-semibold text-foreground">
-                          {comment.author}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">
-                          {comment.createdAt.split(" ")[1] ?? comment.createdAt}
-                        </span>
-                      </div>
-                      <p className="text-[13px] text-foreground leading-relaxed mt-0.5">
-                        {comment.content}
-                      </p>
-                      <div className="flex items-center gap-3 mt-1">
-                        <button className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
-                          </svg>
-                          {comment.likeCount}
-                        </button>
-                        <button
-                          onClick={() => handleReply(comment.id, comment.author)}
-                          className="text-[10px] font-medium text-muted-foreground"
-                        >
-                          답글 달기
-                        </button>
-                      </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[12px] font-semibold text-foreground">{comment.userNickname}</span>
+                      <span className="text-[10px] text-muted-foreground">{formatDate(comment.createdAt)}</span>
+                    </div>
+                    <p className="text-[13px] text-foreground leading-relaxed mt-0.5">{comment.contents}</p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <button
+                        onClick={() => handleReply(comment.id, comment.userNickname)}
+                        className="text-[10px] font-medium text-muted-foreground"
+                      >
+                        답글 달기
+                      </button>
+                    </div>
 
-                      {/* Replies Toggle */}
-                      {replies.length > 0 && !isExpanded && (
-                        <button
-                          onClick={() => toggleReplies(comment.id)}
-                          className="flex items-center gap-1 mt-2 text-[11px] font-semibold text-primary"
-                        >
-                          <span className="w-5 border-t border-primary/30" />
-                          답글 {replies.length}개 더 보기
-                        </button>
-                      )}
+                    {/* Replies toggle */}
+                    {comment.childrenCount > 0 && !replies && (
+                      <button
+                        onClick={() => loadReplies(comment.id)}
+                        className="flex items-center gap-1 mt-2 text-[11px] font-semibold text-primary"
+                        disabled={isLoadingReplies}
+                      >
+                        <span className="w-5 border-t border-primary/30" />
+                        {isLoadingReplies ? "불러오는 중..." : `답글 ${comment.childrenCount}개 더 보기`}
+                      </button>
+                    )}
 
-                      {/* Expanded Replies */}
-                      {isExpanded && replies.length > 0 && (
-                        <div className="mt-3 space-y-3">
-                          {replies.map((reply) => (
-                            <div key={reply.id} className="flex gap-2">
+                    {/* Expanded replies */}
+                    {replies && (
+                      <div className="mt-3 space-y-3">
+                        {replies.map((reply) => (
+                          <div key={reply.id} className="flex gap-2">
+                            {reply.userIconImageUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={reply.userIconImageUrl} alt="" className="w-6 h-6 rounded-full object-cover flex-shrink-0 mt-0.5" />
+                            ) : (
                               <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-[9px] font-bold text-primary flex-shrink-0 mt-0.5">
-                                {reply.author[0]}
+                                {reply.userNickname?.[0] || "?"}
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-[11px] font-semibold text-foreground">
-                                    {reply.author}
-                                  </span>
-                                  <span className="text-[9px] text-muted-foreground">
-                                    {reply.createdAt.split(" ")[1] ?? reply.createdAt}
-                                  </span>
-                                </div>
-                                <p className="text-[12px] text-foreground leading-relaxed mt-0.5">
-                                  {reply.content.split(/(@\S+)/).map((part, i) =>
-                                    part.startsWith("@") ? (
-                                      <span key={i} className="text-primary font-semibold">{part}</span>
-                                    ) : (
-                                      <span key={i}>{part}</span>
-                                    )
-                                  )}
-                                </p>
-                                <div className="flex items-center gap-3 mt-1">
-                                  <button className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
-                                    </svg>
-                                    {reply.likeCount}
-                                  </button>
-                                  <button
-                                    onClick={() => handleReply(comment.id, reply.author)}
-                                    className="text-[10px] font-medium text-muted-foreground"
-                                  >
-                                    답글 달기
-                                  </button>
-                                </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[11px] font-semibold text-foreground">{reply.userNickname}</span>
+                                <span className="text-[9px] text-muted-foreground">{formatDate(reply.createdAt)}</span>
                               </div>
+                              <p className="text-[12px] text-foreground leading-relaxed mt-0.5">
+                                {reply.contents.split(/(@\S+)/).map((part, i) =>
+                                  part.startsWith("@") ? (
+                                    <span key={i} className="text-primary font-semibold">{part}</span>
+                                  ) : (
+                                    <span key={i}>{part}</span>
+                                  )
+                                )}
+                              </p>
+                              <button
+                                onClick={() => handleReply(comment.id, reply.userNickname)}
+                                className="text-[10px] font-medium text-muted-foreground mt-1"
+                              >
+                                답글 달기
+                              </button>
                             </div>
-                          ))}
-
-                          {/* Collapse button */}
-                          <button
-                            onClick={() => toggleReplies(comment.id)}
-                            className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground"
-                          >
-                            <span className="w-5 border-t border-muted-foreground/30" />
-                            답글 숨기기
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                          </div>
+                        ))}
+                        <button
+                          onClick={() => loadReplies(comment.id)}
+                          className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground"
+                        >
+                          <span className="w-5 border-t border-muted-foreground/30" />
+                          답글 숨기기
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
-              );
-            })
-          )}
-        </div>
+              </div>
+            );
+          })
+        )}
+      </div>
 
-        {/* Comment Input */}
-        <div className="flex-shrink-0 px-5 py-3 pb-8 border-t border-border bg-background">
-          {replyTarget && (
-            <div className="flex items-center justify-between mb-2 px-1">
-              <span className="text-[11px] text-muted-foreground">
-                <span className="font-semibold text-primary">{replyTarget.author}</span>님에게 답글 작성 중
-              </span>
-              <button onClick={cancelReply} className="text-[11px] text-muted-foreground font-medium">
-                취소
-              </button>
-            </div>
-          )}
-          <div className="flex items-center gap-2">
-            <input
-              ref={inputRef}
-              type="text"
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
-              placeholder={replyTarget ? "답글을 입력하세요..." : "댓글을 입력하세요..."}
-              className="flex-1 text-[13px] px-4 py-2.5 rounded-full bg-secondary text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30"
-            />
-            <button
-              onClick={handleSubmit}
-              className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
-                newComment.trim()
-                  ? "bg-primary text-white"
-                  : "bg-secondary text-muted-foreground"
-              }`}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="22" y1="2" x2="11" y2="13" />
-                <polygon points="22 2 15 22 11 13 2 9 22 2" />
-              </svg>
-            </button>
+      {/* Comment Input */}
+      <div className="flex-shrink-0 px-5 py-3 pb-8 border-t border-border bg-background">
+        {replyTarget && (
+          <div className="flex items-center justify-between mb-2 px-1">
+            <span className="text-[11px] text-muted-foreground">
+              <span className="font-semibold text-primary">{replyTarget.author}</span>님에게 답글 작성 중
+            </span>
+            <button onClick={() => { setReplyTarget(null); setNewComment(""); }} className="text-[11px] text-muted-foreground font-medium">취소</button>
           </div>
+        )}
+        <div className="flex items-center gap-2">
+          <input
+            ref={inputRef}
+            type="text"
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
+            placeholder={replyTarget ? "답글을 입력하세요..." : "댓글을 입력하세요..."}
+            className="flex-1 text-[13px] px-4 py-2.5 rounded-full bg-secondary text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          <button
+            onClick={handleSubmit}
+            disabled={!newComment.trim() || !accessToken || submitting}
+            className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+              newComment.trim() && accessToken ? "bg-primary text-white" : "bg-secondary text-muted-foreground"
+            }`}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+            </svg>
+          </button>
         </div>
+      </div>
     </BottomSheet>
   );
 }
 
-function WriteSheet({ onClose, onSubmit }: { onClose: () => void; onSubmit: (post: Post) => void }) {
+function WriteSheet({ accessToken, onClose, onSubmit }: { accessToken: string | null; onClose: () => void; onSubmit: () => void }) {
   const [postType, setPostType] = useState<PostType>("TEXT");
   const [category, setCategory] = useState<Category>("자유게시판");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [voteOptionA, setVoteOptionA] = useState("");
   const [voteOptionB, setVoteOptionB] = useState("");
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<{ file: File; preview: string }[]>([]);
   const [imageRatio, setImageRatio] = useState<"4:5" | "1:1">("4:5");
+  const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isValid = postType === "TEXT"
@@ -764,256 +797,242 @@ function WriteSheet({ onClose, onSubmit }: { onClose: () => void; onSubmit: (pos
   function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (!files) return;
-    const newImages = Array.from(files).slice(0, 5 - images.length).map((f) => URL.createObjectURL(f));
+    const newImages = Array.from(files).slice(0, 5 - images.length).map((f) => ({
+      file: f,
+      preview: URL.createObjectURL(f),
+    }));
     setImages((prev) => [...prev, ...newImages].slice(0, 5));
     e.target.value = "";
   }
 
   function removeImage(idx: number) {
     setImages((prev) => {
-      URL.revokeObjectURL(prev[idx]);
+      URL.revokeObjectURL(prev[idx].preview);
       return prev.filter((_, i) => i !== idx);
     });
   }
 
-  function handleSubmit() {
-    if (!isValid) return;
-    const now = new Date();
-    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-    const newPost: Post = {
-      id: `user-${Date.now()}`,
-      type: postType,
-      category,
-      author: "김아재",
-      title: title.trim(),
-      content: content.trim(),
-      createdAt: dateStr,
-      likeCount: 0,
-      commentCount: 0,
-      comments: [],
-      ...(images.length > 0 ? { images, imageRatio } : {}),
-      ...(postType === "VOTE" ? {
-        voteOptionA: voteOptionA.trim(),
-        voteOptionB: voteOptionB.trim(),
-        voteCountA: 0,
-        voteCountB: 0,
-      } : {}),
-    };
-    onSubmit(newPost);
+  async function handleSubmit() {
+    if (!isValid || !accessToken || submitting) return;
+    setSubmitting(true);
+
+    try {
+      // Upload images first if any
+      let imageUrls: string[] | null = null;
+      if (images.length > 0) {
+        const formData = new FormData();
+        images.forEach((img) => formData.append("imageFiles", img.file));
+        const uploadRes = await fetch(`${API_BASE}/azeyo/communities/upload/images`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${accessToken}` },
+          body: formData,
+        });
+        if (!uploadRes.ok) throw new Error("이미지 업로드에 실패했습니다.");
+        const uploadData: { urls: string[] } = await uploadRes.json();
+        imageUrls = uploadData.urls;
+      }
+
+      // Create post
+      const body: Record<string, unknown> = {
+        type: postType,
+        category: CATEGORY_MAP[category],
+        title: title.trim(),
+        contents: content.trim(),
+        imageUrls,
+        imageRatio: images.length > 0 ? imageRatio : null,
+      };
+      if (postType === "VOTE") {
+        body.voteOptionA = voteOptionA.trim();
+        body.voteOptionB = voteOptionB.trim();
+      }
+
+      const res = await fetch(`${API_BASE}/azeyo/communities`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) throw new Error("게시글 등록에 실패했습니다.");
+      onSubmit();
+    } catch {
+      // TODO: show error toast
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
     <BottomSheet onClose={onClose} className="max-h-[90dvh] flex flex-col">
-        {/* Header */}
-        <div className="px-5 pb-3 border-b border-border flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <button onClick={onClose} className="text-[14px] text-muted-foreground font-medium">
-              취소
-            </button>
-            <h3 className="text-[16px] font-bold text-foreground">글쓰기</h3>
+      <div className="px-5 pb-3 border-b border-border flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <button onClick={onClose} className="text-[14px] text-muted-foreground font-medium">취소</button>
+          <h3 className="text-[16px] font-bold text-foreground">글쓰기</h3>
+          <button
+            onClick={handleSubmit}
+            disabled={!isValid || !accessToken || submitting}
+            className={`text-[14px] font-semibold transition-colors ${isValid && accessToken && !submitting ? "text-primary" : "text-muted-foreground/40"}`}
+          >
+            {submitting ? "등록 중..." : "등록"}
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+        {/* Post Type Toggle */}
+        <div className="flex gap-2">
+          {(["TEXT", "VOTE"] as PostType[]).map((type) => (
             <button
-              onClick={handleSubmit}
-              disabled={!isValid}
-              className={`text-[14px] font-semibold transition-colors ${
-                isValid ? "text-primary" : "text-muted-foreground/40"
+              key={type}
+              onClick={() => setPostType(type)}
+              className={`flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition-all active:scale-[0.97] ${
+                postType === type ? "bg-primary text-white" : "bg-secondary text-muted-foreground"
               }`}
             >
-              등록
+              {type === "TEXT" ? "일반 글" : "투표"}
             </button>
-          </div>
+          ))}
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
-          {/* Post Type Toggle */}
-          <div className="flex gap-2">
-            {(["TEXT", "VOTE"] as PostType[]).map((type) => (
+        {/* Category */}
+        <div>
+          <label className="text-[12px] font-semibold text-muted-foreground block mb-2">카테고리</label>
+          <div className="flex flex-wrap gap-2">
+            {writeCategories.map((cat) => (
               <button
-                key={type}
-                onClick={() => setPostType(type)}
-                className={`flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition-all active:scale-[0.97] ${
-                  postType === type
-                    ? "bg-primary text-white"
-                    : "bg-secondary text-muted-foreground"
+                key={cat}
+                onClick={() => setCategory(cat)}
+                className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${
+                  category === cat ? "bg-primary text-white" : "bg-secondary text-muted-foreground active:scale-95"
                 }`}
               >
-                {type === "TEXT" ? "일반 글" : "투표"}
+                {cat}
               </button>
             ))}
           </div>
-
-          {/* Category */}
-          <div>
-            <label className="text-[12px] font-semibold text-muted-foreground block mb-2">카테고리</label>
-            <div className="flex flex-wrap gap-2">
-              {writeCategories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setCategory(cat)}
-                  className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${
-                    category === cat
-                      ? "bg-primary text-white"
-                      : "bg-secondary text-muted-foreground active:scale-95"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Title */}
-          <div>
-            <label className="text-[12px] font-semibold text-muted-foreground block mb-2">
-              {postType === "VOTE" ? "투표 질문" : "제목"}
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={postType === "VOTE" ? "형님들에게 물어볼 질문" : "제목을 입력하세요"}
-              className="w-full rounded-xl bg-secondary px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary/30 transition"
-            />
-          </div>
-
-          {postType === "TEXT" ? (
-            <>
-              {/* Content */}
-              <div>
-                <label className="text-[12px] font-semibold text-muted-foreground block mb-2">내용</label>
-                <textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="내용을 입력하세요"
-                  rows={5}
-                  className="w-full rounded-xl bg-secondary px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary/30 transition resize-none leading-relaxed"
-                />
-              </div>
-
-              {/* Images */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-[12px] font-semibold text-muted-foreground">
-                    사진 ({images.length}/5)
-                  </label>
-                  <div className="flex items-center gap-2">
-                    {images.length > 0 && (
-                      <div className="flex bg-secondary rounded-lg overflow-hidden">
-                        {(["4:5", "1:1"] as const).map((ratio) => (
-                          <button
-                            key={ratio}
-                            onClick={() => setImageRatio(ratio)}
-                            className={`px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                              imageRatio === ratio
-                                ? "bg-primary text-white"
-                                : "text-muted-foreground"
-                            }`}
-                          >
-                            {ratio}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-secondary text-muted-foreground text-[11px] font-semibold active:scale-95 transition-transform"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <line x1="5" y1="12" x2="19" y2="12" />
-                      </svg>
-                      추가
-                    </button>
-                  </div>
-                </div>
-
-                {images.length > 0 && (
-                  <div className="rounded-xl overflow-hidden">
-                    <ImageCarousel images={images} ratio={imageRatio} />
-                    <div className="flex gap-1.5 mt-2">
-                      {images.map((src, i) => (
-                        <div key={i} className="relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={src} alt="" className="w-full h-full object-cover" />
-                          <button
-                            onClick={() => removeImage(i)}
-                            className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/50 text-white flex items-center justify-center text-[8px] leading-none"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageSelect}
-                  className="hidden"
-                />
-              </div>
-            </>
-          ) : (
-            <>
-              {/* Vote Options */}
-              <div>
-                <label className="text-[12px] font-semibold text-muted-foreground block mb-2">선택지</label>
-                <div className="space-y-2">
-                  <div
-                    className="flex items-center gap-3 rounded-xl px-4 py-3.5"
-                    style={{ backgroundColor: "hsl(22 60% 42% / 0.06)" }}
-                  >
-                    <span className="text-[13px] font-bold text-primary">A</span>
-                    <input
-                      type="text"
-                      value={voteOptionA}
-                      onChange={(e) => setVoteOptionA(e.target.value)}
-                      placeholder="첫 번째 선택지"
-                      className="flex-1 bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none"
-                    />
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <span className="text-[11px] font-bold text-muted-foreground/40">VS</span>
-                  </div>
-                  <div
-                    className="flex items-center gap-3 rounded-xl px-4 py-3.5"
-                    style={{ backgroundColor: "hsl(22 60% 42% / 0.06)" }}
-                  >
-                    <span className="text-[13px] font-bold text-primary">B</span>
-                    <input
-                      type="text"
-                      value={voteOptionB}
-                      onChange={(e) => setVoteOptionB(e.target.value)}
-                      placeholder="두 번째 선택지"
-                      className="flex-1 bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Optional description */}
-              <div>
-                <label className="text-[12px] font-semibold text-muted-foreground block mb-2">
-                  부연 설명 <span className="font-normal text-muted-foreground/50">(선택)</span>
-                </label>
-                <textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="투표 배경이나 고민을 적어주세요"
-                  rows={3}
-                  className="w-full rounded-xl bg-secondary px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary/30 transition resize-none leading-relaxed"
-                />
-              </div>
-            </>
-          )}
         </div>
 
-        {/* Bottom safe area */}
-        <div className="h-8 flex-shrink-0" />
+        {/* Title */}
+        <div>
+          <label className="text-[12px] font-semibold text-muted-foreground block mb-2">
+            {postType === "VOTE" ? "투표 질문" : "제목"}
+          </label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder={postType === "VOTE" ? "형님들에게 물어볼 질문" : "제목을 입력하세요"}
+            className="w-full rounded-xl bg-secondary px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary/30 transition"
+          />
+        </div>
+
+        {postType === "TEXT" ? (
+          <>
+            <div>
+              <label className="text-[12px] font-semibold text-muted-foreground block mb-2">내용</label>
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="내용을 입력하세요"
+                rows={5}
+                className="w-full rounded-xl bg-secondary px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary/30 transition resize-none leading-relaxed"
+              />
+            </div>
+
+            {/* Images */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-[12px] font-semibold text-muted-foreground">사진 ({images.length}/5)</label>
+                <div className="flex items-center gap-2">
+                  {images.length > 0 && (
+                    <div className="flex bg-secondary rounded-lg overflow-hidden">
+                      {(["4:5", "1:1"] as const).map((ratio) => (
+                        <button
+                          key={ratio}
+                          onClick={() => setImageRatio(ratio)}
+                          className={`px-2.5 py-1 text-[11px] font-semibold transition-colors ${imageRatio === ratio ? "bg-primary text-white" : "text-muted-foreground"}`}
+                        >
+                          {ratio}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-secondary text-muted-foreground text-[11px] font-semibold active:scale-95 transition-transform"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    추가
+                  </button>
+                </div>
+              </div>
+
+              {images.length > 0 && (
+                <div className="rounded-xl overflow-hidden">
+                  <ImageCarousel images={images.map(i => i.preview)} ratio={imageRatio} />
+                  <div className="flex gap-1.5 mt-2">
+                    {images.map((img, i) => (
+                      <div key={i} className="relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={img.preview} alt="" className="w-full h-full object-cover" />
+                        <button
+                          onClick={() => removeImage(i)}
+                          className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/50 text-white flex items-center justify-center text-[8px] leading-none"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleImageSelect} className="hidden" />
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <label className="text-[12px] font-semibold text-muted-foreground block mb-2">선택지</label>
+              <div className="space-y-2">
+                <div className="flex items-center gap-3 rounded-xl px-4 py-3.5" style={{ backgroundColor: "hsl(22 60% 42% / 0.06)" }}>
+                  <span className="text-[13px] font-bold text-primary">A</span>
+                  <input
+                    type="text" value={voteOptionA} onChange={(e) => setVoteOptionA(e.target.value)}
+                    placeholder="첫 번째 선택지"
+                    className="flex-1 bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none"
+                  />
+                </div>
+                <div className="flex items-center justify-center">
+                  <span className="text-[11px] font-bold text-muted-foreground/40">VS</span>
+                </div>
+                <div className="flex items-center gap-3 rounded-xl px-4 py-3.5" style={{ backgroundColor: "hsl(22 60% 42% / 0.06)" }}>
+                  <span className="text-[13px] font-bold text-primary">B</span>
+                  <input
+                    type="text" value={voteOptionB} onChange={(e) => setVoteOptionB(e.target.value)}
+                    placeholder="두 번째 선택지"
+                    className="flex-1 bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[12px] font-semibold text-muted-foreground block mb-2">
+                부연 설명 <span className="font-normal text-muted-foreground/50">(선택)</span>
+              </label>
+              <textarea
+                value={content} onChange={(e) => setContent(e.target.value)}
+                placeholder="투표 배경이나 고민을 적어주세요" rows={3}
+                className="w-full rounded-xl bg-secondary px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary/30 transition resize-none leading-relaxed"
+              />
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="h-8 flex-shrink-0" />
     </BottomSheet>
   );
 }
