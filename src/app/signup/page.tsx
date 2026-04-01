@@ -98,7 +98,8 @@ function SignupContent() {
       }
 
       const data = await res.json();
-      loginWithTokens(data.accessToken, data.refreshToken);
+      const tokens = data.item ?? data;
+      loginWithTokens(tokens.accessToken, tokens.refreshToken);
       setStep("done");
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "회원가입 중 오류가 발생했습니다.");

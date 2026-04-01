@@ -2,7 +2,10 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useHeaderExtra } from "@/components/header-context";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-context";
+import { useToast } from "@/components/toast";
+import { getCookie } from "@/lib/cookie";
 import { BottomSheet } from "@/components/bottom-sheet";
 import type { Category, PostType } from "@/data/mock";
 
@@ -76,7 +79,9 @@ function formatDate(dateStr: string): string {
 }
 
 export default function CommunityPage() {
+  const router = useRouter();
   const { accessToken } = useAuth();
+  const { show: showToast } = useToast();
   const [activeCategory, setActiveCategory] = useState<"전체" | Category>("전체");
   const [posts, setPosts] = useState<ApiPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,7 +107,8 @@ export default function CommunityPage() {
 
       const res = await fetch(`${API_BASE}/azeyo/communities?${params}`, { headers });
       if (!res.ok) throw new Error("Failed to fetch posts");
-      const data: { posts: ApiPost[]; totalCount: number } = await res.json();
+      const json = await res.json();
+      const data: { posts: ApiPost[]; totalCount: number } = json.item ?? json;
 
       setPosts(prev => reset ? data.posts : [...prev, ...data.posts]);
       setHasMore(reset ? data.posts.length < data.totalCount : (posts.length + data.posts.length) < data.totalCount);
@@ -134,10 +140,23 @@ export default function CommunityPage() {
     return () => observer.disconnect();
   }, [hasMore, page, activeCategory, fetchPosts]);
 
+  function requireLogin(): boolean {
+    // Read cookie directly — no stale closure issues
+    if (!getCookie("accessToken")) {
+      showToast("로그인이 필요한 기능이에요");
+      setTimeout(() => router.push("/login"), 1200);
+      return false;
+    }
+    return true;
+  }
+
   useEffect(() => {
-    const handler = () => setShowWrite(true);
+    const handler = () => {
+      if (requireLogin()) setShowWrite(true);
+    };
     window.addEventListener("header:create", handler);
     return () => window.removeEventListener("header:create", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -158,7 +177,7 @@ export default function CommunityPage() {
   }
 
   function handleVote(postId: number, option: "A" | "B") {
-    if (!accessToken) return;
+    if (!requireLogin()) return;
     fetch(`${API_BASE}/azeyo/communities/${postId}/vote`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
@@ -179,7 +198,7 @@ export default function CommunityPage() {
   }
 
   function handleLike(postId: number, isLike: boolean) {
-    if (!accessToken) return;
+    if (!requireLogin()) return;
     fetch(`${API_BASE}/azeyo/communities/${postId}/like`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
@@ -544,7 +563,8 @@ function CommentSheet({
 
     fetch(`${API_BASE}/azeyo/communities/${post.id}/comments?page=1&size=100`, { headers })
       .then(r => r.json())
-      .then((data: { comments: ApiComment[]; totalCount: number }) => {
+      .then((json) => {
+        const data: { comments: ApiComment[]; totalCount: number } = json.item ?? json;
         setComments(data.comments);
         setTotalCount(data.totalCount);
       })
@@ -568,7 +588,8 @@ function CommentSheet({
       if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
 
       const res = await fetch(`${API_BASE}/azeyo/communities/${post.id}/comments?page=1&size=100&parentId=${parentId}`, { headers });
-      const data: { comments: ApiComment[]; totalCount: number } = await res.json();
+      const json = await res.json();
+      const data: { comments: ApiComment[]; totalCount: number } = json.item ?? json;
       setExpandedReplies(prev => ({ ...prev, [parentId]: data.comments }));
     } finally {
       setLoadingReplies(prev => { const next = new Set(prev); next.delete(parentId); return next; });
@@ -576,7 +597,8 @@ function CommentSheet({
   }
 
   async function handleSubmit() {
-    if (!newComment.trim() || !accessToken || submitting) return;
+    if (!newComment.trim() || submitting) return;
+    if (!accessToken) return;
     setSubmitting(true);
 
     try {
@@ -595,7 +617,8 @@ function CommentSheet({
       // Refresh comments
       const headers: Record<string, string> = { Authorization: `Bearer ${accessToken}` };
       const refreshRes = await fetch(`${API_BASE}/azeyo/communities/${post.id}/comments?page=1&size=100`, { headers });
-      const data: { comments: ApiComment[]; totalCount: number } = await refreshRes.json();
+      const refreshJson = await refreshRes.json();
+      const data: { comments: ApiComment[]; totalCount: number } = refreshJson.item ?? refreshJson;
       setComments(data.comments);
       setTotalCount(data.totalCount);
       onCommentCountChange(data.totalCount);
@@ -603,7 +626,8 @@ function CommentSheet({
       // Refresh replies if replying
       if (replyTarget) {
         const replyRes = await fetch(`${API_BASE}/azeyo/communities/${post.id}/comments?page=1&size=100&parentId=${replyTarget.commentId}`, { headers });
-        const replyData: { comments: ApiComment[]; totalCount: number } = await replyRes.json();
+        const replyJson = await replyRes.json();
+        const replyData: { comments: ApiComment[]; totalCount: number } = replyJson.item ?? replyJson;
         setExpandedReplies(prev => ({ ...prev, [replyTarget.commentId]: replyData.comments }));
       }
 
@@ -763,9 +787,9 @@ function CommentSheet({
           />
           <button
             onClick={handleSubmit}
-            disabled={!newComment.trim() || !accessToken || submitting}
+            disabled={!newComment.trim() || submitting}
             className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
-              newComment.trim() && accessToken ? "bg-primary text-white" : "bg-secondary text-muted-foreground"
+              newComment.trim() ? "bg-primary text-white" : "bg-secondary text-muted-foreground"
             }`}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -813,7 +837,8 @@ function WriteSheet({ accessToken, onClose, onSubmit }: { accessToken: string | 
   }
 
   async function handleSubmit() {
-    if (!isValid || !accessToken || submitting) return;
+    if (!isValid || submitting) return;
+    if (!accessToken) return;
     setSubmitting(true);
 
     try {
@@ -828,7 +853,8 @@ function WriteSheet({ accessToken, onClose, onSubmit }: { accessToken: string | 
           body: formData,
         });
         if (!uploadRes.ok) throw new Error("이미지 업로드에 실패했습니다.");
-        const uploadData: { urls: string[] } = await uploadRes.json();
+        const uploadJson = await uploadRes.json();
+        const uploadData: { urls: string[] } = uploadJson.item ?? uploadJson;
         imageUrls = uploadData.urls;
       }
 
@@ -869,8 +895,8 @@ function WriteSheet({ accessToken, onClose, onSubmit }: { accessToken: string | 
           <h3 className="text-[16px] font-bold text-foreground">글쓰기</h3>
           <button
             onClick={handleSubmit}
-            disabled={!isValid || !accessToken || submitting}
-            className={`text-[14px] font-semibold transition-colors ${isValid && accessToken && !submitting ? "text-primary" : "text-muted-foreground/40"}`}
+            disabled={!isValid || submitting}
+            className={`text-[14px] font-semibold transition-colors ${isValid && !submitting ? "text-primary" : "text-muted-foreground/40"}`}
           >
             {submitting ? "등록 중..." : "등록"}
           </button>

@@ -56,6 +56,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const authTokens = await snsRes.json();
+  const authData = await snsRes.json();
+  // Backend wraps response in { code, message, item }
+  const authTokens = authData.item ?? authData;
   return NextResponse.json(authTokens);
 }
