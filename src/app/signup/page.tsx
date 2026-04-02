@@ -237,6 +237,7 @@ function SignupContent() {
           children,
           snsToken,
           snsType,
+          marketingConsent: agreed.has("marketing"),
         }),
       });
 
