@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
+import { useToast } from "@/components/toast";
+import { BottomSheet } from "@/components/bottom-sheet";
 
 const CATEGORY_REVERSE: Record<string, string> = {
   GIFT: "선물", COUPLE_FIGHT: "부부싸움", HOBBY: "어른들 취미",
@@ -17,6 +19,8 @@ interface ApiPost {
   authorName: string;
   title: string;
   contents: string;
+  imageUrls: string[] | null;
+  imageRatio: string | null;
   voteOptionA: string | null;
   voteOptionB: string | null;
   voteCountA: number;
@@ -32,15 +36,31 @@ function formatDate(dateStr: string): string {
 }
 
 export default function MyPostsPage() {
+  const { show: showToast } = useToast();
   const [posts, setPosts] = useState<ApiPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [menuPost, setMenuPost] = useState<ApiPost | null>(null);
+  const [editPost, setEditPost] = useState<ApiPost | null>(null);
 
-  useEffect(() => {
+  function fetchPosts() {
     apiFetch<{ posts: ApiPost[]; totalCount: number }>("/azeyo/users/me/posts?page=1&size=50")
       .then((data) => setPosts(data.posts))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }
+
+  useEffect(() => { fetchPosts(); }, []);
+
+  async function handleDelete(post: ApiPost) {
+    setMenuPost(null);
+    try {
+      await apiFetch(`/azeyo/communities/${post.id}`, { method: "DELETE" });
+      setPosts((prev) => prev.filter((p) => p.id !== post.id));
+      showToast("게시글이 삭제되었어요");
+    } catch {
+      showToast("삭제에 실패했어요");
+    }
+  }
 
   return (
     <main className="pb-6">
@@ -62,8 +82,18 @@ export default function MyPostsPage() {
         ) : (
           <>
             {posts.map((post) => (
-              <article key={post.id} className="rounded-2xl p-4 active:scale-[0.98] transition-all" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
-                <div className="flex items-center gap-2 mb-2">
+              <article key={post.id} className="rounded-2xl p-4 transition-all relative" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
+                {/* Menu Button */}
+                <button
+                  onClick={() => setMenuPost(post)}
+                  className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-full hover:bg-secondary active:scale-90 transition-all"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-muted-foreground">
+                    <circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" />
+                  </svg>
+                </button>
+
+                <div className="flex items-center gap-2 mb-2 pr-8">
                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
                     {CATEGORY_REVERSE[post.category] ?? post.category}
                   </span>
@@ -82,24 +112,17 @@ export default function MyPostsPage() {
                   const aWins = post.voteCountA >= post.voteCountB;
                   return (
                     <div className="space-y-2 mb-3">
-                      <div className="rounded-lg overflow-hidden" style={{ backgroundColor: "hsl(35 20% 90%)" }}>
-                        <div className="flex items-center justify-between px-3 py-2">
-                          <span className={`text-[11px] font-medium ${aWins ? "text-primary font-bold" : "text-muted-foreground"}`}>{post.voteOptionA}</span>
-                          <span className={`text-[11px] font-bold ${aWins ? "text-primary" : "text-muted-foreground"}`}>{pctA}%</span>
+                      {[{ label: post.voteOptionA, pct: pctA, wins: aWins }, { label: post.voteOptionB, pct: pctB, wins: !aWins }].map((opt, i) => (
+                        <div key={i} className="rounded-lg overflow-hidden" style={{ backgroundColor: "hsl(35 20% 90%)" }}>
+                          <div className="flex items-center justify-between px-3 py-2">
+                            <span className={`text-[11px] font-medium ${opt.wins ? "text-primary font-bold" : "text-muted-foreground"}`}>{opt.label}</span>
+                            <span className={`text-[11px] font-bold ${opt.wins ? "text-primary" : "text-muted-foreground"}`}>{opt.pct}%</span>
+                          </div>
+                          <div className="h-1 rounded-full mx-2 mb-2 overflow-hidden" style={{ backgroundColor: "hsl(35 20% 86%)" }}>
+                            <div className="h-full rounded-full bg-primary" style={{ width: `${opt.pct}%` }} />
+                          </div>
                         </div>
-                        <div className="h-1 rounded-full mx-2 mb-2 overflow-hidden" style={{ backgroundColor: "hsl(35 20% 86%)" }}>
-                          <div className="h-full rounded-full bg-primary" style={{ width: `${pctA}%` }} />
-                        </div>
-                      </div>
-                      <div className="rounded-lg overflow-hidden" style={{ backgroundColor: "hsl(35 20% 90%)" }}>
-                        <div className="flex items-center justify-between px-3 py-2">
-                          <span className={`text-[11px] font-medium ${!aWins ? "text-primary font-bold" : "text-muted-foreground"}`}>{post.voteOptionB}</span>
-                          <span className={`text-[11px] font-bold ${!aWins ? "text-primary" : "text-muted-foreground"}`}>{pctB}%</span>
-                        </div>
-                        <div className="h-1 rounded-full mx-2 mb-2 overflow-hidden" style={{ backgroundColor: "hsl(35 20% 86%)" }}>
-                          <div className="h-full rounded-full bg-primary" style={{ width: `${pctB}%` }} />
-                        </div>
-                      </div>
+                      ))}
                       <p className="text-[10px] text-muted-foreground text-right">총 {total.toLocaleString()}명 참여</p>
                     </div>
                   );
@@ -123,7 +146,105 @@ export default function MyPostsPage() {
           </>
         )}
       </div>
+
+      {/* Action Menu */}
+      {menuPost && (
+        <BottomSheet onClose={() => setMenuPost(null)}>
+          <div className="px-5 pb-8 space-y-1">
+            {menuPost.type === "TEXT" && (
+              <button
+                onClick={() => { setEditPost(menuPost); setMenuPost(null); }}
+                className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left hover:bg-secondary active:scale-[0.98] transition-all"
+              >
+                <span className="text-base">✏️</span>
+                <span className="text-[14px] font-medium text-foreground">수정하기</span>
+              </button>
+            )}
+            <button
+              onClick={() => handleDelete(menuPost)}
+              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left hover:bg-secondary active:scale-[0.98] transition-all"
+            >
+              <span className="text-base">🗑️</span>
+              <span className="text-[14px] font-medium text-red-500">삭제하기</span>
+            </button>
+          </div>
+        </BottomSheet>
+      )}
+
+      {/* Edit Sheet */}
+      {editPost && (
+        <EditPostSheet
+          post={editPost}
+          onClose={() => setEditPost(null)}
+          onSubmit={() => { setEditPost(null); fetchPosts(); showToast("게시글이 수정되었어요"); }}
+        />
+      )}
     </main>
+  );
+}
+
+function EditPostSheet({ post, onClose, onSubmit }: { post: ApiPost; onClose: () => void; onSubmit: () => void }) {
+  const [title, setTitle] = useState(post.title);
+  const [contents, setContents] = useState(post.contents);
+  const [submitting, setSubmitting] = useState(false);
+
+  const isValid = title.trim().length > 0 && contents.trim().length > 0;
+
+  async function handleSubmit() {
+    if (!isValid || submitting) return;
+    setSubmitting(true);
+    try {
+      await apiFetch(`/azeyo/communities/${post.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          category: post.category,
+          title: title.trim(),
+          contents: contents.trim(),
+        }),
+      });
+      onSubmit();
+    } catch {
+      // silently fail
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <BottomSheet onClose={onClose} className="max-h-[90dvh] flex flex-col" hideHeader>
+      <div className="px-5 pt-4 pb-3 border-b border-border flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <button onClick={onClose} className="text-[14px] text-muted-foreground font-medium">취소</button>
+          <h3 className="text-[16px] font-bold text-foreground">글 수정</h3>
+          <button
+            onClick={handleSubmit}
+            disabled={!isValid || submitting}
+            className={`text-[14px] font-semibold transition-colors ${isValid && !submitting ? "text-primary" : "text-muted-foreground/40"}`}
+          >
+            {submitting ? "저장 중..." : "저장"}
+          </button>
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+        <div>
+          <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">제목</span>
+          <input
+            type="text" value={title} onChange={(e) => setTitle(e.target.value)}
+            className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground outline-none transition"
+            style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)" }}
+          />
+        </div>
+        <div>
+          <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">내용</span>
+          <textarea
+            value={contents} onChange={(e) => setContents(e.target.value)}
+            rows={8}
+            className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground outline-none transition resize-none leading-relaxed"
+            style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)" }}
+          />
+        </div>
+      </div>
+    </BottomSheet>
   );
 }
 
