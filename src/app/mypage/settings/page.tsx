@@ -31,14 +31,18 @@ export default function SettingsPage() {
         <div className="mb-6">
           <h3 className="text-[12px] font-medium text-muted-foreground mb-2 px-1">앱 정보</h3>
           <div className="space-y-1">
-            <button className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-left hover:bg-secondary/50 active:scale-[0.98] transition-all" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
+            <Link href="/mypage/settings/terms" className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-left hover:bg-secondary/50 active:scale-[0.98] transition-all" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
               <span className="text-[14px] font-medium text-foreground">이용약관</span>
               <ChevronIcon />
-            </button>
-            <button className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-left hover:bg-secondary/50 active:scale-[0.98] transition-all" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
+            </Link>
+            <Link href="/mypage/settings/privacy" className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-left hover:bg-secondary/50 active:scale-[0.98] transition-all" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
               <span className="text-[14px] font-medium text-foreground">개인정보 처리방침</span>
               <ChevronIcon />
-            </button>
+            </Link>
+            <div className="flex items-center justify-between px-4 py-3.5 rounded-xl" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
+              <span className="text-[14px] font-medium text-foreground">앱 버전</span>
+              <span className="text-[13px] text-muted-foreground">1.0.0</span>
+            </div>
           </div>
         </div>
 
@@ -46,10 +50,10 @@ export default function SettingsPage() {
         <div className="mb-6">
           <h3 className="text-[12px] font-medium text-muted-foreground mb-2 px-1">지원</h3>
           <div className="space-y-1">
-            <button className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-left hover:bg-secondary/50 active:scale-[0.98] transition-all" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
+            <Link href="/mypage/settings/contact" className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-left hover:bg-secondary/50 active:scale-[0.98] transition-all" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
               <span className="text-[14px] font-medium text-foreground">문의하기</span>
               <ChevronIcon />
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -65,9 +69,12 @@ export default function SettingsPage() {
               <span className="text-[14px] font-medium text-foreground">로그아웃</span>
               <ChevronIcon />
             </button>
-            <button className="w-full flex items-center px-4 py-3.5 rounded-xl text-left hover:bg-secondary/50 active:scale-[0.98] transition-all">
+            <Link
+              href="/mypage/settings/withdraw"
+              className="w-full flex items-center px-4 py-3.5 rounded-xl text-left hover:bg-secondary/50 active:scale-[0.98] transition-all"
+            >
               <span className="text-[14px] font-medium text-red-400">회원 탈퇴</span>
-            </button>
+            </Link>
           </div>
         </div>
       </div>
