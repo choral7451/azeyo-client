@@ -21,7 +21,7 @@ export default function LoginPage() {
   return (
     <main className="min-h-dvh flex flex-col items-center justify-center px-8">
       {/* Logo & Branding */}
-      <div className="text-center mb-12 animate-fade-up" style={{ animationDelay: "0.05s" }}>
+      <Link href="/" className="text-center mb-12 animate-fade-up block active:scale-[0.97] transition-transform" style={{ animationDelay: "0.05s" }}>
         <div
           className="w-20 h-20 rounded-3xl mx-auto mb-5 flex items-center justify-center text-3xl font-black text-white"
           style={{ backgroundColor: "hsl(22 60% 42%)" }}
@@ -32,7 +32,7 @@ export default function LoginPage() {
         <p className="text-[14px] text-muted-foreground mt-1.5">
           유부남들의 사랑방
         </p>
-      </div>
+      </Link>
 
       {/* Social Login Buttons */}
       <div className="w-full space-y-3 animate-fade-up" style={{ animationDelay: "0.15s" }}>
