@@ -19,6 +19,23 @@ const terms: TermItem[] = [
   { id: "marketing", label: "마케팅 정보 수신 동의", required: false },
 ];
 
+const ADJECTIVES = [
+  "든든한", "다정한", "웃긴", "현명한", "부지런한", "살림잘하는", "요리하는", "로맨틱한",
+  "센스있는", "참을성있는", "유쾌한", "따뜻한", "멋진", "성실한", "재치있는", "깔끔한",
+  "다정다감한", "인내의", "가정적인", "귀여운", "듬직한", "알뜰한", "배려깊은", "유머있는",
+];
+
+const NOUNS = [
+  "남편", "아빠", "사위", "아재", "가장", "유부남", "아저씨", "대디",
+  "형님", "오빠", "남자", "파파", "달링", "허니", "여보", "킹",
+];
+
+function generateNickname(): string {
+  const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+  const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
+  return `${adj}${noun}`;
+}
+
 function SignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -36,6 +53,9 @@ function SignupContent() {
 
   // Info state
   const [nickname, setNickname] = useState("");
+  const [suggestions, setSuggestions] = useState<string[]>(() =>
+    Array.from({ length: 3 }, () => generateNickname())
+  );
   const [marriageYear, setMarriageYear] = useState("");
   const [children, setChildren] = useState("0");
 
@@ -237,6 +257,31 @@ function SignupContent() {
                 <p className="text-[10px] text-muted-foreground">
                   {nickname.length}/12
                 </p>
+              </div>
+
+              {/* Nickname Suggestions */}
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                {suggestions.map((s, i) => (
+                  <button
+                    key={`${s}-${i}`}
+                    type="button"
+                    onClick={() => { setNickname(s); setSubmitError(null); }}
+                    className="text-[11px] px-3 py-1.5 rounded-full font-medium transition-all active:scale-95"
+                    style={{ backgroundColor: "hsl(22 60% 42% / 0.08)", color: "hsl(22 60% 42%)" }}
+                  >
+                    {s}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setSuggestions(Array.from({ length: 3 }, () => generateNickname()))}
+                  className="text-[11px] px-2 py-1.5 rounded-full text-muted-foreground active:scale-95 transition-all"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M23 4v6h-6" /><path d="M1 20v-6h6" />
+                    <path d="M3.51 9a9 9 0 0114.85-3.36L23 10" /><path d="M20.49 15a9 9 0 01-14.85 3.36L1 14" />
+                  </svg>
+                </button>
               </div>
             </div>
 
