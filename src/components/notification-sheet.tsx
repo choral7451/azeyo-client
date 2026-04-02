@@ -48,6 +48,10 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
       .then((data) => {
         setNotifications(data.notifications);
         setUnreadCount(data.unreadCount);
+        // 읽지 않은 알림이 있으면 자동으로 모두 읽음 처리
+        if (data.unreadCount > 0) {
+          apiFetch("/azeyo/notifications/read-all", { method: "POST" }).catch(() => {});
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
