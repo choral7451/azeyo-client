@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useHeaderExtra } from "@/components/header-context";
 import { useAuth } from "@/components/auth-context";
 import { useToast } from "@/components/toast";
@@ -73,8 +74,9 @@ function CategoryTabs<T extends string>({
 }
 
 export default function JokboPage() {
-  const { accessToken } = useAuth();
+  const { isLoggedIn, accessToken, isLoading } = useAuth();
   const { show: showToast } = useToast();
+  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState<TemplateCategory>(categories[0]);
   const [templates, setTemplates] = useState<ApiTemplate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,13 +86,17 @@ export default function JokboPage() {
   const { setStickyExtra } = useHeaderExtra();
 
   useEffect(() => {
-    const handler = () => {
-      if (!accessToken) { showToast("로그인이 필요한 기능이에요"); return; }
-      setShowWrite(true);
-    };
+    if (!isLoading && !isLoggedIn) {
+      showToast("로그인이 필요한 기능이에요");
+      router.replace("/login");
+    }
+  }, [isLoading, isLoggedIn, router, showToast]);
+
+  useEffect(() => {
+    const handler = () => setShowWrite(true);
     window.addEventListener("header:create", handler);
     return () => window.removeEventListener("header:create", handler);
-  }, [accessToken, showToast]);
+  }, []);
 
   const fetchTemplates = useCallback(async (category: TemplateCategory) => {
     setLoading(true);
@@ -150,6 +156,8 @@ export default function JokboPage() {
       ));
     });
   }
+
+  if (isLoading || !isLoggedIn) return null;
 
   return (
     <main className="pb-6">

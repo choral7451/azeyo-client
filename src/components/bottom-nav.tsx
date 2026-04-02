@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-context";
 import { useToast } from "@/components/toast";
 
-const AUTH_REQUIRED = ["/schedule", "/mypage"];
+const AUTH_REQUIRED = ["/schedule", "/jokbo", "/mypage"];
 
 const tabs = [
   {
