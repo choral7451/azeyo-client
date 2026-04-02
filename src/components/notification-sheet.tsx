@@ -58,12 +58,18 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
       .then(() => {
         setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
         setUnreadCount(0);
+        window.dispatchEvent(new CustomEvent("notification:read"));
       })
       .catch(() => {});
   }
 
+  function handleClose() {
+    window.dispatchEvent(new CustomEvent("notification:read"));
+    onClose();
+  }
+
   return (
-    <BottomSheet onClose={onClose} className="max-h-[85dvh] flex flex-col" hideHeader>
+    <BottomSheet onClose={handleClose} className="max-h-[85dvh] flex flex-col" hideHeader>
         {/* Header */}
         <div className="px-5 pt-4 pb-3 border-b border-border flex-shrink-0">
           <div className="flex items-center justify-between">

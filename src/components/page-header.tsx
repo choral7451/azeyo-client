@@ -3,6 +3,8 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useHeaderExtra } from "./header-context";
+import { useAuth } from "./auth-context";
+import { apiFetch } from "@/lib/api";
 
 const BellIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -30,7 +32,7 @@ function emitCreate() {
   window.dispatchEvent(new CustomEvent("header:create"));
 }
 
-function HeaderContent({ compact, config }: { compact: boolean; config: typeof PAGE_CONFIG[string] }) {
+function HeaderContent({ compact, config, unreadCount }: { compact: boolean; config: typeof PAGE_CONFIG[string]; unreadCount: number }) {
   const { title, hasCreate } = config;
 
   return (
@@ -55,7 +57,9 @@ function HeaderContent({ compact, config }: { compact: boolean; config: typeof P
         className="w-9 h-9 flex items-center justify-center rounded-full text-foreground active:scale-90 transition-transform relative"
       >
         <BellIcon />
-        <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
+        {unreadCount > 0 && (
+          <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
+        )}
       </button>
     </div>
   );
@@ -65,9 +69,30 @@ export function PageHeader() {
   const pathname = usePathname();
   const config = PAGE_CONFIG[pathname] ?? PAGE_CONFIG["/"];
   const { stickyExtra } = useHeaderExtra();
+  const { isLoggedIn } = useAuth();
 
   const [visible, setVisible] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    if (!isLoggedIn) { setUnreadCount(0); return; }
+    apiFetch<{ notifications: unknown[]; totalCount: number; unreadCount: number }>("/azeyo/notifications?page=1&size=1")
+      .then((data) => setUnreadCount(data.unreadCount))
+      .catch(() => {});
+  }, [isLoggedIn, pathname]);
+
+  // 알림 시트 닫힐 때 갱신
+  useEffect(() => {
+    const handler = () => {
+      if (!isLoggedIn) return;
+      apiFetch<{ notifications: unknown[]; totalCount: number; unreadCount: number }>("/azeyo/notifications?page=1&size=1")
+        .then((data) => setUnreadCount(data.unreadCount))
+        .catch(() => {});
+    };
+    window.addEventListener("notification:read", handler);
+    return () => window.removeEventListener("notification:read", handler);
+  }, [isLoggedIn]);
 
   useEffect(() => {
     function handleScroll() {
@@ -99,14 +124,14 @@ export function PageHeader() {
         `}
       >
         <div className="mx-auto max-w-[480px] px-5 py-3">
-          <HeaderContent compact config={config} />
+          <HeaderContent compact config={config} unreadCount={unreadCount} />
           {stickyExtra}
         </div>
       </div>
 
       {/* Static header */}
       <div className="px-5 pt-4 pb-3 animate-fade-up">
-        <HeaderContent compact={false} config={config} />
+        <HeaderContent compact={false} config={config} unreadCount={unreadCount} />
         {config.subtitle && (
           <p className="text-[12px] text-muted-foreground mt-1 text-center">
             {config.subtitle}
