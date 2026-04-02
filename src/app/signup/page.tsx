@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth-context";
+import { BottomSheet } from "@/components/bottom-sheet";
 
 type Step = "terms" | "info" | "done";
 
@@ -36,6 +37,140 @@ function generateNickname(): string {
   return `${adj}${noun}`;
 }
 
+const TERMS_CONTENT: Record<string, { title: string; sections: { heading?: string; body: string }[] }> = {
+  service: {
+    title: "서비스 이용약관",
+    sections: [
+      {
+        heading: "제1조 (목적)",
+        body: "이 약관은 아재요(이하 \"회사\")가 제공하는 모바일 웹 서비스(이하 \"서비스\")의 이용과 관련하여 회사와 이용자 간의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.",
+      },
+      {
+        heading: "제2조 (정의)",
+        body: "① \"서비스\"란 회사가 제공하는 커뮤니티, 족보(메시지 템플릿), 일정 관리 등 모든 관련 서비스를 의미합니다.\n② \"이용자\"란 이 약관에 따라 회사가 제공하는 서비스를 받는 회원을 말합니다.\n③ \"회원\"이란 회사에 개인정보를 제공하여 회원등록을 한 자로서, 회사의 서비스를 계속적으로 이용할 수 있는 자를 말합니다.\n④ \"게시물\"이란 회원이 서비스 이용 시 게시한 글, 사진, 댓글, 투표 등 일체의 정보를 말합니다.",
+      },
+      {
+        heading: "제3조 (약관의 효력 및 변경)",
+        body: "① 이 약관은 서비스 화면에 게시하거나 기타의 방법으로 이용자에게 공지함으로써 효력이 발생합니다.\n② 회사는 관련 법령을 위배하지 않는 범위에서 이 약관을 개정할 수 있으며, 약관을 개정하는 경우 적용일자 및 개정사유를 명시하여 현행 약관과 함께 서비스 내 공지합니다.\n③ 변경된 약관에 동의하지 않는 회원은 회원 탈퇴(해지)를 요청할 수 있으며, 변경된 약관의 효력 발생일 이후에도 서비스를 계속 사용할 경우 약관의 변경사항에 동의한 것으로 간주합니다.",
+      },
+      {
+        heading: "제4조 (회원가입)",
+        body: "① 이용자는 회사가 정한 가입 양식에 따라 회원정보를 기입한 후 이 약관에 동의한다는 의사표시를 함으로써 회원가입을 신청합니다.\n② 회사는 소셜 로그인(카카오, 네이버, 구글)을 통한 회원가입을 지원하며, 소셜 계정 연동 시 해당 플랫폼의 이용약관도 적용됩니다.\n③ 회사는 타인의 명의를 이용한 경우, 허위 정보를 기재한 경우, 기타 서비스 운영에 현저히 지장이 있다고 판단되는 경우 회원가입을 거절하거나 사후에 회원자격을 제한 및 상실시킬 수 있습니다.",
+      },
+      {
+        heading: "제5조 (서비스의 제공 및 변경)",
+        body: "① 회사는 다음과 같은 서비스를 제공합니다.\n• 커뮤니티 서비스 (게시글 작성, 댓글, 투표, 좋아요)\n• 족보 서비스 (메시지 템플릿 열람 및 복사)\n• 일정 관리 서비스 (기념일, 일정 등록 및 알림)\n• 선물/행동 추천 서비스\n• 기타 회사가 추가 개발하거나 제휴를 통해 제공하는 서비스\n② 회사는 서비스의 내용을 변경할 수 있으며, 이 경우 변경된 서비스의 내용 및 제공일자를 명시하여 공지합니다.",
+      },
+      {
+        heading: "제6조 (서비스 이용시간)",
+        body: "① 서비스의 이용은 회사의 업무상 또는 기술상 특별한 지장이 없는 한 연중무휴, 1일 24시간을 원칙으로 합니다.\n② 회사는 정기점검, 시스템 교체, 장애 등의 사유로 서비스의 전부 또는 일부를 일시적으로 중단할 수 있으며, 사전 공지합니다.",
+      },
+      {
+        heading: "제7조 (회원의 의무)",
+        body: "회원은 다음 행위를 하여서는 안 됩니다.\n• 타인의 정보 도용\n• 회사가 게시한 정보의 변경\n• 회사 및 제3자의 저작권 등 지적재산권에 대한 침해\n• 회사 및 제3자의 명예를 손상시키거나 업무를 방해하는 행위\n• 외설 또는 폭력적인 정보를 서비스에 공개 또는 게시하는 행위\n• 영리를 목적으로 서비스를 이용하는 행위\n• 기타 불법적이거나 부당한 행위",
+      },
+      {
+        heading: "제8조 (게시물의 관리)",
+        body: "① 회원이 작성한 게시물에 대한 저작권은 해당 회원에게 귀속됩니다.\n② 회사는 다른 회원 또는 제3자를 비방하거나 명예를 훼손하는 내용, 공공질서 및 미풍양속에 위반되는 내용, 범죄적 행위에 결부된다고 인정되는 내용, 저작권 등 기타 권리를 침해하는 내용, 광고성 정보 또는 스팸에 해당하는 내용의 게시물을 사전 통지 없이 삭제하거나 이동 또는 등록을 거부할 수 있습니다.",
+      },
+      {
+        heading: "제9조 (회원 탈퇴 및 자격 상실)",
+        body: "① 회원은 언제든지 서비스 내 설정 메뉴를 통해 탈퇴를 요청할 수 있으며, 회사는 즉시 회원 탈퇴를 처리합니다.\n② 회원 탈퇴 시 회원이 작성한 게시글, 댓글, 족보 등의 콘텐츠는 삭제되지 않으며, 닉네임은 \"탈퇴한 회원\"으로 표시됩니다.\n③ 탈퇴 후 동일한 소셜 계정으로 재가입할 수 있으나, 기존 활동 내역 및 포인트는 복구되지 않습니다.",
+      },
+      {
+        heading: "제10조 (면책조항)",
+        body: "① 회사는 천재지변, 전쟁, 기간통신사업자의 서비스 중지 등 불가항력적인 사유로 서비스를 제공할 수 없는 경우 책임을 면합니다.\n② 회사는 회원의 귀책사유로 인한 서비스 이용 장애에 대하여 책임을 지지 않습니다.\n③ 회사는 회원이 게시 또는 전송한 자료의 신뢰도, 정확성 등에 대해서는 책임을 지지 않습니다.",
+      },
+      {
+        heading: "제11조 (분쟁 해결)",
+        body: "회사와 회원 간에 발생한 분쟁에 관한 소송은 대한민국 법을 적용하며, 서울중앙지방법원을 전속관할법원으로 합니다.",
+      },
+      { body: "본 약관은 2025년 1월 1일부터 시행합니다." },
+    ],
+  },
+  privacy: {
+    title: "개인정보 수집 및 이용 동의",
+    sections: [
+      {
+        body: "아재요(이하 \"회사\")는 이용자의 개인정보를 중요시하며, 「개인정보 보호법」 등 관련 법령을 준수하고 있습니다.",
+      },
+      {
+        heading: "1. 수집하는 개인정보 항목",
+        body: "[필수 수집 항목]\n• 소셜 로그인 식별자 (카카오/네이버/구글 고유 ID)\n• 이메일 주소\n• 닉네임\n• 결혼 연도\n• 자녀 수\n\n[자동 수집 항목]\n• 서비스 이용 기록 (접속 일시, 이용 기록)\n• 기기 정보 (브라우저 종류, OS 정보)\n• IP 주소",
+      },
+      {
+        heading: "2. 수집 및 이용 목적",
+        body: "• 회원 관리: 본인 확인, 개인 식별, 가입 의사 확인, 불량회원의 부정 이용 방지\n• 서비스 제공: 커뮤니티, 족보, 일정 관리 등 서비스 제공, 맞춤형 콘텐츠 추천\n• 서비스 개선: 신규 서비스 개발, 통계 분석, 서비스 품질 향상\n• 알림 서비스: 일정 알림, 커뮤니티 활동 알림 등 서비스 관련 정보 전달",
+      },
+      {
+        heading: "3. 보유 및 이용 기간",
+        body: "• 회원 정보: 회원 탈퇴 시까지 (탈퇴 후 즉시 파기)\n• 서비스 이용 기록: 3년 (전자상거래법)\n• 접속 로그: 3개월 (통신비밀보호법)",
+      },
+      {
+        heading: "4. 제3자 제공",
+        body: "회사는 이용자의 개인정보를 원칙적으로 외부에 제공하지 않습니다. 다만, 이용자가 사전에 동의한 경우, 법령의 규정에 의거하거나 수사 목적으로 법령에 정해진 절차와 방법에 따라 수사기관의 요구가 있는 경우는 예외로 합니다.",
+      },
+      {
+        heading: "5. 파기 절차 및 방법",
+        body: "회원 탈퇴 또는 보유 기간 만료 시 개인정보를 지체 없이 파기합니다. 전자적 파일 형태의 정보는 복구할 수 없는 기술적 방법을 사용하여 삭제합니다.",
+      },
+      {
+        heading: "6. 이용자의 권리",
+        body: "이용자는 언제든지 개인정보 열람, 정정, 삭제, 처리 정지를 요구할 수 있습니다. 서비스 내 프로필 수정, 회원 탈퇴 기능을 통해 행사하거나, support@azeyo.co.kr로 연락하시면 지체 없이 조치하겠습니다.",
+      },
+      {
+        heading: "7. 안전성 확보 조치",
+        body: "• 개인정보 암호화 (전송 시 SSL/TLS 적용)\n• 접근 제한 (개인정보 처리 시스템에 대한 접근 권한 관리)\n• 보안 프로그램 설치 및 주기적 갱신\n• 개인정보 취급 직원 최소화 및 교육 실시",
+      },
+      {
+        heading: "8. 개인정보 보호 책임자",
+        body: "담당자: 아재요 운영팀\n이메일: support@azeyo.co.kr",
+      },
+      { body: "본 개인정보 처리방침은 2025년 1월 1일부터 시행합니다." },
+    ],
+  },
+  age: {
+    title: "만 14세 이상 확인",
+    sections: [
+      {
+        body: "「개인정보 보호법」 제22조에 따라 만 14세 미만 아동의 개인정보 수집 시에는 법정대리인의 동의가 필요합니다.",
+      },
+      {
+        heading: "확인 사항",
+        body: "• 아재요 서비스는 만 14세 이상의 이용자만 가입할 수 있습니다.\n• 회원가입 시 본 항목에 동의함으로써 만 14세 이상임을 확인합니다.\n• 만 14세 미만의 아동이 법정대리인의 동의 없이 가입한 사실이 확인될 경우, 회사는 해당 회원의 가입을 취소하고 관련 개인정보를 즉시 파기합니다.",
+      },
+      {
+        heading: "관련 법령",
+        body: "• 개인정보 보호법 제22조 (동의를 받는 방법)\n• 정보통신망 이용촉진 및 정보보호 등에 관한 법률 제31조 (법정대리인의 권리)",
+      },
+    ],
+  },
+  marketing: {
+    title: "마케팅 정보 수신 동의",
+    sections: [
+      {
+        body: "아재요의 다양한 소식과 혜택을 받아보실 수 있습니다. 동의하지 않으셔도 서비스 이용에는 제한이 없습니다.",
+      },
+      {
+        heading: "수신 정보 내용",
+        body: "• 신규 기능 및 서비스 업데이트 안내\n• 이벤트, 프로모션 정보\n• 맞춤형 콘텐츠 추천 (족보, 선물 추천 등)\n• 커뮤니티 인기 게시글 알림",
+      },
+      {
+        heading: "수신 방법",
+        body: "• 앱 내 푸시 알림\n• 이메일",
+      },
+      {
+        heading: "수신 동의 변경",
+        body: "마케팅 정보 수신 동의는 언제든지 서비스 내 [마이페이지 > 알림 설정]에서 변경하실 수 있습니다.",
+      },
+      {
+        heading: "유의사항",
+        body: "• 마케팅 정보 수신에 동의하지 않으셔도 서비스 이용에 필요한 필수 알림(계정 관련, 서비스 변경 등)은 정상적으로 발송됩니다.\n• 수신 거부 시 이벤트, 프로모션 등 혜택 관련 정보를 받아보실 수 없습니다.",
+      },
+    ],
+  },
+};
+
 function SignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -50,6 +185,7 @@ function SignupContent() {
 
   // Terms state
   const [agreed, setAgreed] = useState<Set<string>>(new Set());
+  const [viewingTerm, setViewingTerm] = useState<string | null>(null);
 
   // Info state
   const [nickname, setNickname] = useState("");
@@ -188,34 +324,40 @@ function SignupContent() {
           {/* Individual Terms */}
           <div className="space-y-1">
             {terms.map((term) => (
-              <button
-                key={term.id}
-                onClick={() => toggleTerm(term.id)}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left active:scale-[0.98] transition-all"
-              >
-                <CheckCircle checked={agreed.has(term.id)} />
-                <span className="text-[14px] text-foreground flex-1">
-                  {term.required && (
-                    <span className="text-primary font-medium">[필수] </span>
-                  )}
-                  {!term.required && (
-                    <span className="text-muted-foreground">[선택] </span>
-                  )}
-                  {term.label}
-                </span>
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  className="opacity-20 text-muted-foreground"
+              <div key={term.id} className="flex items-center gap-1">
+                <button
+                  onClick={() => toggleTerm(term.id)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-left active:scale-[0.98] transition-all flex-1 min-w-0"
                 >
-                  <path d="M9 18l6-6-6-6" />
-                </svg>
-              </button>
+                  <CheckCircle checked={agreed.has(term.id)} />
+                  <span className="text-[14px] text-foreground flex-1">
+                    {term.required && (
+                      <span className="text-primary font-medium">[필수] </span>
+                    )}
+                    {!term.required && (
+                      <span className="text-muted-foreground">[선택] </span>
+                    )}
+                    {term.label}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setViewingTerm(term.id)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-secondary/50 active:scale-90 transition-all shrink-0"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    className="opacity-30 text-muted-foreground"
+                  >
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </button>
+              </div>
             ))}
           </div>
 
@@ -257,41 +399,55 @@ function SignupContent() {
                 }}
                 placeholder="2~12자 닉네임"
                 maxLength={12}
-                className="w-full px-4 py-3 rounded-xl text-[14px] text-foreground outline-none transition-all focus:ring-2 focus:ring-primary/20"
+                className="w-full px-4 py-3 rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
                 style={{ backgroundColor: "hsl(36 30% 93%)" }}
               />
-              <div className="flex justify-between mt-1">
-                {submitError ? (
-                  <p className="text-[10px] text-red-500">{submitError}</p>
-                ) : (
-                  <span />
-                )}
-                <p className="text-[10px] text-muted-foreground">
-                  {nickname.length}/12
+              {nickname.length > 0 && nickname.trim().length < 2 && (
+                <p className="text-[11px] text-red-400 mt-1 px-1">
+                  2자 이상 입력해주세요
                 </p>
-              </div>
+              )}
 
-              {/* Nickname Suggestions */}
-              <div className="flex items-center gap-2 mt-2 flex-wrap">
-                {suggestions.map((s, i) => (
+              {/* AI Suggestions */}
+              <div className="mt-2 flex flex-wrap gap-1.5 items-center">
+                <span className="text-[11px] text-muted-foreground">추천:</span>
+                {suggestions.map((s) => (
                   <button
-                    key={`${s}-${i}`}
-                    type="button"
-                    onClick={() => { setNickname(s); setSubmitError(null); }}
-                    className="text-[11px] px-3 py-1.5 rounded-full font-medium transition-all active:scale-95"
-                    style={{ backgroundColor: "hsl(22 60% 42% / 0.08)", color: "hsl(22 60% 42%)" }}
+                    key={s}
+                    onClick={() => {
+                      setNickname(s);
+                      setSubmitError(null);
+                    }}
+                    className="px-2.5 py-1 rounded-full text-[11px] font-medium active:scale-95 transition-all"
+                    style={{
+                      backgroundColor: "hsl(22 60% 42% / 0.08)",
+                      color: "hsl(22 60% 42%)",
+                    }}
                   >
                     {s}
                   </button>
                 ))}
                 <button
-                  type="button"
-                  onClick={() => setSuggestions(Array.from({ length: 3 }, () => generateNickname()))}
-                  className="text-[11px] px-2 py-1.5 rounded-full text-muted-foreground active:scale-95 transition-all"
+                  onClick={() =>
+                    setSuggestions(
+                      Array.from({ length: 3 }, () => generateNickname())
+                    )
+                  }
+                  className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-secondary active:scale-90 transition-all"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M23 4v6h-6" /><path d="M1 20v-6h6" />
-                    <path d="M3.51 9a9 9 0 0114.85-3.36L23 10" /><path d="M20.49 15a9 9 0 01-14.85 3.36L1 14" />
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-muted-foreground"
+                  >
+                    <path d="M23 4v6h-6M1 20v-6h6" />
+                    <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
                   </svg>
                 </button>
               </div>
@@ -305,13 +461,18 @@ function SignupContent() {
               <select
                 value={marriageYear}
                 onChange={(e) => setMarriageYear(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl text-[14px] text-foreground outline-none transition-all focus:ring-2 focus:ring-primary/20 appearance-none"
+                className="w-full px-4 py-3 rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 appearance-none"
                 style={{ backgroundColor: "hsl(36 30% 93%)" }}
               >
-                <option value="">선택해주세요</option>
-                {Array.from({ length: 30 }, (_, i) => 2026 - i).map((y) => (
+                <option value="" disabled>
+                  결혼 연도를 선택하세요
+                </option>
+                {Array.from(
+                  { length: 30 },
+                  (_, i) => new Date().getFullYear() - i
+                ).map((y) => (
                   <option key={y} value={y}>
-                    {y}년 (결혼 {2026 - y}년차)
+                    {y}년
                   </option>
                 ))}
               </select>
@@ -323,27 +484,38 @@ function SignupContent() {
                 자녀 수
               </label>
               <div className="flex gap-2">
-                {["0", "1", "2", "3+"].map((n) => (
+                {["0", "1", "2", "3+"].map((c) => (
                   <button
-                    key={n}
-                    onClick={() => setChildren(n)}
-                    className={`flex-1 py-2.5 rounded-xl text-[13px] font-medium transition-all active:scale-95 ${
-                      children === n
-                        ? "bg-primary text-white"
-                        : "bg-secondary text-muted-foreground"
-                    }`}
+                    key={c}
+                    onClick={() => setChildren(c)}
+                    className="flex-1 py-2.5 rounded-xl text-[13px] font-medium transition-all active:scale-95"
+                    style={
+                      children === c
+                        ? {
+                            backgroundColor: "hsl(22 60% 42%)",
+                            color: "#fff",
+                          }
+                        : {
+                            backgroundColor: "hsl(36 30% 93%)",
+                            color: "hsl(30 10% 45%)",
+                          }
+                    }
                   >
-                    {n === "0" ? "없음" : n === "3+" ? "3명 이상" : `${n}명`}
+                    {c === "0" ? "없음" : c === "3+" ? "3명 이상" : `${c}명`}
                   </button>
                 ))}
               </div>
             </div>
           </div>
 
+          {submitError && (
+            <p className="text-[12px] text-red-400 text-center mt-4">{submitError}</p>
+          )}
+
           <div className="mt-auto pt-6 flex gap-3">
             <button
               onClick={() => setStep("terms")}
-              className="flex-shrink-0 px-5 py-3.5 rounded-xl text-[14px] font-medium bg-secondary text-secondary-foreground active:scale-[0.97] transition-all"
+              className="flex-1 py-3.5 rounded-xl text-[14px] font-medium bg-secondary text-secondary-foreground active:scale-[0.97] transition-all"
             >
               이전
             </button>
@@ -386,6 +558,37 @@ function SignupContent() {
             시작하기
           </button>
         </div>
+      )}
+
+      {/* Terms Detail Bottom Sheet */}
+      {viewingTerm && TERMS_CONTENT[viewingTerm] && (
+        <BottomSheet onClose={() => setViewingTerm(null)}>
+          <div className="px-5 pb-8">
+            <h3 className="text-[17px] font-bold text-foreground mb-5">
+              {TERMS_CONTENT[viewingTerm].title}
+            </h3>
+            <div className="max-h-[60vh] overflow-y-auto space-y-4 text-[13px] leading-relaxed text-foreground/80">
+              {TERMS_CONTENT[viewingTerm].sections.map((section, i) => (
+                <div key={i}>
+                  {section.heading && (
+                    <h4 className="text-[14px] font-bold text-foreground mb-1.5">{section.heading}</h4>
+                  )}
+                  <p className="whitespace-pre-line">{section.body}</p>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => {
+                if (!agreed.has(viewingTerm)) toggleTerm(viewingTerm);
+                setViewingTerm(null);
+              }}
+              className="w-full mt-6 py-3.5 rounded-xl text-[14px] font-semibold text-white active:scale-[0.97] transition-all"
+              style={{ backgroundColor: "hsl(22 60% 42%)" }}
+            >
+              {agreed.has(viewingTerm) ? "확인" : "동의하기"}
+            </button>
+          </div>
+        </BottomSheet>
       )}
     </main>
   );
