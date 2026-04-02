@@ -44,7 +44,7 @@ export default function ProfileEditPage() {
       formData.append("image", file);
 
       const token = getCookie("accessToken");
-      const res = await fetch(`${API_BASE}/azeyo/users/me/profile-image`, {
+      const res = await fetch(`${API_BASE}/azeyo/users/upload/profile-image`, {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
