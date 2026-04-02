@@ -372,8 +372,8 @@ function AddScheduleDialog({ allTags, onClose, onSubmit }: { allTags: ApiTag[]; 
           <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">날짜</span>
           <input
             type="date" value={date} onChange={(e) => setDate(e.target.value)}
-            className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground outline-none transition"
-            style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)" }}
+            className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground outline-none transition appearance-none min-h-[48px]"
+            style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)", WebkitAppearance: "none" }}
             onFocus={(e) => { e.currentTarget.style.boxShadow = "0 0 0 2px hsl(22 60% 42% / 0.2)"; e.currentTarget.style.borderColor = "hsl(22 60% 42% / 0.4)"; }}
             onBlur={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "hsl(35 20% 90%)"; }}
           />
