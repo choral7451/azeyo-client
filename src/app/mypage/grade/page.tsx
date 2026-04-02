@@ -1,10 +1,24 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { currentUser, getGrade, grades, gradeRules } from "@/data/mock";
+import { grades, gradeRules } from "@/data/mock";
+import { apiFetch } from "@/lib/api";
+
+function getGradeFromPoints(points: number) {
+  return [...grades].reverse().find((g) => points >= g.minPoints) ?? grades[0];
+}
 
 export default function GradePage() {
-  const grade = getGrade(currentUser.activityPoints);
+  const [activityPoints, setActivityPoints] = useState<number | null>(null);
+
+  useEffect(() => {
+    apiFetch<{ activityPoints: number }>("/azeyo/users/me")
+      .then((data) => setActivityPoints(data.activityPoints))
+      .catch(() => setActivityPoints(0));
+  }, []);
+
+  const grade = getGradeFromPoints(activityPoints ?? 0);
 
   return (
     <main className="pb-6">
@@ -29,7 +43,7 @@ export default function GradePage() {
         {/* Grade List */}
         <div className="space-y-2.5 mb-6 animate-fade-up" style={{ animationDelay: "0.1s" }}>
           {grades.map((g) => {
-            const isCurrent = g.level === grade.level;
+            const isCurrent = activityPoints !== null && g.level === grade.level;
             return (
               <div
                 key={g.level}
