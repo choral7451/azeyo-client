@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { BottomSheet } from "@/components/bottom-sheet";
 import { apiFetch } from "@/lib/api";
 
@@ -36,7 +37,23 @@ function formatTime(dateStr: string): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
+function getNotificationHref(n: ApiNotification): string | null {
+  if (!n.referenceId) return null;
+  switch (n.type) {
+    case "LIKE":
+    case "COMMENT":
+      return `/community/${n.referenceId}`;
+    case "JOKBO_COPY":
+      return `/jokbo/${n.referenceId}`;
+    case "SCHEDULE":
+      return "/schedule";
+    default:
+      return null;
+  }
+}
+
 export function NotificationSheet({ onClose }: { onClose: () => void }) {
+  const router = useRouter();
   const [notifications, setNotifications] = useState<ApiNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const hasUnreadRef = { current: false };
@@ -91,12 +108,14 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
           ) : (
             notifications.map((n) => {
               const icon = typeIcon[n.type];
+              const href = getNotificationHref(n);
               return (
                 <div
                   key={n.id}
+                  onClick={() => { if (href) { handleClose(); router.push(href); } }}
                   className={`px-5 py-3.5 flex items-start gap-3 transition-colors ${
                     !n.isRead ? "" : "opacity-60"
-                  }`}
+                  } ${href ? "cursor-pointer active:scale-[0.98]" : ""}`}
                   style={!n.isRead ? { backgroundColor: "hsl(36 30% 93%)" } : undefined}
                 >
                   <div
