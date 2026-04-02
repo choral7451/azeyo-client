@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import { getCookie, setCookie, removeCookie } from "@/lib/cookie";
+import { connectSocket, disconnectSocket } from "@/lib/socket";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -70,6 +71,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setIsLoading(false));
   }, []);
 
+  // 소켓 연결 관리
+  useEffect(() => {
+    if (accessToken) {
+      const socket = connectSocket(accessToken);
+      socket.on("notification", (data: unknown) => {
+        window.dispatchEvent(new CustomEvent("socket:notification", { detail: data }));
+      });
+    } else {
+      disconnectSocket();
+    }
+    return () => { disconnectSocket(); };
+  }, [accessToken]);
+
   const loginWithTokens = useCallback((newAccessToken: string, newRefreshToken: string) => {
     setCookie("accessToken", newAccessToken);
     setCookie("refreshToken", newRefreshToken);
@@ -79,6 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(() => {
     removeCookie("accessToken");
     removeCookie("refreshToken");
+    disconnectSocket();
     setAccessToken(null);
   }, []);
 

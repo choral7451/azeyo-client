@@ -94,6 +94,15 @@ export function PageHeader() {
     return () => window.removeEventListener("notification:read", handler);
   }, [isLoggedIn]);
 
+  // 소켓으로 실시간 알림 수신
+  useEffect(() => {
+    const handler = () => {
+      setUnreadCount((prev) => prev + 1);
+    };
+    window.addEventListener("socket:notification", handler);
+    return () => window.removeEventListener("socket:notification", handler);
+  }, []);
+
   useEffect(() => {
     function handleScroll() {
       const currentY = window.scrollY;
