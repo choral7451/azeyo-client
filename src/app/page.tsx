@@ -91,6 +91,7 @@ export default function HomePage() {
   const [selectedUser, setSelectedUser] = useState<ApiTopUser | null>(null);
   const [selectedPost, setSelectedPost] = useState<ApiPost | null>(null);
   const [upcoming, setUpcoming] = useState<ApiSchedule[]>([]);
+  const [schedulesLoaded, setSchedulesLoaded] = useState(false);
   const [matchedRec, setMatchedRec] = useState<ApiRecommendation | null>(null);
   const [topUsers, setTopUsers] = useState<ApiTopUser[]>([]);
   const [trending, setTrending] = useState<ApiPost[]>([]);
@@ -132,7 +133,8 @@ export default function HomePage() {
           }
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setSchedulesLoaded(true));
   }, [isLoggedIn, accessToken]);
 
   // Load comments when post selected
@@ -166,6 +168,25 @@ export default function HomePage() {
             </div>
             <Link href="/login" className="flex items-center justify-center w-full py-3 rounded-xl text-[13px] font-semibold text-white active:scale-[0.97] transition-all" style={{ backgroundColor: "hsl(22 60% 42%)" }}>
               3초만에 시작하기
+            </Link>
+          </div>
+        </section>
+      )}
+
+      {/* No Schedules CTA (logged-in) */}
+      {isLoggedIn && schedulesLoaded && upcoming.length === 0 && (
+        <section className="mb-10 animate-fade-up" style={{ animationDelay: "0.05s" }}>
+          <div className="rounded-2xl px-5 pt-5 pb-5" style={{ backgroundColor: "hsl(38 35% 93%)" }}>
+            <p className="text-[13px] font-medium mb-1" style={{ color: "hsl(22 60% 42%)" }}>형님,</p>
+            <h2 className="text-[17px] font-bold leading-snug mb-3" style={{ color: "hsl(25 25% 18%)" }}>
+              다가오는 기념일<br />등록해두셨나요?
+            </h2>
+            <p className="text-[12px] leading-relaxed mb-5" style={{ color: "hsl(25 12% 48%)" }}>
+              아내 생일, 결혼기념일, 장모님 생신...<br />
+              미리 등록하면 선물 추천까지 해드려요.
+            </p>
+            <Link href="/schedule" className="flex items-center justify-center w-full py-3 rounded-xl text-[13px] font-semibold text-white active:scale-[0.97] transition-all" style={{ backgroundColor: "hsl(22 60% 42%)" }}>
+              일정 등록하러 가기
             </Link>
           </div>
         </section>
