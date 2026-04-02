@@ -9,7 +9,7 @@ export function connectSocket(accessToken: string) {
 
   socket = io(`${API_BASE}/azeyo`, {
     auth: { token: accessToken },
-    transports: ["websocket"],
+    transports: ["polling", "websocket"],
     reconnection: true,
     reconnectionDelay: 3000,
   });
