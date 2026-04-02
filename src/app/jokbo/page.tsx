@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useHeaderExtra } from "@/components/header-context";
 import { useAuth } from "@/components/auth-context";
+import { useToast } from "@/components/toast";
+import { BottomSheet } from "@/components/bottom-sheet";
 import { apiFetch } from "@/lib/api";
 
 const CATEGORY_MAP = {
@@ -72,12 +74,23 @@ function CategoryTabs<T extends string>({
 
 export default function JokboPage() {
   const { accessToken } = useAuth();
+  const { show: showToast } = useToast();
   const [activeCategory, setActiveCategory] = useState<TemplateCategory>(categories[0]);
   const [templates, setTemplates] = useState<ApiTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  const [showWrite, setShowWrite] = useState(false);
   const { setStickyExtra } = useHeaderExtra();
+
+  useEffect(() => {
+    const handler = () => {
+      if (!accessToken) { showToast("로그인이 필요한 기능이에요"); return; }
+      setShowWrite(true);
+    };
+    window.addEventListener("header:create", handler);
+    return () => window.removeEventListener("header:create", handler);
+  }, [accessToken, showToast]);
 
   const fetchTemplates = useCallback(async (category: TemplateCategory) => {
     setLoading(true);
@@ -263,6 +276,127 @@ export default function JokboPage() {
           })
         )}
       </div>
+
+      {showWrite && (
+        <WriteJokboSheet
+          defaultCategory={activeCategory}
+          onClose={() => setShowWrite(false)}
+          onSubmit={() => {
+            setShowWrite(false);
+            fetchTemplates(activeCategory);
+            showToast("족보가 등록되었어요!");
+          }}
+        />
+      )}
     </main>
+  );
+}
+
+function WriteJokboSheet({
+  defaultCategory,
+  onClose,
+  onSubmit,
+}: {
+  defaultCategory: TemplateCategory;
+  onClose: () => void;
+  onSubmit: () => void;
+}) {
+  const [category, setCategory] = useState<TemplateCategory>(defaultCategory);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const isValid = title.trim().length > 0 && content.trim().length > 0;
+
+  async function handleSubmit() {
+    if (!isValid || submitting) return;
+    setSubmitting(true);
+    try {
+      await apiFetch("/azeyo/jokbos", {
+        method: "POST",
+        body: JSON.stringify({
+          category: CATEGORY_MAP[category],
+          title: title.trim(),
+          content: content.trim(),
+        }),
+      });
+      onSubmit();
+    } catch {
+      // silently fail
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <BottomSheet onClose={onClose} className="max-h-[90dvh] flex flex-col" hideHeader>
+      <div className="px-5 pt-4 pb-3 border-b border-border flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <button onClick={onClose} className="text-[14px] text-muted-foreground font-medium">취소</button>
+          <h3 className="text-[16px] font-bold text-foreground">족보 등록</h3>
+          <button
+            onClick={handleSubmit}
+            disabled={!isValid || submitting}
+            className={`text-[14px] font-semibold transition-colors ${isValid && !submitting ? "text-primary" : "text-muted-foreground/40"}`}
+          >
+            {submitting ? "등록 중..." : "등록"}
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+        {/* Category */}
+        <div>
+          <span className="text-[12px] font-semibold text-muted-foreground block mb-2">카테고리</span>
+          <div className="flex gap-2 flex-wrap">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setCategory(cat)}
+                className={`text-[12px] px-3.5 py-2 rounded-full font-medium transition-all ${
+                  category === cat
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-muted-foreground active:scale-95"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Title */}
+        <div>
+          <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">제목</span>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="예: 진심 담은 생일 편지"
+            maxLength={30}
+            className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none transition"
+            style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)" }}
+            onFocus={(e) => { e.currentTarget.style.boxShadow = "0 0 0 2px hsl(22 60% 42% / 0.2)"; e.currentTarget.style.borderColor = "hsl(22 60% 42% / 0.4)"; }}
+            onBlur={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "hsl(35 20% 90%)"; }}
+          />
+          <p className="text-[10px] text-muted-foreground mt-1 text-right">{title.length}/30</p>
+        </div>
+
+        {/* Content */}
+        <div>
+          <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">내용</span>
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder={"여보, 생일 축하해!\n\n올해도 고생 많았어.\n항상 곁에 있어줘서 고마워.\n\n사랑해, 여보 ❤️"}
+            rows={10}
+            className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none transition resize-none leading-[1.8]"
+            style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)" }}
+            onFocus={(e) => { e.currentTarget.style.boxShadow = "0 0 0 2px hsl(22 60% 42% / 0.2)"; e.currentTarget.style.borderColor = "hsl(22 60% 42% / 0.4)"; }}
+            onBlur={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "hsl(35 20% 90%)"; }}
+          />
+        </div>
+      </div>
+    </BottomSheet>
   );
 }
