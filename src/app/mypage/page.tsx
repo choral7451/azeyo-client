@@ -67,9 +67,13 @@ export default function MyPage() {
         style={{ backgroundColor: "hsl(36 30% 93%)", animationDelay: "0.05s" }}
       >
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white text-xl font-black">
-            {profile.nickname.charAt(0)}
-          </div>
+          {profile.iconImageUrl ? (
+            <img src={profile.iconImageUrl} alt={profile.nickname} className="w-16 h-16 rounded-full object-cover" />
+          ) : (
+            <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white text-xl font-black">
+              {profile.nickname.charAt(0)}
+            </div>
+          )}
           <div className="flex-1 min-w-0">
             <h2 className="text-[17px] font-bold text-foreground">{profile.nickname}</h2>
             <p className="text-[12px] text-muted-foreground mt-0.5">{profile.subtitle ?? ""}</p>
