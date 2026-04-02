@@ -645,8 +645,8 @@ function CommentSheet({
   }
 
   return (
-    <BottomSheet onClose={onClose} className="max-h-[80dvh] flex flex-col">
-      <div className="px-5 pb-3 border-b border-border flex-shrink-0">
+    <BottomSheet onClose={onClose} className="max-h-[80dvh] flex flex-col" hideHeader>
+      <div className="px-5 pt-4 pb-3 border-b border-border flex-shrink-0">
         <div className="flex items-center justify-between">
           <h3 className="text-[16px] font-bold text-foreground">댓글 {totalCount}</h3>
           <button onClick={onClose} className="text-muted-foreground p-1">
@@ -888,8 +888,8 @@ function WriteSheet({ accessToken, onClose, onSubmit }: { accessToken: string | 
   }
 
   return (
-    <BottomSheet onClose={onClose} className="max-h-[90dvh] flex flex-col">
-      <div className="px-5 pb-3 border-b border-border flex-shrink-0">
+    <BottomSheet onClose={onClose} className="max-h-[90dvh] flex flex-col" hideHeader>
+      <div className="px-5 pt-4 pb-3 border-b border-border flex-shrink-0">
         <div className="flex items-center justify-between">
           <button onClick={onClose} className="text-[14px] text-muted-foreground font-medium">취소</button>
           <h3 className="text-[16px] font-bold text-foreground">글쓰기</h3>
