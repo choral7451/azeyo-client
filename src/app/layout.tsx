@@ -4,7 +4,7 @@ import { AppShell } from "@/components/app-shell";
 
 const SITE_NAME = "아재요";
 const SITE_URL = "https://azeyo.kr";
-const SITE_DESCRIPTION = "기혼 남성들을 위한 커뮤니티. 아내·장모님 메시지 족보, 기념일 일정 관리, 선물 추천, 유부남 커뮤니티까지. 결혼 생활의 모든 꿀팁을 한곳에서.";
+const SITE_DESCRIPTION = "편지 족보, 기념일 관리, 선물 추천까지. 유부남들을 위한 커뮤니티 아재요";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
