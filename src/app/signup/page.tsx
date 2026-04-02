@@ -457,7 +457,7 @@ function SignupContent() {
             {/* Marriage Year */}
             <div>
               <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">
-                결혼 연도 *
+                결혼 여부 *
               </label>
               <select
                 value={marriageYear}
@@ -468,9 +468,10 @@ function SignupContent() {
                 <option value="" disabled>
                   결혼 연도를 선택하세요
                 </option>
+                <option value="0">미혼 (예비 신랑)</option>
                 {Array.from(
-                  { length: 30 },
-                  (_, i) => new Date().getFullYear() - i
+                  { length: 50 },
+                  (_, i) => new Date().getFullYear() + 1 - i
                 ).map((y) => (
                   <option key={y} value={y}>
                     {y}년
