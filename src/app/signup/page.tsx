@@ -129,7 +129,19 @@ function SignupContent() {
   }
 
   return (
-    <main className="min-h-dvh flex flex-col px-6 pt-14 pb-8">
+    <main className="min-h-dvh flex flex-col px-6 pt-6 pb-8">
+      {/* Close Button */}
+      <div className="flex justify-end mb-4 animate-fade-up">
+        <button
+          onClick={() => router.push("/")}
+          className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-secondary active:scale-90 transition-all text-muted-foreground"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
       {/* Progress */}
       <div className="flex gap-2 mb-8 animate-fade-up" style={{ animationDelay: "0.05s" }}>
         {(["terms", "info", "done"] as Step[]).map((s, i) => (
