@@ -470,7 +470,7 @@ function SignupContent() {
                 </option>
                 <option value="0">미혼 (예비 신랑)</option>
                 {Array.from(
-                  { length: 70 },
+                  { length: 50 },
                   (_, i) => new Date().getFullYear() + 1 - i
                 ).map((y) => (
                   <option key={y} value={y}>
