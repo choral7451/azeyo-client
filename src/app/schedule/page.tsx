@@ -1,21 +1,80 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { BottomSheet } from "@/components/bottom-sheet";
-import {
-  schedules as initialSchedules,
-  allTags,
-  formatDday,
-  getDday,
-  recommendations,
-  type Schedule,
-  type ScheduleTag,
-} from "@/data/mock";
+import { apiFetch } from "@/lib/api";
+
+interface ApiTag {
+  id: number;
+  name: string;
+  color: string;
+  isSystem: boolean;
+}
+
+interface ApiSchedule {
+  id: number;
+  title: string;
+  date: string;
+  memo: string | null;
+  tags: ApiTag[];
+  createdAt: string;
+}
+
+interface ApiRecommendationItem {
+  rank: number;
+  name: string;
+  description: string;
+  emoji: string;
+}
+
+interface ApiRecommendation {
+  id: number;
+  tagId: number;
+  title: string;
+  items: ApiRecommendationItem[];
+}
+
+function getDday(dateStr: string): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(dateStr);
+  target.setHours(0, 0, 0, 0);
+  return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function formatDday(dateStr: string): string {
+  const diff = getDday(dateStr);
+  if (diff === 0) return "D-DAY";
+  if (diff > 0) return `D-${diff}`;
+  return `D+${Math.abs(diff)}`;
+}
 
 export default function SchedulePage() {
-  const [scheduleList] = useState<Schedule[]>(initialSchedules);
+  const [scheduleList, setScheduleList] = useState<ApiSchedule[]>([]);
+  const [allTags, setAllTags] = useState<ApiTag[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
+  const [selectedSchedule, setSelectedSchedule] = useState<ApiSchedule | null>(null);
+  const [selectedRec, setSelectedRec] = useState<ApiRecommendation | null>(null);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const [schedulesData, tagsData] = await Promise.all([
+        apiFetch<{ schedules: ApiSchedule[] }>("/azeyo/schedules"),
+        apiFetch<{ tags: ApiTag[] }>("/azeyo/schedules/tags"),
+      ]);
+      setScheduleList(schedulesData.schedules);
+      setAllTags(tagsData.tags);
+    } catch {
+      // silently fail
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   useEffect(() => {
     const handler = () => setShowAddDialog(true);
@@ -23,17 +82,43 @@ export default function SchedulePage() {
     return () => window.removeEventListener("header:create", handler);
   }, []);
 
+  // Fetch recommendation when schedule selected
+  useEffect(() => {
+    if (!selectedSchedule) { setSelectedRec(null); return; }
+    const tagIds = selectedSchedule.tags.map(t => t.id).join(",");
+    if (!tagIds) { setSelectedRec(null); return; }
+    apiFetch<{ recommendations: ApiRecommendation[] }>(`/azeyo/schedules/recommendations?tagIds=${tagIds}`)
+      .then(data => setSelectedRec(data.recommendations[0] ?? null))
+      .catch(() => setSelectedRec(null));
+  }, [selectedSchedule]);
+
   const sorted = [...scheduleList].sort(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
   const upcoming = sorted.filter((s) => getDday(s.date) >= 0);
   const past = sorted.filter((s) => getDday(s.date) < 0);
 
-  const selectedRec = selectedSchedule
-    ? recommendations.find((r) =>
-        selectedSchedule.tags.some((t) => t.id === r.tagId)
-      )
-    : null;
+  async function handleAddSchedule(title: string, date: string, tagIds: number[]) {
+    try {
+      await apiFetch("/azeyo/schedules", {
+        method: "POST",
+        body: JSON.stringify({ title, date, memo: null, tagIds }),
+      });
+      fetchData();
+    } catch {
+      // silently fail
+    }
+  }
+
+  if (loading) {
+    return (
+      <main className="pb-6 px-5">
+        <div className="text-center py-16">
+          <p className="text-[13px] text-muted-foreground">불러오는 중...</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <>
@@ -69,6 +154,14 @@ export default function SchedulePage() {
             ))}
           </div>
         </section>
+      )}
+
+      {upcoming.length === 0 && past.length === 0 && (
+        <div className="text-center py-16 animate-fade-up">
+          <p className="text-[40px] mb-2">📅</p>
+          <p className="text-[14px] text-muted-foreground">등록된 일정이 없어요</p>
+          <p className="text-[12px] text-muted-foreground mt-1">상단 연필 버튼으로 일정을 등록해보세요!</p>
+        </div>
       )}
 
       {/* Recommendation Detail Sheet */}
@@ -141,7 +234,14 @@ export default function SchedulePage() {
 
       {/* Add Schedule Dialog */}
       {showAddDialog && (
-        <AddScheduleDialog onClose={() => setShowAddDialog(false)} />
+        <AddScheduleDialog
+          allTags={allTags}
+          onClose={() => setShowAddDialog(false)}
+          onSubmit={(title, date, tagIds) => {
+            handleAddSchedule(title, date, tagIds);
+            setShowAddDialog(false);
+          }}
+        />
       )}
       </main>
     </>
@@ -152,7 +252,7 @@ function ScheduleCard({
   schedule,
   onSelect,
 }: {
-  schedule: Schedule;
+  schedule: ApiSchedule;
   onSelect?: () => void;
 }) {
   const dday = getDday(schedule.date);
@@ -165,7 +265,6 @@ function ScheduleCard({
       className="w-full text-left rounded-2xl px-4 py-3.5 flex items-center gap-4 shadow-sm transition-transform duration-200 active:scale-[0.98]"
       style={{ backgroundColor: "hsl(36 30% 93%)" }}
     >
-      {/* D-day badge */}
       <div
         className={`
           flex-shrink-0 w-14 h-14 rounded-xl flex flex-col items-center justify-center
@@ -186,7 +285,6 @@ function ScheduleCard({
         </span>
       </div>
 
-      {/* Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
           <h3 className="text-[14px] font-semibold text-foreground truncate">
@@ -218,18 +316,8 @@ function ScheduleCard({
         )}
       </div>
 
-      {/* Arrow */}
       {onSelect && (
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          className="flex-shrink-0 text-muted-foreground opacity-40"
-        >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="flex-shrink-0 text-muted-foreground opacity-40">
           <path d="M9 18l6-6-6-6" />
         </svg>
       )}
@@ -237,90 +325,68 @@ function ScheduleCard({
   );
 }
 
-function AddScheduleDialog({ onClose }: { onClose: () => void }) {
+function AddScheduleDialog({ allTags, onClose, onSubmit }: { allTags: ApiTag[]; onClose: () => void; onSubmit: (title: string, date: string, tagIds: number[]) => void }) {
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
-  const [selectedTags, setSelectedTags] = useState<ScheduleTag[]>([]);
+  const [selectedTags, setSelectedTags] = useState<ApiTag[]>([]);
   const [tagSearch, setTagSearch] = useState("");
   const [showTagDropdown, setShowTagDropdown] = useState(false);
 
   const filteredTags = allTags.filter(
-    (t) =>
-      t.name.includes(tagSearch) &&
-      !selectedTags.some((st) => st.id === t.id)
+    (t) => t.name.includes(tagSearch) && !selectedTags.some((st) => st.id === t.id)
   );
+
+  async function handleCreateTag() {
+    try {
+      const data = await apiFetch<{ id: number }>("/azeyo/schedules/tags", {
+        method: "POST",
+        body: JSON.stringify({ name: tagSearch, color: "#636e72" }),
+      });
+      const newTag: ApiTag = { id: data.id, name: tagSearch, color: "#636e72", isSystem: false };
+      setSelectedTags((prev) => [...prev, newTag]);
+      setTagSearch("");
+      setShowTagDropdown(false);
+    } catch {
+      // silently fail
+    }
+  }
 
   return (
     <BottomSheet onClose={onClose} className="max-h-[85dvh] overflow-y-auto" style={{ backgroundColor: "hsl(40 30% 99%)" }}>
       <div className="px-6 pb-24">
-        <h3 className="text-[18px] font-bold text-foreground mb-5">
-          일정 등록
-        </h3>
+        <h3 className="text-[18px] font-bold text-foreground mb-5">일정 등록</h3>
 
-        {/* Title */}
         <label className="block mb-4">
-          <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">
-            일정 이름
-          </span>
+          <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">일정 이름</span>
           <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            type="text" value={title} onChange={(e) => setTitle(e.target.value)}
             placeholder="예: 아내 생일"
             className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none transition"
-            style={{
-              backgroundColor: "hsl(36 30% 93%)",
-              border: "1px solid hsl(35 20% 90%)",
-            }}
-            onFocus={(e) => {
-              e.currentTarget.style.boxShadow = "0 0 0 2px hsl(22 60% 42% / 0.2)";
-              e.currentTarget.style.borderColor = "hsl(22 60% 42% / 0.4)";
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.boxShadow = "none";
-              e.currentTarget.style.borderColor = "hsl(35 20% 90%)";
-            }}
+            style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)" }}
+            onFocus={(e) => { e.currentTarget.style.boxShadow = "0 0 0 2px hsl(22 60% 42% / 0.2)"; e.currentTarget.style.borderColor = "hsl(22 60% 42% / 0.4)"; }}
+            onBlur={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "hsl(35 20% 90%)"; }}
           />
         </label>
 
-        {/* Date */}
         <label className="block mb-4">
-          <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">
-            날짜
-          </span>
+          <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">날짜</span>
           <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
+            type="date" value={date} onChange={(e) => setDate(e.target.value)}
             className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground outline-none transition"
-            style={{
-              backgroundColor: "hsl(36 30% 93%)",
-              border: "1px solid hsl(35 20% 90%)",
-            }}
-            onFocus={(e) => {
-              e.currentTarget.style.boxShadow = "0 0 0 2px hsl(22 60% 42% / 0.2)";
-              e.currentTarget.style.borderColor = "hsl(22 60% 42% / 0.4)";
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.boxShadow = "none";
-              e.currentTarget.style.borderColor = "hsl(35 20% 90%)";
-            }}
+            style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)" }}
+            onFocus={(e) => { e.currentTarget.style.boxShadow = "0 0 0 2px hsl(22 60% 42% / 0.2)"; e.currentTarget.style.borderColor = "hsl(22 60% 42% / 0.4)"; }}
+            onBlur={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "hsl(35 20% 90%)"; }}
           />
         </label>
 
-        {/* Tags */}
         <div className="mb-5">
-          <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">
-            태그
-          </span>
+          <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">태그</span>
           {selectedTags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-2">
               {selectedTags.map((tag) => (
                 <button
                   key={tag.id}
-                  onClick={() =>
-                    setSelectedTags((prev) => prev.filter((t) => t.id !== tag.id))
-                  }
+                  onClick={() => setSelectedTags((prev) => prev.filter((t) => t.id !== tag.id))}
                   className="text-[11px] px-2.5 py-1 rounded-full font-medium flex items-center gap-1"
                   style={{ backgroundColor: tag.color + "20", color: tag.color }}
                 >
@@ -332,98 +398,53 @@ function AddScheduleDialog({ onClose }: { onClose: () => void }) {
           )}
           <div className="relative">
             <input
-              type="text"
-              value={tagSearch}
-              onChange={(e) => {
-                setTagSearch(e.target.value);
-                setShowTagDropdown(true);
-              }}
-              onFocus={(e) => {
-                setShowTagDropdown(true);
-                e.currentTarget.style.boxShadow = "0 0 0 2px hsl(22 60% 42% / 0.2)";
-                e.currentTarget.style.borderColor = "hsl(22 60% 42% / 0.4)";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.boxShadow = "none";
-                e.currentTarget.style.borderColor = "hsl(35 20% 90%)";
-              }}
+              type="text" value={tagSearch}
+              onChange={(e) => { setTagSearch(e.target.value); setShowTagDropdown(true); }}
+              onFocus={(e) => { setShowTagDropdown(true); e.currentTarget.style.boxShadow = "0 0 0 2px hsl(22 60% 42% / 0.2)"; e.currentTarget.style.borderColor = "hsl(22 60% 42% / 0.4)"; }}
+              onBlur={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "hsl(35 20% 90%)"; }}
               placeholder="태그 검색 또는 새로 만들기"
               className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none transition"
-              style={{
-                backgroundColor: "hsl(36 30% 93%)",
-                border: "1px solid hsl(35 20% 90%)",
-              }}
+              style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)" }}
             />
             {showTagDropdown && (tagSearch || filteredTags.length > 0) && (
               <div
                 className="absolute top-full left-0 right-0 mt-1 rounded-xl shadow-lg overflow-hidden z-10 max-h-48 overflow-y-auto"
-                style={{
-                  backgroundColor: "hsl(40 30% 99%)",
-                  border: "1px solid hsl(35 20% 90%)",
-                }}
+                style={{ backgroundColor: "hsl(40 30% 99%)", border: "1px solid hsl(35 20% 90%)" }}
               >
                 {filteredTags.map((tag) => (
                   <button
                     key={tag.id}
-                    onClick={() => {
-                      setSelectedTags((prev) => [...prev, tag]);
-                      setTagSearch("");
-                      setShowTagDropdown(false);
-                    }}
+                    onClick={() => { setSelectedTags((prev) => [...prev, tag]); setTagSearch(""); setShowTagDropdown(false); }}
                     className="w-full text-left px-4 py-2.5 text-[13px] flex items-center gap-2 transition-colors"
-                    style={{ }}
                     onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "hsl(36 30% 93%)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
                   >
-                    <span
-                      className="w-2.5 h-2.5 rounded-full"
-                      style={{ backgroundColor: tag.color }}
-                    />
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: tag.color }} />
                     <span className="text-foreground">{tag.name}</span>
-                    {tag.isSystem && (
-                      <span className="text-[9px] text-muted-foreground ml-auto">
-                        시스템
-                      </span>
-                    )}
+                    {tag.isSystem && <span className="text-[9px] text-muted-foreground ml-auto">시스템</span>}
                   </button>
                 ))}
-                {tagSearch &&
-                  !allTags.some((t) => t.name === tagSearch) && (
-                    <button
-                      onClick={() => {
-                        const newTag: ScheduleTag = {
-                          id: `custom-${Date.now()}`,
-                          name: tagSearch,
-                          color: "#636e72",
-                          isSystem: false,
-                        };
-                        setSelectedTags((prev) => [...prev, newTag]);
-                        setTagSearch("");
-                        setShowTagDropdown(false);
-                      }}
-                      className="w-full text-left px-4 py-2.5 text-[13px] text-primary font-medium transition-colors"
-                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "hsl(36 30% 93%)"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
-                    >
-                      &ldquo;{tagSearch}&rdquo; 새 태그 만들기
-                    </button>
-                  )}
+                {tagSearch && !allTags.some((t) => t.name === tagSearch) && (
+                  <button
+                    onClick={handleCreateTag}
+                    className="w-full text-left px-4 py-2.5 text-[13px] text-primary font-medium transition-colors"
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "hsl(36 30% 93%)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                  >
+                    &ldquo;{tagSearch}&rdquo; 새 태그 만들기
+                  </button>
+                )}
               </div>
             )}
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 py-3 rounded-xl text-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform"
-            style={{ backgroundColor: "hsl(40 30% 93%)" }}
-          >
+          <button onClick={onClose} className="flex-1 py-3 rounded-xl text-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform" style={{ backgroundColor: "hsl(40 30% 93%)" }}>
             취소
           </button>
           <button
-            onClick={onClose}
+            onClick={() => { if (title && date) onSubmit(title, date, selectedTags.map(t => t.id)); }}
             className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform"
           >
             등록하기
