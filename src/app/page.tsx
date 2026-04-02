@@ -260,9 +260,13 @@ export default function HomePage() {
               return (
                 <button key={user.id} onClick={() => setSelectedUser(user)} className="flex-shrink-0 w-[150px] rounded-2xl p-4 text-center active:scale-[0.97] transition-all" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
                   <div className="relative inline-block mb-2">
-                    <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white text-sm font-black">
-                      {user.nickname.charAt(0)}
-                    </div>
+                    {user.iconImageUrl ? (
+                      <img src={user.iconImageUrl} alt={user.nickname} className="w-12 h-12 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white text-sm font-black">
+                        {user.nickname.charAt(0)}
+                      </div>
+                    )}
                     <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white" style={{ backgroundColor: rankColors[index] }}>
                       {index + 1}
                     </span>
@@ -312,9 +316,13 @@ export default function HomePage() {
         <BottomSheet onClose={() => setSelectedUser(null)}>
           <div className="px-5 pb-8">
             <div className="flex items-center gap-4 mb-5 mt-2">
-              <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-white text-lg font-black">
-                {selectedUser.nickname.charAt(0)}
-              </div>
+              {selectedUser.iconImageUrl ? (
+                <img src={selectedUser.iconImageUrl} alt={selectedUser.nickname} className="w-14 h-14 rounded-full object-cover" />
+              ) : (
+                <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-white text-lg font-black">
+                  {selectedUser.nickname.charAt(0)}
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <h3 className="text-[17px] font-bold text-foreground">{selectedUser.nickname}</h3>
                 <div className="flex gap-2 mt-1.5 flex-wrap">
