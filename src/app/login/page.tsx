@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 
 function getGoogleOAuthUrl() {
@@ -22,12 +23,13 @@ export default function LoginPage() {
     <main className="min-h-dvh flex flex-col items-center justify-center px-8">
       {/* Logo & Branding */}
       <Link href="/" className="text-center mb-12 animate-fade-up block active:scale-[0.97] transition-transform" style={{ animationDelay: "0.05s" }}>
-        <div
-          className="w-20 h-20 rounded-3xl mx-auto mb-5 flex items-center justify-center text-3xl font-black text-white"
-          style={{ backgroundColor: "hsl(22 60% 42%)" }}
-        >
-          아
-        </div>
+        <Image
+          src="/AZY.png"
+          alt="아재요 로고"
+          width={80}
+          height={80}
+          className="rounded-3xl mx-auto mb-5"
+        />
         <h1 className="text-[24px] font-black text-foreground">아재요</h1>
         <p className="text-[14px] text-muted-foreground mt-1.5">
           유부남들의 사랑방
