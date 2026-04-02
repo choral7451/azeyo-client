@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
+import { getCookie } from "@/lib/cookie";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 interface ApiProfile {
   id: number;
@@ -14,18 +17,50 @@ interface ApiProfile {
 export default function ProfileEditPage() {
   const [name, setName] = useState("");
   const [subtitle, setSubtitle] = useState("");
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     apiFetch<ApiProfile>("/azeyo/users/me")
       .then((data) => {
         setName(data.nickname);
         setSubtitle(data.subtitle ?? "");
+        setImageUrl(data.iconImageUrl);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const token = getCookie("accessToken");
+      const res = await fetch(`${API_BASE}/azeyo/users/me/profile-image`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
+      const url = data.item?.url ?? data.url;
+      setImageUrl(url);
+    } catch {
+      // silently fail
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
 
   async function handleSave() {
     try {
@@ -62,15 +97,40 @@ export default function ProfileEditPage() {
       </div>
 
       <div className="px-5 space-y-6 animate-fade-up" style={{ animationDelay: "0.1s" }}>
+        {/* Avatar */}
         <div className="flex flex-col items-center gap-3">
-          <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center text-white text-2xl font-black">
-            {name.charAt(0)}
+          <div className="relative">
+            {imageUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={imageUrl} alt="프로필" className="w-20 h-20 rounded-full object-cover" />
+            ) : (
+              <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center text-white text-2xl font-black">
+                {name.charAt(0)}
+              </div>
+            )}
+            {uploading && (
+              <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center">
+                <div className="w-6 h-6 rounded-full border-2 border-white border-t-transparent animate-spin" />
+              </div>
+            )}
           </div>
-          <button className="text-[12px] text-primary font-medium active:opacity-60 transition-opacity">
-            프로필 사진 변경
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageUpload}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="text-[12px] text-primary font-medium active:opacity-60 transition-opacity"
+          >
+            {uploading ? "업로드 중..." : "프로필 사진 변경"}
           </button>
         </div>
 
+        {/* Form */}
         <div className="space-y-4">
           <div>
             <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">닉네임</label>
