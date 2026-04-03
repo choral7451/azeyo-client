@@ -3,7 +3,7 @@ import "./globals.css";
 import { AppShell } from "@/components/app-shell";
 
 const SITE_NAME = "아재요";
-const SITE_URL = "https://azeyo.kr";
+const SITE_URL = "https://azeyo.co.kr";
 const SITE_DESCRIPTION = "편지 족보, 기념일 관리, 선물 추천까지. 유부남들을 위한 커뮤니티 아재요";
 
 export const metadata: Metadata = {
