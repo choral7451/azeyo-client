@@ -344,27 +344,15 @@ function AddScheduleDialog({ allTags, onClose, onSubmit }: { allTags: ApiTag[]; 
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
   const [repeatType, setRepeatType] = useState<"NONE" | "YEARLY">("NONE");
-  const [selectedTags, setSelectedTags] = useState<ApiTag[]>([]);
-  const [tagSearch, setTagSearch] = useState("");
-  const [showTagDropdown, setShowTagDropdown] = useState(false);
+  const [selectedTagIds, setSelectedTagIds] = useState<Set<number>>(new Set());
 
-  const filteredTags = allTags.filter(
-    (t) => t.name.includes(tagSearch) && !selectedTags.some((st) => st.id === t.id)
-  );
-
-  async function handleCreateTag() {
-    try {
-      const data = await apiFetch<{ id: number }>("/azeyo/schedules/tags", {
-        method: "POST",
-        body: JSON.stringify({ name: tagSearch, color: "#636e72" }),
-      });
-      const newTag: ApiTag = { id: data.id, name: tagSearch, color: "#636e72", isSystem: false };
-      setSelectedTags((prev) => [...prev, newTag]);
-      setTagSearch("");
-      setShowTagDropdown(false);
-    } catch {
-      // silently fail
-    }
+  function toggleTag(tagId: number) {
+    setSelectedTagIds(prev => {
+      const next = new Set(prev);
+      if (next.has(tagId)) next.delete(tagId);
+      else next.add(tagId);
+      return next;
+    });
   }
 
   return (
@@ -425,61 +413,26 @@ function AddScheduleDialog({ allTags, onClose, onSubmit }: { allTags: ApiTag[]; 
 
         <div className="mb-5">
           <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">태그</span>
-          {selectedTags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              {selectedTags.map((tag) => (
+          <div className="flex flex-wrap gap-2">
+            {allTags.map((tag) => {
+              const isSelected = selectedTagIds.has(tag.id);
+              return (
                 <button
                   key={tag.id}
-                  onClick={() => setSelectedTags((prev) => prev.filter((t) => t.id !== tag.id))}
-                  className="text-[11px] px-2.5 py-1 rounded-full font-medium flex items-center gap-1"
-                  style={{ backgroundColor: tag.color + "20", color: tag.color }}
+                  onClick={() => toggleTag(tag.id)}
+                  className={`text-[12px] px-3 py-1.5 rounded-full font-medium transition-all active:scale-95 ${
+                    isSelected ? "text-white" : ""
+                  }`}
+                  style={
+                    isSelected
+                      ? { backgroundColor: tag.color, color: "white" }
+                      : { backgroundColor: tag.color + "18", color: tag.color }
+                  }
                 >
                   {tag.name}
-                  <span className="text-[9px] opacity-60">×</span>
                 </button>
-              ))}
-            </div>
-          )}
-          <div className="relative">
-            <input
-              type="text" value={tagSearch}
-              onChange={(e) => { setTagSearch(e.target.value); setShowTagDropdown(true); }}
-              onFocus={(e) => { setShowTagDropdown(true); e.currentTarget.style.boxShadow = "0 0 0 2px hsl(22 60% 42% / 0.2)"; e.currentTarget.style.borderColor = "hsl(22 60% 42% / 0.4)"; }}
-              onBlur={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "hsl(35 20% 90%)"; }}
-              placeholder="태그 검색 또는 새로 만들기"
-              className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none transition"
-              style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)" }}
-            />
-            {showTagDropdown && (tagSearch || filteredTags.length > 0) && (
-              <div
-                className="absolute top-full left-0 right-0 mt-1 rounded-xl shadow-lg overflow-hidden z-10 max-h-48 overflow-y-auto"
-                style={{ backgroundColor: "hsl(40 30% 99%)", border: "1px solid hsl(35 20% 90%)" }}
-              >
-                {filteredTags.map((tag) => (
-                  <button
-                    key={tag.id}
-                    onClick={() => { setSelectedTags((prev) => [...prev, tag]); setTagSearch(""); setShowTagDropdown(false); }}
-                    className="w-full text-left px-4 py-2.5 text-[13px] flex items-center gap-2 transition-colors"
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "hsl(36 30% 93%)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
-                  >
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: tag.color }} />
-                    <span className="text-foreground">{tag.name}</span>
-                    {tag.isSystem && <span className="text-[9px] text-muted-foreground ml-auto">시스템</span>}
-                  </button>
-                ))}
-                {tagSearch && !allTags.some((t) => t.name === tagSearch) && (
-                  <button
-                    onClick={handleCreateTag}
-                    className="w-full text-left px-4 py-2.5 text-[13px] text-primary font-medium transition-colors"
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "hsl(36 30% 93%)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
-                  >
-                    &ldquo;{tagSearch}&rdquo; 새 태그 만들기
-                  </button>
-                )}
-              </div>
-            )}
+              );
+            })}
           </div>
         </div>
 
@@ -488,7 +441,7 @@ function AddScheduleDialog({ allTags, onClose, onSubmit }: { allTags: ApiTag[]; 
             취소
           </button>
           <button
-            onClick={() => { if (title && date) onSubmit(title, date, selectedTags.map(t => t.id), repeatType, repeatType === "YEARLY" ? date : null); }}
+            onClick={() => { if (title && date) onSubmit(title, date, Array.from(selectedTagIds), repeatType, repeatType === "YEARLY" ? date : null); }}
             className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform"
           >
             등록하기
