@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-context";
+import { useToast } from "@/components/toast";
 import { BottomSheet } from "@/components/bottom-sheet";
 import { apiFetch } from "@/lib/api";
 import { grades } from "@/data/mock";
@@ -354,10 +355,17 @@ export default function HomePage() {
   );
 }
 
-function PostDetailSheet({ post, comments, onClose }: { post: ApiPost; comments: ApiComment[]; onClose: () => void }) {
-  const { accessToken } = useAuth();
+function PostDetailSheet({ post, comments: initialComments, onClose }: { post: ApiPost; comments: ApiComment[]; onClose: () => void }) {
+  const { accessToken, isLoggedIn } = useAuth();
+  const { show: showToast } = useToast();
   const [liked, setLiked] = useState(post.isLiked);
   const [likeCount, setLikeCount] = useState(post.likeCount);
+  const [comments, setComments] = useState<ApiComment[]>(initialComments);
+  const [commentCount, setCommentCount] = useState(post.commentCount);
+  const [commentText, setCommentText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => { setComments(initialComments); }, [initialComments]);
 
   function handleLike() {
     if (!accessToken) return;
@@ -373,6 +381,30 @@ function PostDetailSheet({ post, comments, onClose }: { post: ApiPost; comments:
     });
   }
 
+  async function handleSubmitComment() {
+    if (!commentText.trim() || submitting || !accessToken) return;
+    setSubmitting(true);
+    try {
+      await apiFetch("/azeyo/communities/comments", {
+        method: "POST",
+        body: JSON.stringify({ postId: post.id, contents: commentText.trim() }),
+      });
+      // 댓글 목록 새로고침
+      const data = await apiFetch<{ comments: ApiComment[]; totalCount: number }>(
+        `/azeyo/communities/${post.id}/comments?page=1&size=20`,
+        { noAuth: true },
+      );
+      setComments(data.comments);
+      setCommentCount(prev => prev + 1);
+      setCommentText("");
+      showToast("댓글이 등록되었어요");
+    } catch {
+      showToast("댓글 등록에 실패했어요");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   const hasVote = post.type === "VOTE" && post.voteOptionA && post.voteOptionB;
   const voteTotal = post.voteCountA + post.voteCountB;
   const pctA = voteTotal > 0 ? Math.round((post.voteCountA / voteTotal) * 100) : 50;
@@ -381,11 +413,15 @@ function PostDetailSheet({ post, comments, onClose }: { post: ApiPost; comments:
 
   return (
     <BottomSheet onClose={onClose} className="max-h-[85dvh] flex flex-col">
-      <div className="flex-1 overflow-y-auto px-5 pb-6">
+      <div className="flex-1 overflow-y-auto px-5 pb-4">
         <div className="flex items-center gap-2.5 mb-4">
-          <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-[12px] font-bold text-primary">
-            {post.authorName.charAt(0)}
-          </div>
+          {post.authorIconImageUrl ? (
+            <img src={post.authorIconImageUrl} alt={post.authorName} className="w-9 h-9 rounded-full object-cover" />
+          ) : (
+            <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-[12px] font-bold text-primary">
+              {post.authorName.charAt(0)}
+            </div>
+          )}
           <div className="flex-1 min-w-0">
             <span className="text-[13px] font-semibold text-foreground">{post.authorName}</span>
             <br />
@@ -397,7 +433,7 @@ function PostDetailSheet({ post, comments, onClose }: { post: ApiPost; comments:
         </div>
 
         <h3 className="text-[16px] font-bold text-foreground leading-snug mb-2">{post.title}</h3>
-        <p className="text-[13px] text-muted-foreground leading-relaxed mb-4">{post.contents}</p>
+        <p className="text-[13px] text-muted-foreground leading-relaxed mb-4 whitespace-pre-line">{post.contents}</p>
 
         {hasVote && (
           <div className="space-y-2 mb-4">
@@ -427,7 +463,7 @@ function PostDetailSheet({ post, comments, onClose }: { post: ApiPost; comments:
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" />
             </svg>
-            {post.commentCount}
+            {commentCount}
           </span>
         </div>
 
@@ -438,9 +474,13 @@ function PostDetailSheet({ post, comments, onClose }: { post: ApiPost; comments:
               {comments.map((comment) => (
                 <div key={comment.id}>
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-[9px] font-bold text-primary">
-                      {comment.userNickname.charAt(0)}
-                    </div>
+                    {comment.userIconImageUrl ? (
+                      <img src={comment.userIconImageUrl} alt={comment.userNickname} className="w-6 h-6 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-[9px] font-bold text-primary">
+                        {comment.userNickname.charAt(0)}
+                      </div>
+                    )}
                     <span className="text-[12px] font-semibold text-foreground">{comment.userNickname}</span>
                     <span className="text-[10px] text-muted-foreground">{new Date(comment.createdAt).toLocaleDateString()}</span>
                   </div>
@@ -451,6 +491,32 @@ function PostDetailSheet({ post, comments, onClose }: { post: ApiPost; comments:
           </div>
         )}
       </div>
+
+      {/* Comment Input */}
+      {isLoggedIn && (
+        <div className="flex-shrink-0 px-4 py-3 border-t border-border" style={{ backgroundColor: "hsl(30 20% 97%)" }}>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) handleSubmitComment(); }}
+              placeholder="댓글을 입력하세요"
+              className="flex-1 rounded-xl px-4 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/50 outline-none"
+              style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)" }}
+            />
+            <button
+              onClick={handleSubmitComment}
+              disabled={!commentText.trim() || submitting}
+              className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-[13px] font-semibold text-white transition-all active:scale-95 ${
+                commentText.trim() && !submitting ? "bg-primary" : "bg-muted-foreground/30"
+              }`}
+            >
+              등록
+            </button>
+          </div>
+        </div>
+      )}
     </BottomSheet>
   );
 }
