@@ -188,8 +188,15 @@ export default function JokboPage() {
                 className="rounded-2xl overflow-hidden"
                 style={{ backgroundColor: "hsl(36 30% 93%)" }}
               >
+                {/* Title */}
+                <div className="px-5 pt-4 pb-2">
+                  <h3 className="text-[14px] font-bold text-foreground leading-snug">
+                    {template.title}
+                  </h3>
+                </div>
+
                 {/* Content */}
-                <div className="px-5 pt-5">
+                <div className="px-5">
                   <div
                     className={`text-[13px] leading-[1.8] text-foreground whitespace-pre-line overflow-hidden transition-[max-height] duration-300 ease-out ${
                       isExpanded ? "max-h-[2000px]" : "max-h-[100px]"
@@ -230,14 +237,9 @@ export default function JokboPage() {
                   className="px-5 py-3 flex items-center justify-between"
                   style={{ borderTop: "1px solid hsl(35 20% 90%)" }}
                 >
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-[12px] font-semibold text-foreground truncate">
-                      {template.title}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground flex-shrink-0">
-                      {template.authorName}
-                    </span>
-                  </div>
+                  <span className="text-[11px] text-muted-foreground">
+                    {template.authorName}
+                  </span>
 
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <button
