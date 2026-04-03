@@ -344,7 +344,6 @@ function AddScheduleDialog({ allTags, onClose, onSubmit }: { allTags: ApiTag[]; 
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
   const [repeatType, setRepeatType] = useState<"NONE" | "YEARLY">("NONE");
-  const [startDate, setStartDate] = useState("");
   const [selectedTags, setSelectedTags] = useState<ApiTag[]>([]);
   const [tagSearch, setTagSearch] = useState("");
   const [showTagDropdown, setShowTagDropdown] = useState(false);
@@ -386,7 +385,9 @@ function AddScheduleDialog({ allTags, onClose, onSubmit }: { allTags: ApiTag[]; 
         </label>
 
         <label className="block mb-4">
-          <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">날짜</span>
+          <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">
+            {repeatType === "YEARLY" ? "최초 날짜 (매년 이 날짜에 반복)" : "날짜"}
+          </span>
           <input
             type="date" value={date} onChange={(e) => setDate(e.target.value)}
             className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground outline-none transition appearance-none min-h-[48px]"
@@ -394,6 +395,11 @@ function AddScheduleDialog({ allTags, onClose, onSubmit }: { allTags: ApiTag[]; 
             onFocus={(e) => { e.currentTarget.style.boxShadow = "0 0 0 2px hsl(22 60% 42% / 0.2)"; e.currentTarget.style.borderColor = "hsl(22 60% 42% / 0.4)"; }}
             onBlur={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "hsl(35 20% 90%)"; }}
           />
+          {repeatType === "YEARLY" && date && (
+            <p className="text-[11px] text-muted-foreground mt-1.5">
+              매년 {new Date(date + "T00:00:00").getMonth() + 1}월 {new Date(date + "T00:00:00").getDate()}일에 반복됩니다
+            </p>
+          )}
         </label>
 
         {/* Repeat */}
@@ -415,18 +421,6 @@ function AddScheduleDialog({ allTags, onClose, onSubmit }: { allTags: ApiTag[]; 
               </button>
             ))}
           </div>
-          {repeatType === "YEARLY" && (
-            <label className="block mt-3">
-              <span className="text-[11px] text-muted-foreground block mb-1">최초 시작일 (몇 주년 계산용)</span>
-              <input
-                type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
-                className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground outline-none transition appearance-none min-h-[48px]"
-                style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)", WebkitAppearance: "none" }}
-                onFocus={(e) => { e.currentTarget.style.boxShadow = "0 0 0 2px hsl(22 60% 42% / 0.2)"; e.currentTarget.style.borderColor = "hsl(22 60% 42% / 0.4)"; }}
-                onBlur={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "hsl(35 20% 90%)"; }}
-              />
-            </label>
-          )}
         </div>
 
         <div className="mb-5">
@@ -494,7 +488,7 @@ function AddScheduleDialog({ allTags, onClose, onSubmit }: { allTags: ApiTag[]; 
             취소
           </button>
           <button
-            onClick={() => { if (title && date) onSubmit(title, date, selectedTags.map(t => t.id), repeatType, repeatType === "YEARLY" && startDate ? startDate : null); }}
+            onClick={() => { if (title && date) onSubmit(title, date, selectedTags.map(t => t.id), repeatType, repeatType === "YEARLY" ? date : null); }}
             className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform"
           >
             등록하기
