@@ -16,6 +16,9 @@ interface ApiSchedule {
   title: string;
   date: string;
   memo: string | null;
+  repeatType: "NONE" | "YEARLY";
+  startDate: string | null;
+  anniversaryLabel: string | null;
   tags: ApiTag[];
   createdAt: string;
 }
@@ -98,11 +101,11 @@ export default function SchedulePage() {
   const upcoming = sorted.filter((s) => getDday(s.date) >= 0);
   const past = sorted.filter((s) => getDday(s.date) < 0);
 
-  async function handleAddSchedule(title: string, date: string, tagIds: number[]) {
+  async function handleAddSchedule(title: string, date: string, tagIds: number[], repeatType: "NONE" | "YEARLY", startDate: string | null) {
     try {
       await apiFetch("/azeyo/schedules", {
         method: "POST",
-        body: JSON.stringify({ title, date, memo: null, tagIds }),
+        body: JSON.stringify({ title, date, memo: null, tagIds, repeatType, startDate }),
       });
       fetchData();
     } catch {
@@ -169,9 +172,16 @@ export default function SchedulePage() {
         <BottomSheet onClose={() => setSelectedSchedule(null)} className="max-h-[85dvh] overflow-y-auto" style={{ backgroundColor: "hsl(40 30% 99%)" }}>
           <div className="px-6 pb-24">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="text-[18px] font-bold text-foreground">
-                {selectedSchedule.title}
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-[18px] font-bold text-foreground">
+                  {selectedSchedule.title}
+                </h3>
+                {selectedSchedule.anniversaryLabel && (
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary">
+                    {selectedSchedule.anniversaryLabel}
+                  </span>
+                )}
+              </div>
               <span className="text-[13px] font-bold text-primary">
                 {formatDday(selectedSchedule.date)}
               </span>
@@ -237,8 +247,8 @@ export default function SchedulePage() {
         <AddScheduleDialog
           allTags={allTags}
           onClose={() => setShowAddDialog(false)}
-          onSubmit={(title, date, tagIds) => {
-            handleAddSchedule(title, date, tagIds);
+          onSubmit={(title, date, tagIds, repeatType, startDate) => {
+            handleAddSchedule(title, date, tagIds, repeatType, startDate);
             setShowAddDialog(false);
           }}
         />
@@ -290,6 +300,11 @@ function ScheduleCard({
           <h3 className="text-[14px] font-semibold text-foreground truncate">
             {schedule.title}
           </h3>
+          {schedule.anniversaryLabel && (
+            <span className="flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-primary/10 text-primary">
+              {schedule.anniversaryLabel}
+            </span>
+          )}
           <span
             className={`flex-shrink-0 text-[11px] font-bold ${
               isUrgent ? "text-primary" : "text-muted-foreground"
@@ -325,9 +340,11 @@ function ScheduleCard({
   );
 }
 
-function AddScheduleDialog({ allTags, onClose, onSubmit }: { allTags: ApiTag[]; onClose: () => void; onSubmit: (title: string, date: string, tagIds: number[]) => void }) {
+function AddScheduleDialog({ allTags, onClose, onSubmit }: { allTags: ApiTag[]; onClose: () => void; onSubmit: (title: string, date: string, tagIds: number[], repeatType: "NONE" | "YEARLY", startDate: string | null) => void }) {
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
+  const [repeatType, setRepeatType] = useState<"NONE" | "YEARLY">("NONE");
+  const [startDate, setStartDate] = useState("");
   const [selectedTags, setSelectedTags] = useState<ApiTag[]>([]);
   const [tagSearch, setTagSearch] = useState("");
   const [showTagDropdown, setShowTagDropdown] = useState(false);
@@ -378,6 +395,39 @@ function AddScheduleDialog({ allTags, onClose, onSubmit }: { allTags: ApiTag[]; 
             onBlur={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "hsl(35 20% 90%)"; }}
           />
         </label>
+
+        {/* Repeat */}
+        <div className="mb-4">
+          <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">반복 설정</span>
+          <div className="flex gap-2">
+            {([["NONE", "반복 없음"], ["YEARLY", "매년 반복"]] as const).map(([value, label]) => (
+              <button
+                key={value}
+                onClick={() => setRepeatType(value)}
+                className={`flex-1 py-2.5 rounded-xl text-[13px] font-medium transition-all ${
+                  repeatType === value
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground active:scale-95"
+                }`}
+                style={repeatType !== value ? { backgroundColor: "hsl(36 30% 93%)" } : undefined}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {repeatType === "YEARLY" && (
+            <label className="block mt-3">
+              <span className="text-[11px] text-muted-foreground block mb-1">최초 시작일 (몇 주년 계산용)</span>
+              <input
+                type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+                className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground outline-none transition appearance-none min-h-[48px]"
+                style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)", WebkitAppearance: "none" }}
+                onFocus={(e) => { e.currentTarget.style.boxShadow = "0 0 0 2px hsl(22 60% 42% / 0.2)"; e.currentTarget.style.borderColor = "hsl(22 60% 42% / 0.4)"; }}
+                onBlur={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "hsl(35 20% 90%)"; }}
+              />
+            </label>
+          )}
+        </div>
 
         <div className="mb-5">
           <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">태그</span>
@@ -444,7 +494,7 @@ function AddScheduleDialog({ allTags, onClose, onSubmit }: { allTags: ApiTag[]; 
             취소
           </button>
           <button
-            onClick={() => { if (title && date) onSubmit(title, date, selectedTags.map(t => t.id)); }}
+            onClick={() => { if (title && date) onSubmit(title, date, selectedTags.map(t => t.id), repeatType, repeatType === "YEARLY" && startDate ? startDate : null); }}
             className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform"
           >
             등록하기
