@@ -18,7 +18,6 @@ interface ApiProfile {
 
 export default function ProfileEditPage() {
   const [name, setName] = useState("");
-  const [subtitle, setSubtitle] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -31,7 +30,6 @@ export default function ProfileEditPage() {
     apiFetch<ApiProfile>("/azeyo/users/me")
       .then((data) => {
         setName(data.nickname);
-        setSubtitle(data.subtitle ?? "");
         setEmail(data.email ?? "");
         setPhone(data.phone ?? "");
         setImageUrl(data.iconImageUrl);
@@ -72,7 +70,7 @@ export default function ProfileEditPage() {
     try {
       await apiFetch("/azeyo/users/me", {
         method: "PUT",
-        body: JSON.stringify({ nickname: name, subtitle: subtitle || null, email: email || null, phone: phone || null }),
+        body: JSON.stringify({ nickname: name, email: email || null, phone: phone || null }),
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -147,18 +145,6 @@ export default function ProfileEditPage() {
               maxLength={12}
             />
             <p className="text-[10px] text-muted-foreground mt-1 text-right">{name.length}/12</p>
-          </div>
-
-          <div>
-            <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">한줄 소개</label>
-            <input
-              type="text" value={subtitle} onChange={(e) => setSubtitle(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl text-[14px] text-foreground outline-none transition-all focus:ring-2 focus:ring-primary/20"
-              style={{ backgroundColor: "hsl(36 30% 93%)" }}
-              placeholder="결혼 N년차 · 아이 N명"
-              maxLength={20}
-            />
-            <p className="text-[10px] text-muted-foreground mt-1 text-right">{subtitle.length}/20</p>
           </div>
 
           <div>
