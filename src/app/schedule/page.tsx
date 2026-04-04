@@ -552,7 +552,7 @@ function AddScheduleDialog({ allTags, initialData, onClose, onSubmit }: { allTag
                     onChange={(e) => { const next = [...alarmTimes]; next[idx] = `${h}:${String(e.target.value).padStart(2, "0")}`; setAlarmTimes(next); }}
                     className="w-14 text-center text-[15px] font-bold text-foreground bg-transparent outline-none appearance-none"
                   >
-                    {[0, 10, 20, 30, 40, 50].map(v => (<option key={v} value={v}>{String(v).padStart(2, "0")}</option>))}
+                    {Array.from({ length: 60 }, (_, i) => i).map(v => (<option key={v} value={v}>{String(v).padStart(2, "0")}</option>))}
                   </select>
                   <div className="flex-1" />
                   <button
