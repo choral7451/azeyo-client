@@ -84,8 +84,8 @@ export default function LoginPage() {
           className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl text-[14px] font-semibold text-white active:scale-[0.97] transition-all"
           style={{ backgroundColor: "#03C75A" }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-            <path d="M16.27 3H7.73L3 12l4.73 9h8.54L21 12l-4.73-9zM13.2 14.4L10.47 10v4.4H8.4V5.6h2.13L13.2 10V5.6h2.07v8.8H13.2z" />
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+            <path d="M13.5 10.8L6.3 1H1v18h5.5V9.2L13.7 19H19V1h-5.5v9.8z" fill="white" />
           </svg>
           네이버로 시작하기
         </button>
