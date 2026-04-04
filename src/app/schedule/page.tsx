@@ -38,6 +38,19 @@ interface ApiRecommendation {
   items: ApiRecommendationItem[];
 }
 
+const ALARM_LABELS: Record<string, string> = {
+  "D-0_09:00": "당일 오전 9시",
+  "D-1_09:00": "1일 전 오전 9시",
+  "D-3_09:00": "3일 전 오전 9시",
+  "D-7_09:00": "1주일 전 오전 9시",
+  "D-14_09:00": "2주일 전 오전 9시",
+  "D-30_09:00": "1개월 전 오전 9시",
+};
+
+function formatAlarmLabel(alarm: string): string {
+  return ALARM_LABELS[alarm] ?? alarm;
+}
+
 function getDday(dateStr: string): number {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -218,6 +231,16 @@ export default function SchedulePage() {
               {selectedSchedule.memo && ` · ${selectedSchedule.memo}`}
             </p>
 
+            {selectedSchedule.alarmTimes && selectedSchedule.alarmTimes.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-4">
+                {selectedSchedule.alarmTimes.map((alarm, i) => (
+                  <span key={i} className="text-[11px] px-2.5 py-1 rounded-lg font-medium" style={{ backgroundColor: "hsl(22 60% 42% / 0.1)", color: "hsl(22 60% 42%)" }}>
+                    {formatAlarmLabel(alarm)}
+                  </span>
+                ))}
+              </div>
+            )}
+
             {selectedRec ? (
               <>
                 <h4 className="text-[14px] font-bold text-foreground mb-3">
@@ -355,6 +378,11 @@ function ScheduleCard({
           <h3 className="text-[14px] font-semibold text-foreground truncate">
             {schedule.title}
           </h3>
+          {schedule.alarmTimes && schedule.alarmTimes.length > 0 && (
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="hsl(22 60% 42%)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" />
+            </svg>
+          )}
           {schedule.anniversaryLabel && (
             <span className="flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-primary/10 text-primary">
               {schedule.anniversaryLabel}
@@ -493,42 +521,50 @@ function AddScheduleDialog({ allTags, initialData, onClose, onSubmit }: { allTag
           </div>
         </div>
 
-        {/* Alarm Times */}
+        {/* Alarm Presets */}
         <div className="mb-5">
-          <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">알람 시간 (최대 2개)</span>
-          <div className="space-y-2">
-            {alarmTimes.map((time, idx) => (
-              <div key={idx} className="flex items-center gap-2">
-                <input
-                  type="time"
-                  value={time}
-                  onChange={(e) => {
-                    const next = [...alarmTimes];
-                    next[idx] = e.target.value;
-                    setAlarmTimes(next);
-                  }}
-                  className="flex-1 rounded-xl px-4 py-2.5 text-[14px] text-foreground outline-none transition min-h-[44px]"
-                  style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)" }}
-                />
+          <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">알람 (최대 2개)</span>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { value: "D-0_09:00", label: "당일 오전 9시" },
+              { value: "D-1_09:00", label: "1일 전 오전 9시" },
+              { value: "D-3_09:00", label: "3일 전 오�� 9시" },
+              { value: "D-7_09:00", label: "1주일 전 오전 9시" },
+              { value: "D-14_09:00", label: "2주일 전 오전 9시" },
+              { value: "D-30_09:00", label: "1��월 전 오전 9시" },
+            ].map((preset) => {
+              const isSelected = alarmTimes.includes(preset.value);
+              const canAdd = alarmTimes.length < 2;
+              return (
                 <button
-                  onClick={() => setAlarmTimes(alarmTimes.filter((_, i) => i !== idx))}
-                  className="w-9 h-9 flex items-center justify-center rounded-xl active:scale-90 transition-all"
-                  style={{ backgroundColor: "hsl(0 60% 95%)", color: "hsl(0 60% 50%)" }}
+                  key={preset.value}
+                  onClick={() => {
+                    if (isSelected) {
+                      setAlarmTimes(alarmTimes.filter(t => t !== preset.value));
+                    } else if (canAdd) {
+                      setAlarmTimes([...alarmTimes, preset.value]);
+                    }
+                  }}
+                  className={`text-[12px] px-3 py-2 rounded-xl font-medium transition-all active:scale-95 ${
+                    !isSelected && !canAdd ? "opacity-40 cursor-not-allowed" : ""
+                  }`}
+                  style={
+                    isSelected
+                      ? { backgroundColor: "hsl(22 60% 42%)", color: "white" }
+                      : { backgroundColor: "hsl(36 30% 93%)", color: "hsl(30 10% 45%)" }
+                  }
+                  disabled={!isSelected && !canAdd}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                  {isSelected ? "✓ " : ""}{preset.label}
                 </button>
-              </div>
-            ))}
-            {alarmTimes.length < 2 && (
-              <button
-                onClick={() => setAlarmTimes([...alarmTimes, "09:00"])}
-                className="w-full py-2.5 rounded-xl text-[13px] font-medium text-primary active:scale-[0.98] transition-all"
-                style={{ backgroundColor: "hsl(22 60% 42% / 0.08)" }}
-              >
-                + 알람 추가
-              </button>
-            )}
+              );
+            })}
           </div>
+          {alarmTimes.length > 0 && (
+            <p className="text-[11px] text-muted-foreground mt-2">
+              {alarmTimes.length}개 알람 선택됨
+            </p>
+          )}
         </div>
 
         <div className="flex gap-3">
