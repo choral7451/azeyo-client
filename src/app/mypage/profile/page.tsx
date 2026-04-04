@@ -12,11 +12,15 @@ interface ApiProfile {
   nickname: string;
   subtitle: string | null;
   iconImageUrl: string | null;
+  email: string | null;
+  phone: string | null;
 }
 
 export default function ProfileEditPage() {
   const [name, setName] = useState("");
   const [subtitle, setSubtitle] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -28,6 +32,8 @@ export default function ProfileEditPage() {
       .then((data) => {
         setName(data.nickname);
         setSubtitle(data.subtitle ?? "");
+        setEmail(data.email ?? "");
+        setPhone(data.phone ?? "");
         setImageUrl(data.iconImageUrl);
       })
       .catch(() => {})
@@ -66,7 +72,7 @@ export default function ProfileEditPage() {
     try {
       await apiFetch("/azeyo/users/me", {
         method: "PUT",
-        body: JSON.stringify({ nickname: name, subtitle: subtitle || null }),
+        body: JSON.stringify({ nickname: name, subtitle: subtitle || null, email: email || null, phone: phone || null }),
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -153,6 +159,26 @@ export default function ProfileEditPage() {
               maxLength={20}
             />
             <p className="text-[10px] text-muted-foreground mt-1 text-right">{subtitle.length}/20</p>
+          </div>
+
+          <div>
+            <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">이메일</label>
+            <input
+              type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl text-[14px] text-foreground outline-none transition-all focus:ring-2 focus:ring-primary/20"
+              style={{ backgroundColor: "hsl(36 30% 93%)" }}
+              placeholder="example@email.com"
+            />
+          </div>
+
+          <div>
+            <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">연락처</label>
+            <input
+              type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl text-[14px] text-foreground outline-none transition-all focus:ring-2 focus:ring-primary/20"
+              style={{ backgroundColor: "hsl(36 30% 93%)" }}
+              placeholder="010-0000-0000"
+            />
           </div>
         </div>
 
