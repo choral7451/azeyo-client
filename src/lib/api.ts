@@ -4,7 +4,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 let refreshPromise: Promise<boolean> | null = null;
 
-async function refreshTokens(): Promise<boolean> {
+async function doRefreshTokens(): Promise<boolean> {
   const accessToken = getCookie("accessToken");
   const refreshToken = getCookie("refreshToken");
   if (!accessToken || !refreshToken) return false;
@@ -24,6 +24,14 @@ async function refreshTokens(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/** 싱글턴 리프레시 — 동시에 여러 곳에서 호출해도 하나의 요청만 실행 */
+export function refreshTokens(): Promise<boolean> {
+  if (!refreshPromise) {
+    refreshPromise = doRefreshTokens().finally(() => { refreshPromise = null; });
+  }
+  return refreshPromise;
 }
 
 export async function apiFetch<T>(
@@ -50,10 +58,7 @@ export async function apiFetch<T>(
 
   // 401이면 토큰 리프레시 후 재시도
   if (res.status === 401 && !noAuth) {
-    if (!refreshPromise) {
-      refreshPromise = refreshTokens().finally(() => { refreshPromise = null; });
-    }
-    const refreshed = await refreshPromise;
+    const refreshed = await refreshTokens();
 
     if (refreshed) {
       res = await fetch(`${API_BASE}${path}`, { ...fetchOptions, headers: buildHeaders() });

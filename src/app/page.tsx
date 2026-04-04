@@ -90,6 +90,7 @@ function formatDday(dateStr: string): string {
 export default function HomePage() {
   const { isLoggedIn, accessToken } = useAuth();
   const [selectedUser, setSelectedUser] = useState<ApiTopUser | null>(null);
+  const [userTopPosts, setUserTopPosts] = useState<ApiPost[]>([]);
   const [selectedPost, setSelectedPost] = useState<ApiPost | null>(null);
   const [upcoming, setUpcoming] = useState<ApiSchedule[]>([]);
   const [schedulesLoaded, setSchedulesLoaded] = useState(false);
@@ -137,6 +138,14 @@ export default function HomePage() {
       .catch(() => {})
       .finally(() => setSchedulesLoaded(true));
   }, [isLoggedIn, accessToken]);
+
+  // Load user's top posts when user selected
+  useEffect(() => {
+    if (!selectedUser) { setUserTopPosts([]); return; }
+    apiFetch<{ posts: ApiPost[]; totalCount: number }>(`/azeyo/communities/top/user/${selectedUser.id}?count=5`, { noAuth: true })
+      .then((data) => setUserTopPosts(data.posts))
+      .catch(() => setUserTopPosts([]));
+  }, [selectedUser]);
 
   // Load comments when post selected
   useEffect(() => {
@@ -364,6 +373,43 @@ export default function HomePage() {
                 <p className="text-[10px] text-muted-foreground mt-0.5">이달 점수</p>
               </div>
             </div>
+
+            {/* 인기글 */}
+            {userTopPosts.length > 0 && (
+              <div className="mt-5">
+                <h4 className="text-[13px] font-bold text-foreground mb-3">인기글</h4>
+                <div className="space-y-2">
+                  {userTopPosts.map((post) => (
+                    <button
+                      key={post.id}
+                      onClick={() => { setSelectedUser(null); setTimeout(() => setSelectedPost(post), 200); }}
+                      className="w-full text-left rounded-xl px-4 py-3 transition-all active:scale-[0.97]"
+                      style={{ backgroundColor: "hsl(36 30% 93%)" }}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+                          {CATEGORY_REVERSE[post.category] ?? post.category}
+                        </span>
+                        {post.type === "VOTE" && (
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: "hsl(40 80% 60% / 0.15)", color: "hsl(40 80% 45%)" }}>투표</span>
+                        )}
+                      </div>
+                      <p className="text-[13px] font-semibold text-foreground leading-snug line-clamp-1">{post.title}</p>
+                      <div className="flex items-center gap-3 mt-1.5">
+                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" /></svg>
+                          {post.likeCount}
+                        </span>
+                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <CommentIcon />
+                          {post.commentCount}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </BottomSheet>
       )}

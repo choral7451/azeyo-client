@@ -3,16 +3,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import { getCookie, setCookie, removeCookie } from "@/lib/cookie";
 import { connectSocket, disconnectSocket } from "@/lib/socket";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-interface AuthContextValue {
-  isLoggedIn: boolean;
-  accessToken: string | null;
-  isLoading: boolean;
-  logout: () => void;
-  loginWithTokens: (accessToken: string, refreshToken: string) => void;
-}
+import { refreshTokens } from "@/lib/api";
 
 const AuthContext = createContext<AuthContextValue>({
   isLoggedIn: false,
@@ -21,6 +12,14 @@ const AuthContext = createContext<AuthContextValue>({
   logout: () => {},
   loginWithTokens: () => {},
 });
+
+interface AuthContextValue {
+  isLoggedIn: boolean;
+  accessToken: string | null;
+  isLoading: boolean;
+  logout: () => void;
+  loginWithTokens: (accessToken: string, refreshToken: string) => void;
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Start with null on both server & client to avoid hydration mismatch
@@ -46,27 +45,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Set token immediately from cookie (so UI is usable right away)
     setAccessToken(storedAccessToken);
 
-    // Then validate in background
-    fetch(`${API_BASE}/azeyo/auths/refresh`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        accessToken: storedAccessToken,
-        refreshToken: storedRefreshToken,
-      }),
-    })
-      .then(async (res) => {
-        if (!res.ok) throw new Error("Token invalid");
-        const data = await res.json();
-        const tokens = data.item ?? data;
-        setCookie("accessToken", tokens.accessToken);
-        setCookie("refreshToken", tokens.refreshToken);
-        setAccessToken(tokens.accessToken);
-      })
-      .catch(() => {
-        removeCookie("accessToken");
-        removeCookie("refreshToken");
-        setAccessToken(null);
+    // 싱글턴 refreshTokens 사용 — apiFetch와 동일한 promise를 공유하므로 레이스 컨디션 방지
+    refreshTokens()
+      .then((refreshed) => {
+        if (refreshed) {
+          setAccessToken(getCookie("accessToken"));
+        } else {
+          removeCookie("accessToken");
+          removeCookie("refreshToken");
+          setAccessToken(null);
+        }
       })
       .finally(() => setIsLoading(false));
   }, []);
