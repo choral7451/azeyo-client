@@ -116,7 +116,7 @@ const TERMS_CONTENT: Record<string, { title: string; sections: { heading?: strin
       },
       {
         heading: "6. 이용자의 권리",
-        body: "이용자는 언제든지 개인정보 열람, 정정, 삭제, 처리 정지를 요구할 수 있습니다. 서비스 내 프로필 수정, 회원 탈퇴 기능을 통해 행사하거나, support@azeyo.co.kr로 연락하시면 지체 없이 조치하겠습니다.",
+        body: "이용자는 언제든지 개인정보 열람, 정정, 삭제, 처리 정지를 요구할 수 있습니다. 서비스 내 프로필 수정, 회원 탈퇴 기능을 통해 행사하거나, azeyokorea@gmail.com로 연락하시면 지체 없이 조치하겠습니다.",
       },
       {
         heading: "7. 안전성 확보 조치",
@@ -124,7 +124,7 @@ const TERMS_CONTENT: Record<string, { title: string; sections: { heading?: strin
       },
       {
         heading: "8. 개인정보 보호 책임자",
-        body: "담당자: 아재요 운영팀\n이메일: support@azeyo.co.kr",
+        body: "담당자: 아트인포 운영팀\n이메일: azeyokorea@gmail.com",
       },
       { body: "본 개인정보 처리방침은 2025년 1월 1일부터 시행합니다." },
     ],

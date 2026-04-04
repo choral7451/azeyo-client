@@ -121,8 +121,8 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-[15px] font-bold text-foreground mb-2">제9조 (개인정보 보호 책임자)</h2>
             <div className="mt-2 rounded-xl p-4" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
-              <p>담당자: 아재요 운영팀</p>
-              <p className="mt-0.5">이메일: support@azeyo.co.kr</p>
+              <p>담당자: 아트인포 운영팀</p>
+              <p className="mt-0.5">이메일: azeyokorea@gmail.com</p>
             </div>
             <p className="mt-2">기타 개인정보 침해에 대한 신고 및 상담은 아래 기관에 문의하실 수 있습니다.</p>
             <ul className="list-disc pl-5 mt-1 space-y-0.5">

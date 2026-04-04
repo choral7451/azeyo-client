@@ -489,6 +489,18 @@ export default function HomePage() {
           onUpdate={(updated) => setTrending(prev => prev.map(p => p.id === updated.id ? { ...p, likeCount: updated.likeCount, isLiked: updated.isLiked, voteCountA: updated.voteCountA, voteCountB: updated.voteCountB, userVote: updated.userVote } : p))}
         />
       )}
+
+      {/* 사업자 정보 */}
+      <footer className="mt-16 mb-4 pt-6 border-t border-border/50">
+        <div className="space-y-1">
+          <p className="text-[11px] font-semibold text-muted-foreground/70">아트인포</p>
+          <div className="text-[10px] text-muted-foreground/50 leading-relaxed space-y-0.5">
+            <p>대표: 임성준 | 사업자등록번호: 329-35-01197</p>
+            <p>주소: 서울특별시 방배동 1430 401호</p>
+            <p>이메일: azeyokorea@gmail.com</p>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }
