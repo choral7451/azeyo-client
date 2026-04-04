@@ -59,6 +59,7 @@ interface ApiPost {
   likeCount: number;
   commentCount: number;
   isLiked: boolean;
+  userVote: "A" | "B" | null;
   createdAt: string;
 }
 
@@ -472,11 +473,33 @@ function PostDetailSheet({ post, comments: initialComments, onClose }: { post: A
     }
   }
 
+  const [voted, setVoted] = useState<"A" | "B" | null>(post.userVote);
+  const [voteCountA, setVoteCountA] = useState(post.voteCountA);
+  const [voteCountB, setVoteCountB] = useState(post.voteCountB);
+
   const hasVote = post.type === "VOTE" && post.voteOptionA && post.voteOptionB;
-  const voteTotal = post.voteCountA + post.voteCountB;
-  const pctA = voteTotal > 0 ? Math.round((post.voteCountA / voteTotal) * 100) : 50;
+  const voteTotal = voteCountA + voteCountB;
+  const pctA = voteTotal > 0 ? Math.round((voteCountA / voteTotal) * 100) : 50;
   const pctB = 100 - pctA;
-  const aWins = post.voteCountA >= post.voteCountB;
+
+  function handleVote(option: "A" | "B") {
+    if (!accessToken) return;
+    const wasSame = voted === option;
+    const newVote = wasSame ? null : option;
+    // Optimistic update
+    setVoted(newVote);
+    setVoteCountA(prev => prev + (option === "A" ? (wasSame ? -1 : 1) : (voted === "A" ? -1 : 0)));
+    setVoteCountB(prev => prev + (option === "B" ? (wasSame ? -1 : 1) : (voted === "B" ? -1 : 0)));
+    apiFetch(`/azeyo/communities/${post.id}/vote`, {
+      method: "POST",
+      body: JSON.stringify({ option }),
+    }).catch(() => {
+      // Rollback
+      setVoted(voted);
+      setVoteCountA(post.voteCountA);
+      setVoteCountB(post.voteCountB);
+    });
+  }
 
   return (
     <BottomSheet onClose={onClose} className="max-h-[85dvh] flex flex-col">
@@ -503,19 +526,40 @@ function PostDetailSheet({ post, comments: initialComments, onClose }: { post: A
         <p className="text-[13px] text-muted-foreground leading-relaxed mb-4 whitespace-pre-line">{post.contents}</p>
 
         {hasVote && (
-          <div className="space-y-2 mb-4">
-            {[{ label: post.voteOptionA!, pct: pctA, wins: aWins }, { label: post.voteOptionB!, pct: pctB, wins: !aWins }].map((opt, i) => (
-              <div key={i} className="rounded-lg overflow-hidden" style={{ backgroundColor: "hsl(35 20% 90%)" }}>
-                <div className="flex items-center justify-between px-3.5 py-2.5">
-                  <span className={`text-[12px] font-medium ${opt.wins ? "text-primary font-bold" : "text-muted-foreground"}`}>{opt.label}</span>
-                  <span className={`text-[12px] font-bold ${opt.wins ? "text-primary" : "text-muted-foreground"}`}>{opt.pct}%</span>
-                </div>
-                <div className="h-1.5 rounded-full mx-3 mb-2.5 overflow-hidden" style={{ backgroundColor: "hsl(35 20% 86%)" }}>
-                  <div className="h-full rounded-full bg-primary" style={{ width: `${opt.pct}%` }} />
-                </div>
-              </div>
-            ))}
-            <p className="text-[10px] text-muted-foreground text-right">총 {voteTotal.toLocaleString()}명 참여</p>
+          <div className="rounded-xl border border-border overflow-hidden bg-secondary/50 mb-4">
+            <div className="flex items-center justify-between px-3.5 py-2 border-b border-border">
+              <span className="text-[11px] font-bold text-primary tracking-wide">
+                {voted ? "투표 완료" : "눌러서 투표하기"}
+              </span>
+              <span className="text-[10px] text-muted-foreground">{voteTotal.toLocaleString()}명 참여</span>
+            </div>
+            <div className="p-2 space-y-1.5">
+              {(["A", "B"] as const).map((opt) => {
+                const label = opt === "A" ? post.voteOptionA! : post.voteOptionB!;
+                const pct = opt === "A" ? pctA : pctB;
+                const isSelected = voted === opt;
+                return (
+                  <button
+                    key={opt}
+                    onClick={() => handleVote(opt)}
+                    className={`relative w-full text-left rounded-lg overflow-hidden h-10 transition-all duration-200 active:scale-[0.98] cursor-pointer ${isSelected ? "ring-[1.5px] ring-primary" : ""}`}
+                  >
+                    <div
+                      className={`absolute inset-y-0 left-0 rounded-lg ${isSelected ? "" : voted ? "bg-muted/80" : "bg-secondary"}`}
+                      style={{
+                        width: voted ? `${pct}%` : "100%",
+                        transition: "width 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
+                        ...(isSelected ? { backgroundColor: "hsl(22 60% 42% / 0.15)" } : {}),
+                      }}
+                    />
+                    <div className="relative z-10 flex items-center justify-between h-full px-3.5">
+                      <span className={`text-[13px] ${isSelected ? "font-bold text-primary" : "font-medium text-foreground"}`}>{label}</span>
+                      <span className={`text-[12px] font-bold tabular-nums ${isSelected ? "text-primary" : "text-muted-foreground"}`}>{pct}%</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 
