@@ -33,8 +33,14 @@ export default function PrivacyPage() {
               <p className="font-semibold text-foreground mb-1">필수 수집 항목</p>
               <ul className="list-disc pl-5 space-y-0.5">
                 <li>소셜 로그인 식별자 (카카오/네이버/구글 고유 ID)</li>
+                <li>이름</li>
                 <li>이메일 주소</li>
                 <li>닉네임</li>
+                <li>성별</li>
+                <li>연령대</li>
+                <li>생일</li>
+                <li>출생연도</li>
+                <li>연락처 (휴대전화번호)</li>
                 <li>결혼 연도</li>
                 <li>자녀 수</li>
               </ul>
