@@ -591,7 +591,7 @@ function SignupContent() {
             아재요는 <span className="font-semibold text-primary">남성 전용</span> 커뮤니티예요
           </p>
           <p className="text-[13px] text-muted-foreground">
-            혹시 남편분이 찾으시는 거라면<br />남편분 카카오로 다시 시도해주세요 😄
+            혹시 남편분을 찾으시는 거라면<br />남편분 카카오로 다시 시도해주세요 😄
           </p>
 
           <button
