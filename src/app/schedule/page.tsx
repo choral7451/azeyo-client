@@ -38,17 +38,12 @@ interface ApiRecommendation {
   items: ApiRecommendationItem[];
 }
 
-const ALARM_LABELS: Record<string, string> = {
-  "D-0_09:00": "당일 오전 9시",
-  "D-1_09:00": "1일 전 오전 9시",
-  "D-3_09:00": "3일 전 오전 9시",
-  "D-7_09:00": "1주일 전 오전 9시",
-  "D-14_09:00": "2주일 전 오전 9시",
-  "D-30_09:00": "1개월 전 오전 9시",
-};
-
-function formatAlarmLabel(alarm: string): string {
-  return ALARM_LABELS[alarm] ?? alarm;
+function formatAlarmLabel(time: string): string {
+  const [h, m] = time.split(":");
+  const hour = parseInt(h);
+  const period = hour < 12 ? "오전" : "오후";
+  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `당일 ${period} ${displayHour}시${m !== "00" ? ` ${m}분` : ""}`;
 }
 
 function getDday(dateStr: string): number {
@@ -521,50 +516,65 @@ function AddScheduleDialog({ allTags, initialData, onClose, onSubmit }: { allTag
           </div>
         </div>
 
-        {/* Alarm Presets */}
+        {/* Alarm Times */}
         <div className="mb-5">
           <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">알람 (최대 2개)</span>
-          <div className="flex flex-wrap gap-2">
-            {[
-              { value: "D-0_09:00", label: "당일 오전 9시" },
-              { value: "D-1_09:00", label: "1일 전 오전 9시" },
-              { value: "D-3_09:00", label: "3일 전 오�� 9시" },
-              { value: "D-7_09:00", label: "1주일 전 오전 9시" },
-              { value: "D-14_09:00", label: "2주일 전 오전 9시" },
-              { value: "D-30_09:00", label: "1��월 전 오전 9시" },
-            ].map((preset) => {
-              const isSelected = alarmTimes.includes(preset.value);
-              const canAdd = alarmTimes.length < 2;
+          <div className="space-y-2">
+            {alarmTimes.map((time, idx) => {
+              const [h, m] = time.split(":");
+              const hour = parseInt(h);
+              const isPM = hour >= 12;
+              const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
               return (
-                <button
-                  key={preset.value}
-                  onClick={() => {
-                    if (isSelected) {
-                      setAlarmTimes(alarmTimes.filter(t => t !== preset.value));
-                    } else if (canAdd) {
-                      setAlarmTimes([...alarmTimes, preset.value]);
-                    }
-                  }}
-                  className={`text-[12px] px-3 py-2 rounded-xl font-medium transition-all active:scale-95 ${
-                    !isSelected && !canAdd ? "opacity-40 cursor-not-allowed" : ""
-                  }`}
-                  style={
-                    isSelected
-                      ? { backgroundColor: "hsl(22 60% 42%)", color: "white" }
-                      : { backgroundColor: "hsl(36 30% 93%)", color: "hsl(30 10% 45%)" }
-                  }
-                  disabled={!isSelected && !canAdd}
-                >
-                  {isSelected ? "✓ " : ""}{preset.label}
-                </button>
+                <div key={idx} className="flex items-center gap-2 rounded-xl px-3 py-2.5" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
+                  <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid hsl(35 20% 88%)" }}>
+                    <button
+                      onClick={() => { const next = [...alarmTimes]; const nh = isPM ? hour - 12 : hour; next[idx] = `${String(nh < 0 ? 0 : nh).padStart(2, "0")}:${m}`; setAlarmTimes(next); }}
+                      className="px-2.5 py-1 text-[11px] font-semibold transition-all"
+                      style={!isPM ? { backgroundColor: "hsl(22 60% 42%)", color: "white" } : { color: "hsl(30 10% 45%)" }}
+                    >오전</button>
+                    <button
+                      onClick={() => { const next = [...alarmTimes]; const nh = isPM ? hour : hour + 12; next[idx] = `${String(nh >= 24 ? 12 : nh).padStart(2, "0")}:${m}`; setAlarmTimes(next); }}
+                      className="px-2.5 py-1 text-[11px] font-semibold transition-all"
+                      style={isPM ? { backgroundColor: "hsl(22 60% 42%)", color: "white" } : { color: "hsl(30 10% 45%)" }}
+                    >오후</button>
+                  </div>
+                  <select
+                    value={displayHour}
+                    onChange={(e) => { const next = [...alarmTimes]; let nh = parseInt(e.target.value); if (isPM) nh = nh === 12 ? 12 : nh + 12; else nh = nh === 12 ? 0 : nh; next[idx] = `${String(nh).padStart(2, "0")}:${m}`; setAlarmTimes(next); }}
+                    className="w-14 text-center text-[15px] font-bold text-foreground bg-transparent outline-none appearance-none"
+                  >
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map(v => (<option key={v} value={v}>{v}</option>))}
+                  </select>
+                  <span className="text-[15px] font-bold text-muted-foreground">:</span>
+                  <select
+                    value={parseInt(m)}
+                    onChange={(e) => { const next = [...alarmTimes]; next[idx] = `${h}:${String(e.target.value).padStart(2, "0")}`; setAlarmTimes(next); }}
+                    className="w-14 text-center text-[15px] font-bold text-foreground bg-transparent outline-none appearance-none"
+                  >
+                    {[0, 10, 20, 30, 40, 50].map(v => (<option key={v} value={v}>{String(v).padStart(2, "0")}</option>))}
+                  </select>
+                  <div className="flex-1" />
+                  <button
+                    onClick={() => setAlarmTimes(alarmTimes.filter((_, i) => i !== idx))}
+                    className="w-7 h-7 flex items-center justify-center rounded-full active:scale-90 transition-all"
+                    style={{ color: "hsl(0 40% 55%)" }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                  </button>
+                </div>
               );
             })}
+            {alarmTimes.length < 2 && (
+              <button
+                onClick={() => setAlarmTimes([...alarmTimes, "09:00"])}
+                className="w-full py-2.5 rounded-xl text-[13px] font-medium text-primary active:scale-[0.98] transition-all"
+                style={{ backgroundColor: "hsl(22 60% 42% / 0.08)" }}
+              >
+                + 알람 추가
+              </button>
+            )}
           </div>
-          {alarmTimes.length > 0 && (
-            <p className="text-[11px] text-muted-foreground mt-2">
-              {alarmTimes.length}개 알람 선택됨
-            </p>
-          )}
         </div>
 
         <div className="flex gap-3">
