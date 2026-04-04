@@ -14,7 +14,7 @@ interface ApiProfile {
   nickname: string;
   subtitle: string | null;
   iconImageUrl: string | null;
-  marriageYear: number;
+  marriageDate: string | null;
   children: string;
   activityPoints: number;
   monthlyPoints: number;

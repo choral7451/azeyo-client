@@ -96,7 +96,7 @@ const TERMS_CONTENT: Record<string, { title: string; sections: { heading?: strin
       },
       {
         heading: "1. 수집하는 개인정보 항목",
-        body: "[필수 수집 항목]\n• 소셜 로그인 식별자 (카카오/네이버/구글 고유 ID)\n• 이름\n• 이메일 주소\n• 닉네임\n• 성별\n• 연령대\n• 생일\n• 출생연도\n• 연락처 (휴대전화번호)\n• 결혼 연도\n• 자녀 수\n\n[자동 수집 항목]\n• 서비스 이용 기록 (접속 일시, 이용 기록)\n• 기기 정보 (브라우저 종류, OS 정보)\n• IP 주소",
+        body: "[필수 수집 항목]\n• 소셜 로그인 식별자 (카카오/네이버/구글 고유 ID)\n• 이름\n• 이메일 주소\n• 닉네임\n• 성별\n• 연령대\n• 생일\n• 출생연도\n• 연락처 (휴대전화번호)\n• 결혼 날짜\n• 자녀 수\n\n[자동 수집 항목]\n• 서비스 이용 기록 (접속 일시, 이용 기록)\n• 기기 정보 (브라우저 종류, OS 정보)\n• IP 주소",
       },
       {
         heading: "2. 수집 및 이용 목적",
@@ -192,12 +192,13 @@ function SignupContent() {
   const [suggestions, setSuggestions] = useState<string[]>(() =>
     Array.from({ length: 3 }, () => generateNickname())
   );
-  const [marriageYear, setMarriageYear] = useState("");
+  const [isMarried, setIsMarried] = useState<boolean | null>(null);
+  const [marriageDate, setMarriageDate] = useState("");
   const [children, setChildren] = useState("0");
 
   const allRequired = terms.filter((t) => t.required).every((t) => agreed.has(t.id));
   const allChecked = terms.every((t) => agreed.has(t.id));
-  const infoValid = nickname.trim().length >= 2 && marriageYear !== "";
+  const infoValid = nickname.trim().length >= 2 && isMarried !== null && (isMarried === false || marriageDate !== "");
 
   function toggleTerm(id: string) {
     setAgreed((prev) => {
@@ -233,7 +234,7 @@ function SignupContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           nickname: nickname.trim(),
-          marriageYear: Number(marriageYear),
+          marriageDate: isMarried ? marriageDate : null,
           children,
           snsToken,
           snsType,
@@ -454,30 +455,37 @@ function SignupContent() {
               </div>
             </div>
 
-            {/* Marriage Year */}
+            {/* Marriage Status */}
             <div>
               <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">
                 결혼 여부 *
               </label>
-              <select
-                value={marriageYear}
-                onChange={(e) => setMarriageYear(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 appearance-none"
-                style={{ backgroundColor: "hsl(36 30% 93%)" }}
-              >
-                <option value="" disabled>
-                  결혼 연도를 선택하세요
-                </option>
-                <option value="0">미혼 (예비 신랑)</option>
-                {Array.from(
-                  { length: 50 },
-                  (_, i) => new Date().getFullYear() + 1 - i
-                ).map((y) => (
-                  <option key={y} value={y}>
-                    {y}년
-                  </option>
+              <div className="flex gap-2 mb-3">
+                {[{ value: true, label: "기혼" }, { value: false, label: "미혼 (예비 신랑)" }].map(({ value, label }) => (
+                  <button
+                    key={String(value)}
+                    onClick={() => { setIsMarried(value); if (!value) setMarriageDate(""); }}
+                    className="flex-1 py-2.5 rounded-xl text-[13px] font-medium transition-all active:scale-95"
+                    style={
+                      isMarried === value
+                        ? { backgroundColor: "hsl(22 60% 42%)", color: "#fff" }
+                        : { backgroundColor: "hsl(36 30% 93%)", color: "hsl(30 10% 45%)" }
+                    }
+                  >
+                    {label}
+                  </button>
                 ))}
-              </select>
+              </div>
+              {isMarried && (
+                <input
+                  type="date"
+                  value={marriageDate}
+                  onChange={(e) => setMarriageDate(e.target.value)}
+                  max={new Date().toISOString().split("T")[0]}
+                  className="w-full px-4 py-3 rounded-xl text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  style={{ backgroundColor: "hsl(36 30% 93%)" }}
+                />
+              )}
             </div>
 
             {/* Children */}

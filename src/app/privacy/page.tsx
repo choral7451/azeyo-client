@@ -38,7 +38,7 @@ export default function PublicPrivacyPage() {
                 <li>생일</li>
                 <li>출생연도</li>
                 <li>연락처 (휴대전화번호)</li>
-                <li>결혼 연도</li>
+                <li>결혼 날짜</li>
                 <li>자녀 수</li>
               </ul>
             </div>
