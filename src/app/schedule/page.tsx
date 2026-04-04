@@ -177,7 +177,7 @@ export default function SchedulePage() {
           </h2>
           <div className="space-y-2.5 opacity-60">
             {past.map((schedule) => (
-              <ScheduleCard key={schedule.id} schedule={schedule} />
+              <ScheduleCard key={schedule.id} schedule={schedule} onSelect={() => setSelectedSchedule(schedule)} />
             ))}
           </div>
         </section>
