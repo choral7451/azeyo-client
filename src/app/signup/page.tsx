@@ -582,16 +582,19 @@ function SignupContent() {
             className="w-20 h-20 rounded-full flex items-center justify-center mb-6"
             style={{ backgroundColor: "hsl(22 60% 42% / 0.1)" }}
           >
-            <span className="text-4xl">🙅‍♂️</span>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="hsl(22 60% 42%)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 8v4M12 16h.01" />
+            </svg>
           </div>
           <h1 className="text-[22px] font-bold text-foreground mb-2">
-            형님, 여긴 아재들만...
+            가입이 제한된 서비스예요
           </h1>
           <p className="text-[14px] text-muted-foreground mb-2">
-            아재요는 <span className="font-semibold text-primary">남성 전용</span> 커뮤니티예요
+            아재요는 <span className="font-semibold text-primary">기혼 남성 전용</span> 커뮤니티로 운영되고 있어요
           </p>
-          <p className="text-[13px] text-muted-foreground">
-            혹시 남편분을 찾으시는 거라면<br />남편분 카카오로 다시 시도해주세요 😄
+          <p className="text-[13px] text-muted-foreground leading-relaxed">
+            관심 가져주셔서 감사합니다<br />남편분의 가입을 원하시면 남편분 계정으로 시도해주세요
           </p>
 
           <button
