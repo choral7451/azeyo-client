@@ -211,7 +211,9 @@ export default function SchedulePage() {
               </span>
             </div>
             <p className="text-[12px] text-muted-foreground mb-4">
-              {selectedSchedule.date}
+              {selectedSchedule.repeatType === "YEARLY" && selectedSchedule.startDate
+                ? `시작일 ${selectedSchedule.startDate} · 매년 반복`
+                : selectedSchedule.date}
               {selectedSchedule.memo && ` · ${selectedSchedule.memo}`}
             </p>
 
