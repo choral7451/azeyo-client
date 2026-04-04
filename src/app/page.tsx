@@ -107,12 +107,14 @@ export default function HomePage() {
     apiFetch<{ users: ApiTopUser[] }>("/azeyo/users/top-monthly?count=3")
       .then((data) => setTopUsers(data.users))
       .catch(() => {});
+  }, []);
 
-    // Trending posts (public)
-    apiFetch<{ posts: ApiPost[]; totalCount: number }>("/azeyo/communities/top")
+  // Trending posts (re-fetch with auth to get isLiked/userVote)
+  useEffect(() => {
+    apiFetch<{ posts: ApiPost[]; totalCount: number }>("/azeyo/communities/top", isLoggedIn ? undefined : { noAuth: true })
       .then((data) => setTrending(data.posts.slice(0, 4)))
       .catch(() => {});
-  }, []);
+  }, [accessToken]);
 
   useEffect(() => {
     if (!isLoggedIn || !accessToken) return;
@@ -480,13 +482,18 @@ export default function HomePage() {
 
       {/* Post Detail Bottom Sheet */}
       {selectedPost && (
-        <PostDetailSheet post={selectedPost} comments={postComments} onClose={() => setSelectedPost(null)} />
+        <PostDetailSheet
+          post={selectedPost}
+          comments={postComments}
+          onClose={() => setSelectedPost(null)}
+          onUpdate={(updated) => setTrending(prev => prev.map(p => p.id === updated.id ? { ...p, likeCount: updated.likeCount, isLiked: updated.isLiked, voteCountA: updated.voteCountA, voteCountB: updated.voteCountB, userVote: updated.userVote } : p))}
+        />
       )}
     </main>
   );
 }
 
-function PostDetailSheet({ post, comments: initialComments, onClose }: { post: ApiPost; comments: ApiComment[]; onClose: () => void }) {
+function PostDetailSheet({ post, comments: initialComments, onClose, onUpdate }: { post: ApiPost; comments: ApiComment[]; onClose: () => void; onUpdate?: (updated: { id: number; likeCount: number; isLiked: boolean; voteCountA: number; voteCountB: number; userVote: "A" | "B" | null }) => void }) {
   const { accessToken, isLoggedIn } = useAuth();
   const { show: showToast } = useToast();
   const [liked, setLiked] = useState(post.isLiked);
@@ -501,14 +508,17 @@ function PostDetailSheet({ post, comments: initialComments, onClose }: { post: A
   function handleLike() {
     if (!accessToken) return;
     const newLiked = !liked;
+    const newCount = likeCount + (newLiked ? 1 : -1);
     setLiked(newLiked);
-    setLikeCount(prev => prev + (newLiked ? 1 : -1));
+    setLikeCount(newCount);
+    onUpdate?.({ id: post.id, likeCount: newCount, isLiked: newLiked, voteCountA, voteCountB, userVote: voted });
     apiFetch(`/azeyo/communities/${post.id}/like`, {
       method: "POST",
       body: JSON.stringify({ isLike: newLiked }),
     }).catch(() => {
       setLiked(!newLiked);
-      setLikeCount(prev => prev + (newLiked ? -1 : 1));
+      setLikeCount(likeCount);
+      onUpdate?.({ id: post.id, likeCount, isLiked: liked, voteCountA, voteCountB, userVote: voted });
     });
   }
 
@@ -549,18 +559,22 @@ function PostDetailSheet({ post, comments: initialComments, onClose }: { post: A
     if (!accessToken) return;
     const wasSame = voted === option;
     const newVote = wasSame ? null : option;
+    const newCountA = voteCountA + (option === "A" ? (wasSame ? -1 : 1) : (voted === "A" ? -1 : 0));
+    const newCountB = voteCountB + (option === "B" ? (wasSame ? -1 : 1) : (voted === "B" ? -1 : 0));
     // Optimistic update
     setVoted(newVote);
-    setVoteCountA(prev => prev + (option === "A" ? (wasSame ? -1 : 1) : (voted === "A" ? -1 : 0)));
-    setVoteCountB(prev => prev + (option === "B" ? (wasSame ? -1 : 1) : (voted === "B" ? -1 : 0)));
+    setVoteCountA(newCountA);
+    setVoteCountB(newCountB);
+    onUpdate?.({ id: post.id, likeCount, isLiked: liked, voteCountA: newCountA, voteCountB: newCountB, userVote: newVote });
     apiFetch(`/azeyo/communities/${post.id}/vote`, {
       method: "POST",
       body: JSON.stringify({ option }),
     }).catch(() => {
       // Rollback
       setVoted(voted);
-      setVoteCountA(post.voteCountA);
-      setVoteCountB(post.voteCountB);
+      setVoteCountA(voteCountA);
+      setVoteCountB(voteCountB);
+      onUpdate?.({ id: post.id, likeCount, isLiked: liked, voteCountA, voteCountB, userVote: voted });
     });
   }
 
