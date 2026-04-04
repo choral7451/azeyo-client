@@ -31,7 +31,10 @@ export type Category =
   | "어른들 취미"
   | "육아"
   | "생활꿀팁"
-  | "자유게시판";
+  | "자유게시판"
+  | "직장생활"
+  | "건강/운동"
+  | "시댁/처가";
 
 export interface Post {
   id: string;

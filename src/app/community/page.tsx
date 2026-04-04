@@ -19,6 +19,9 @@ const CATEGORY_MAP: Record<Category, string> = {
   "육아": "PARENTING",
   "생활꿀팁": "LIFE_TIP",
   "자유게시판": "FREE",
+  "직장생활": "WORK",
+  "건강/운동": "HEALTH",
+  "시댁/처가": "IN_LAWS",
 };
 
 const CATEGORY_REVERSE: Record<string, Category> = Object.fromEntries(
@@ -26,9 +29,9 @@ const CATEGORY_REVERSE: Record<string, Category> = Object.fromEntries(
 ) as Record<string, Category>;
 
 const categories: ("전체" | Category)[] = [
-  "전체", "선물", "부부싸움", "어른들 취미", "육아", "생활꿀팁", "자유게시판",
+  "전체", "선물", "부부싸움", "어른들 취미", "육아", "생활꿀팁", "직장생활", "건강/운동", "시댁/처가", "자유게시판",
 ];
-const writeCategories: Category[] = ["선물", "부부싸움", "어른들 취미", "육아", "생활꿀팁", "자유게시판"];
+const writeCategories: Category[] = ["선물", "부부싸움", "어른들 취미", "육아", "생활꿀팁", "직장생활", "건강/운동", "시댁/처가", "자유게시판"];
 
 // API response types
 interface ApiPost {

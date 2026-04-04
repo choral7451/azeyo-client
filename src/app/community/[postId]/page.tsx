@@ -8,6 +8,7 @@ import { apiFetch } from "@/lib/api";
 const CATEGORY_REVERSE: Record<string, string> = {
   GIFT: "선물", COUPLE_FIGHT: "부부싸움", HOBBY: "어른들 취미",
   PARENTING: "육아", LIFE_TIP: "생활꿀팁", FREE: "자유게시판",
+  WORK: "직장생활", HEALTH: "건강/운동", IN_LAWS: "시댁/처가",
 };
 
 interface ApiPost {
