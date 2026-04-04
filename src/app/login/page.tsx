@@ -84,8 +84,8 @@ export default function LoginPage() {
       {/* Footer */}
       <p className="text-[11px] text-muted-foreground mt-8 text-center leading-relaxed animate-fade-up" style={{ animationDelay: "0.25s" }}>
         시작하면{" "}
-        <Link href="/mypage/settings/terms" className="underline">이용약관</Link> 및{" "}
-        <Link href="/mypage/settings/privacy" className="underline">개인정보 처리방침</Link>에 동의합니다
+        <Link href="/terms" className="underline">이용약관</Link> 및{" "}
+        <Link href="/privacy" className="underline">개인정보 처리방침</Link>에 동의합니다
       </p>
     </main>
   );
