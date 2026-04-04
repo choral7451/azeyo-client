@@ -43,7 +43,7 @@ function formatAlarmLabel(time: string): string {
   const hour = parseInt(h);
   const period = hour < 12 ? "오전" : "오후";
   const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return `당일 ${period} ${displayHour}시${m !== "00" ? ` ${m}분` : ""}`;
+  return `${period} ${displayHour}시${m !== "00" ? ` ${m}분` : ""}`;
 }
 
 function getDday(dateStr: string): number {
