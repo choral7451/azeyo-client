@@ -90,6 +90,8 @@ function formatDday(dateStr: string): string {
 
 export default function HomePage() {
   const { isLoggedIn, accessToken } = useAuth();
+  const [selectedSchedule, setSelectedSchedule] = useState<ApiSchedule | null>(null);
+  const [scheduleRec, setScheduleRec] = useState<ApiRecommendation | null>(null);
   const [selectedUser, setSelectedUser] = useState<ApiTopUser | null>(null);
   const [userTopPosts, setUserTopPosts] = useState<ApiPost[]>([]);
   const [selectedPost, setSelectedPost] = useState<ApiPost | null>(null);
@@ -139,6 +141,16 @@ export default function HomePage() {
       .catch(() => {})
       .finally(() => setSchedulesLoaded(true));
   }, [isLoggedIn, accessToken]);
+
+  // Load recommendation when schedule selected
+  useEffect(() => {
+    if (!selectedSchedule) { setScheduleRec(null); return; }
+    const tagIds = selectedSchedule.tags.map(t => t.id).join(",");
+    if (!tagIds) { setScheduleRec(null); return; }
+    apiFetch<{ recommendations: ApiRecommendation[] }>(`/azeyo/schedules/recommendations?tagIds=${tagIds}`)
+      .then(data => setScheduleRec(data.recommendations[0] ?? null))
+      .catch(() => setScheduleRec(null));
+  }, [selectedSchedule]);
 
   // Load user's top posts when user selected
   useEffect(() => {
@@ -215,9 +227,10 @@ export default function HomePage() {
               const dday = getDday(schedule.date);
               const isUrgent = dday <= 7;
               return (
-                <div
+                <button
                   key={schedule.id}
-                  className={`flex-shrink-0 w-[200px] rounded-2xl p-4 transition-transform duration-200 active:scale-[0.97] ${isUrgent ? "bg-primary text-primary-foreground shadow-md" : ""}`}
+                  onClick={() => setSelectedSchedule(schedule)}
+                  className={`flex-shrink-0 w-[200px] rounded-2xl p-4 text-left transition-transform duration-200 active:scale-[0.97] cursor-pointer ${isUrgent ? "bg-primary text-primary-foreground shadow-md" : ""}`}
                   style={!isUrgent ? { backgroundColor: "hsl(36 30% 93%)" } : undefined}
                 >
                   <span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full mb-3 ${isUrgent ? "bg-white/20 text-white" : "bg-secondary text-primary"}`}>
@@ -234,7 +247,7 @@ export default function HomePage() {
                   {schedule.memo && (
                     <p className={`text-[11px] mt-2 leading-relaxed line-clamp-1 ${isUrgent ? "text-white/60" : "text-muted-foreground"}`}>{schedule.memo}</p>
                   )}
-                </div>
+                </button>
               );
             })}
           </div>
@@ -341,6 +354,56 @@ export default function HomePage() {
             ))}
           </div>
         </section>
+      )}
+
+      {/* Schedule Detail Bottom Sheet */}
+      {selectedSchedule && (
+        <BottomSheet onClose={() => setSelectedSchedule(null)} className="max-h-[85dvh] overflow-y-auto" style={{ backgroundColor: "hsl(40 30% 99%)" }}>
+          <div className="px-6 pb-8">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-[18px] font-bold text-foreground">{selectedSchedule.title}</h3>
+              <span className="text-[13px] font-bold text-primary">{formatDday(selectedSchedule.date)}</span>
+            </div>
+            <p className="text-[12px] text-muted-foreground mb-1">{selectedSchedule.date}</p>
+            {selectedSchedule.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {selectedSchedule.tags.map(tag => (
+                  <span key={tag.id} className="text-[10px] px-2 py-0.5 rounded-md font-medium" style={{ backgroundColor: tag.color + "18", color: tag.color }}>
+                    {tag.name}
+                  </span>
+                ))}
+              </div>
+            )}
+            {selectedSchedule.memo && (
+              <p className="text-[12px] text-muted-foreground mb-4">{selectedSchedule.memo}</p>
+            )}
+
+            {scheduleRec ? (
+              <div className="mt-4">
+                <h4 className="text-[14px] font-bold text-foreground mb-3">{scheduleRec.title}</h4>
+                <ol className="space-y-2.5">
+                  {scheduleRec.items.map(item => (
+                    <li key={item.rank} className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
+                      <span className="flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center text-[12px] font-bold text-primary" style={{ backgroundColor: "hsl(40 30% 99%)" }}>
+                        {item.rank}
+                      </span>
+                      <span className="text-base">{item.emoji}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-semibold text-foreground">{item.name}</p>
+                        <p className="text-[11px] text-muted-foreground">{item.description}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-2xl mb-2">📋</p>
+                <p className="text-[13px] text-muted-foreground">아직 추천 정보가 없어요</p>
+              </div>
+            )}
+          </div>
+        </BottomSheet>
       )}
 
       {/* User Profile Bottom Sheet */}
