@@ -76,7 +76,6 @@ export default function MyPage() {
           )}
           <div className="flex-1 min-w-0">
             <h2 className="text-[17px] font-bold text-foreground">{profile.nickname}</h2>
-            <p className="text-[12px] text-muted-foreground mt-0.5">{profile.subtitle ?? ""}</p>
             <div className="flex gap-2 mt-2 flex-wrap">
               <Link
                 href="/mypage/grade"
