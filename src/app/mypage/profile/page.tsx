@@ -9,6 +9,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 interface ApiProfile {
   id: number;
+  name: string | null;
   nickname: string;
   subtitle: string | null;
   iconImageUrl: string | null;
@@ -17,6 +18,7 @@ interface ApiProfile {
 }
 
 export default function ProfileEditPage() {
+  const [realName, setRealName] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -29,6 +31,7 @@ export default function ProfileEditPage() {
   useEffect(() => {
     apiFetch<ApiProfile>("/azeyo/users/me")
       .then((data) => {
+        setRealName(data.name ?? "");
         setName(data.nickname);
         setEmail(data.email ?? "");
         setPhone(data.phone ?? "");
@@ -136,6 +139,15 @@ export default function ProfileEditPage() {
 
         {/* Form */}
         <div className="space-y-4">
+          <div>
+            <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">이름</label>
+            <input
+              type="text" value={realName} disabled
+              className="w-full px-4 py-3 rounded-xl text-[14px] text-muted-foreground outline-none cursor-not-allowed"
+              style={{ backgroundColor: "hsl(36 30% 93%)", opacity: 0.6 }}
+            />
+          </div>
+
           <div>
             <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">닉네임</label>
             <input
