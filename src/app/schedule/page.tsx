@@ -18,6 +18,7 @@ interface ApiSchedule {
   memo: string | null;
   repeatType: "NONE" | "YEARLY";
   startDate: string | null;
+  alarmTimes: string[] | null;
   anniversaryLabel: string | null;
   tags: ApiTag[];
   createdAt: string;
@@ -102,11 +103,11 @@ export default function SchedulePage() {
   const upcoming = sorted.filter((s) => getDday(s.date) >= 0);
   const past = sorted.filter((s) => getDday(s.date) < 0);
 
-  async function handleAddSchedule(title: string, date: string, tagIds: number[], repeatType: "NONE" | "YEARLY", startDate: string | null) {
+  async function handleAddSchedule(title: string, date: string, tagIds: number[], repeatType: "NONE" | "YEARLY", startDate: string | null, alarmTimes: string[] | null) {
     try {
       await apiFetch("/azeyo/schedules", {
         method: "POST",
-        body: JSON.stringify({ title, date, memo: null, tagIds, repeatType, startDate }),
+        body: JSON.stringify({ title, date, memo: null, tagIds, repeatType, startDate, alarmTimes }),
       });
       fetchData();
     } catch {
@@ -124,11 +125,11 @@ export default function SchedulePage() {
     }
   }
 
-  async function handleUpdateSchedule(scheduleId: number, title: string, date: string, tagIds: number[], repeatType: "NONE" | "YEARLY", startDate: string | null) {
+  async function handleUpdateSchedule(scheduleId: number, title: string, date: string, tagIds: number[], repeatType: "NONE" | "YEARLY", startDate: string | null, alarmTimes: string[] | null) {
     try {
       await apiFetch(`/azeyo/schedules/${scheduleId}`, {
         method: "PUT",
-        body: JSON.stringify({ title, date, memo: null, tagIds, repeatType, startDate }),
+        body: JSON.stringify({ title, date, memo: null, tagIds, repeatType, startDate, alarmTimes }),
       });
       setEditingSchedule(null);
       fetchData();
@@ -289,8 +290,8 @@ export default function SchedulePage() {
         <AddScheduleDialog
           allTags={allTags}
           onClose={() => setShowAddDialog(false)}
-          onSubmit={(title, date, tagIds, repeatType, startDate) => {
-            handleAddSchedule(title, date, tagIds, repeatType, startDate);
+          onSubmit={(title, date, tagIds, repeatType, startDate, alarmTimes) => {
+            handleAddSchedule(title, date, tagIds, repeatType, startDate, alarmTimes);
             setShowAddDialog(false);
           }}
         />
@@ -302,8 +303,8 @@ export default function SchedulePage() {
           allTags={allTags}
           initialData={editingSchedule}
           onClose={() => setEditingSchedule(null)}
-          onSubmit={(title, date, tagIds, repeatType, startDate) => {
-            handleUpdateSchedule(editingSchedule.id, title, date, tagIds, repeatType, startDate);
+          onSubmit={(title, date, tagIds, repeatType, startDate, alarmTimes) => {
+            handleUpdateSchedule(editingSchedule.id, title, date, tagIds, repeatType, startDate, alarmTimes);
           }}
         />
       )}
@@ -394,12 +395,13 @@ function ScheduleCard({
   );
 }
 
-function AddScheduleDialog({ allTags, initialData, onClose, onSubmit }: { allTags: ApiTag[]; initialData?: ApiSchedule; onClose: () => void; onSubmit: (title: string, date: string, tagIds: number[], repeatType: "NONE" | "YEARLY", startDate: string | null) => void }) {
+function AddScheduleDialog({ allTags, initialData, onClose, onSubmit }: { allTags: ApiTag[]; initialData?: ApiSchedule; onClose: () => void; onSubmit: (title: string, date: string, tagIds: number[], repeatType: "NONE" | "YEARLY", startDate: string | null, alarmTimes: string[] | null) => void }) {
   const isEdit = !!initialData;
   const [title, setTitle] = useState(initialData?.title ?? "");
   const [date, setDate] = useState(initialData?.date ?? "");
   const [repeatType, setRepeatType] = useState<"NONE" | "YEARLY">(initialData?.repeatType ?? "NONE");
   const [selectedTagIds, setSelectedTagIds] = useState<Set<number>>(new Set(initialData?.tags.map(t => t.id) ?? []));
+  const [alarmTimes, setAlarmTimes] = useState<string[]>(initialData?.alarmTimes ?? []);
 
   function toggleTag(tagId: number) {
     setSelectedTagIds(prev => {
@@ -491,12 +493,50 @@ function AddScheduleDialog({ allTags, initialData, onClose, onSubmit }: { allTag
           </div>
         </div>
 
+        {/* Alarm Times */}
+        <div className="mb-5">
+          <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">알람 시간 (최대 2개)</span>
+          <div className="space-y-2">
+            {alarmTimes.map((time, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <input
+                  type="time"
+                  value={time}
+                  onChange={(e) => {
+                    const next = [...alarmTimes];
+                    next[idx] = e.target.value;
+                    setAlarmTimes(next);
+                  }}
+                  className="flex-1 rounded-xl px-4 py-2.5 text-[14px] text-foreground outline-none transition min-h-[44px]"
+                  style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)" }}
+                />
+                <button
+                  onClick={() => setAlarmTimes(alarmTimes.filter((_, i) => i !== idx))}
+                  className="w-9 h-9 flex items-center justify-center rounded-xl active:scale-90 transition-all"
+                  style={{ backgroundColor: "hsl(0 60% 95%)", color: "hsl(0 60% 50%)" }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                </button>
+              </div>
+            ))}
+            {alarmTimes.length < 2 && (
+              <button
+                onClick={() => setAlarmTimes([...alarmTimes, "09:00"])}
+                className="w-full py-2.5 rounded-xl text-[13px] font-medium text-primary active:scale-[0.98] transition-all"
+                style={{ backgroundColor: "hsl(22 60% 42% / 0.08)" }}
+              >
+                + 알람 추가
+              </button>
+            )}
+          </div>
+        </div>
+
         <div className="flex gap-3">
           <button onClick={onClose} className="flex-1 py-3 rounded-xl text-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform" style={{ backgroundColor: "hsl(40 30% 93%)" }}>
             취소
           </button>
           <button
-            onClick={() => { if (title && date) onSubmit(title, date, Array.from(selectedTagIds), repeatType, repeatType === "YEARLY" ? date : null); }}
+            onClick={() => { if (title && date) onSubmit(title, date, Array.from(selectedTagIds), repeatType, repeatType === "YEARLY" ? date : null, alarmTimes.length > 0 ? alarmTimes : null); }}
             className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform"
           >
             {isEdit ? "수정하기" : "등록하기"}
