@@ -193,8 +193,8 @@ export default function SchedulePage() {
 
       {/* Recommendation Detail Sheet */}
       {selectedSchedule && (
-        <BottomSheet onClose={() => setSelectedSchedule(null)} className="max-h-[85dvh] overflow-y-auto" style={{ backgroundColor: "hsl(40 30% 99%)" }}>
-          <div className="px-6 pb-24">
+        <BottomSheet onClose={() => setSelectedSchedule(null)} className="max-h-[85dvh]" style={{ backgroundColor: "hsl(40 30% 99%)" }}>
+          <div className="flex-1 overflow-y-auto px-6 pb-24">
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <h3 className="text-[18px] font-bold text-foreground">
@@ -411,8 +411,8 @@ function AddScheduleDialog({ allTags, initialData, onClose, onSubmit }: { allTag
   }
 
   return (
-    <BottomSheet onClose={onClose} className="max-h-[85dvh] overflow-y-auto" style={{ backgroundColor: "hsl(40 30% 99%)" }}>
-      <div className="px-6 pb-24">
+    <BottomSheet onClose={onClose} className="max-h-[85dvh]" style={{ backgroundColor: "hsl(40 30% 99%)" }}>
+      <div className="flex-1 overflow-y-auto px-6 pb-24">
         <h3 className="text-[18px] font-bold text-foreground mb-5">{isEdit ? "일정 수정" : "일정 등록"}</h3>
 
         <label className="block mb-4">
