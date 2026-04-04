@@ -42,6 +42,13 @@ export async function POST(request: NextRequest) {
     const errorBody = await snsRes.json().catch(() => null);
     const errorCode = errorBody?.code;
 
+    if (errorCode === "AZEYO-AUTH-006") {
+      return NextResponse.json(
+        { maleOnly: true },
+        { status: 200 }
+      );
+    }
+
     if (errorCode === "AZEYO-AUTH-005") {
       return NextResponse.json(
         { notRegistered: true, snsToken: snsAccessToken, snsType: "KAKAO" },

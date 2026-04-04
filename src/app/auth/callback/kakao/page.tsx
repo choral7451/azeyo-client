@@ -9,6 +9,7 @@ function KakaoCallbackContent() {
   const searchParams = useSearchParams();
   const { loginWithTokens } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const [blocked, setBlocked] = useState(false);
   const calledRef = useRef(false);
 
   useEffect(() => {
@@ -45,6 +46,10 @@ function KakaoCallbackContent() {
         return res.json();
       })
       .then((data) => {
+        if (data.maleOnly) {
+          setBlocked(true);
+          return;
+        }
         if (data.notRegistered) {
           const params = new URLSearchParams({
             snsToken: data.snsToken,
@@ -61,6 +66,27 @@ function KakaoCallbackContent() {
         setTimeout(() => router.push("/login"), 3000);
       });
   }, [searchParams, router, loginWithTokens]);
+
+  if (blocked) {
+    return (
+      <main className="min-h-dvh flex flex-col items-center justify-center px-8">
+        <div className="text-center animate-fade-up">
+          <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: "hsl(22 60% 42% / 0.1)" }}>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="hsl(22 60% 42%)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 8v4M12 16h.01" />
+            </svg>
+          </div>
+          <h1 className="text-[22px] font-bold text-foreground mb-2">가입이 제한된 서비스예요</h1>
+          <p className="text-[14px] text-muted-foreground mb-2">아재요는 <span className="font-semibold" style={{ color: "hsl(22 60% 42%)" }}>기혼 남성 전용</span> 커뮤니티로 운영되고 있어요</p>
+          <p className="text-[13px] text-muted-foreground leading-relaxed">관심 가져주셔서 감사합니다<br />남편분의 가입을 원하시면 남편분 계정으로 시도해주��요</p>
+          <button onClick={() => router.push("/login")} className="w-full mt-10 py-3.5 rounded-xl text-[14px] font-semibold text-white active:scale-[0.97] transition-all" style={{ backgroundColor: "hsl(22 60% 42%)" }}>
+            돌아가기
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-dvh flex flex-col items-center justify-center px-8">
