@@ -358,8 +358,8 @@ export default function HomePage() {
 
       {/* Schedule Detail Bottom Sheet */}
       {selectedSchedule && (
-        <BottomSheet onClose={() => setSelectedSchedule(null)} className="max-h-[85dvh] overflow-y-auto" style={{ backgroundColor: "hsl(40 30% 99%)" }}>
-          <div className="px-6 pb-8">
+        <BottomSheet onClose={() => setSelectedSchedule(null)} className="max-h-[85dvh]" style={{ backgroundColor: "hsl(40 30% 99%)" }}>
+          <div className="flex-1 overflow-y-auto px-6 pb-8">
             <div className="flex items-center justify-between mb-1">
               <h3 className="text-[18px] font-bold text-foreground">{selectedSchedule.title}</h3>
               <span className="text-[13px] font-bold text-primary">{formatDday(selectedSchedule.date)}</span>
