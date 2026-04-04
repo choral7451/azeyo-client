@@ -8,50 +8,34 @@ export function MaleOnlyScreen() {
   return (
     <main className="min-h-dvh flex flex-col items-center justify-center px-8 overflow-hidden">
       <div className="text-center animate-fade-up w-full max-w-[320px]">
-        {/* Door illustration */}
-        <div className="relative mx-auto mb-8 w-[140px] h-[180px]">
-          {/* Door frame */}
+        {/* Lock illustration */}
+        <div className="relative mx-auto mb-8 w-[120px] h-[140px]">
+          {/* Lock body */}
           <div
-            className="absolute inset-0 rounded-t-[70px] border-[3px]"
-            style={{ borderColor: "hsl(22 60% 42% / 0.3)", backgroundColor: "hsl(36 30% 93%)" }}
-          />
-          {/* Door surface */}
-          <div
-            className="absolute inset-[3px] rounded-t-[67px] overflow-hidden"
-            style={{ backgroundColor: "hsl(22 60% 42% / 0.08)" }}
+            className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[90px] h-[75px] rounded-2xl"
+            style={{ backgroundColor: "hsl(22 60% 42% / 0.15)" }}
           >
-            {/* Door knob */}
-            <div
-              className="absolute right-5 top-1/2 w-4 h-4 rounded-full"
-              style={{ backgroundColor: "hsl(22 60% 42% / 0.35)" }}
-            />
-            {/* Sign on door */}
-            <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[80px]">
-              <div
-                className="rounded-lg px-2 py-3 text-center"
-                style={{ backgroundColor: "hsl(22 60% 42% / 0.12)" }}
-              >
-                <p className="text-[10px] font-bold leading-tight" style={{ color: "hsl(22 60% 42%)" }}>
-                  MEMBERS
-                  <br />
-                  ONLY
-                </p>
-              </div>
-              {/* Sign nail */}
-              <div className="w-1 h-1 rounded-full mx-auto -mt-[2px]" style={{ backgroundColor: "hsl(22 60% 42% / 0.3)" }} />
+            {/* Keyhole */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+              <div className="w-5 h-5 rounded-full" style={{ backgroundColor: "hsl(22 60% 42% / 0.4)" }} />
+              <div className="w-2.5 h-4 mx-auto -mt-1 rounded-b-sm" style={{ backgroundColor: "hsl(22 60% 42% / 0.4)" }} />
             </div>
           </div>
-          {/* Peek character - eyes peeking from side */}
-          <div className="absolute -right-6 top-[55%] animate-peek">
-            <div className="flex gap-[6px]">
-              <div className="w-[7px] h-[7px] rounded-full" style={{ backgroundColor: "hsl(22 60% 42% / 0.6)" }} />
-              <div className="w-[7px] h-[7px] rounded-full" style={{ backgroundColor: "hsl(22 60% 42% / 0.6)" }} />
-            </div>
+          {/* Lock shackle */}
+          <div
+            className="absolute top-0 left-1/2 -translate-x-1/2 w-[56px] h-[70px] rounded-t-[28px] border-[6px] border-b-0"
+            style={{ borderColor: "hsl(22 60% 42% / 0.3)" }}
+          />
+          {/* Sparkle */}
+          <div className="absolute -right-2 top-4 animate-sparkle">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="hsl(22 60% 42% / 0.4)">
+              <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
+            </svg>
           </div>
         </div>
 
         <h1 className="text-[22px] font-bold text-foreground mb-3">
-          이 문은 아재들만 열 수 있어요
+          여긴 아재들의 공간이에요
         </h1>
 
         <div
@@ -59,16 +43,15 @@ export function MaleOnlyScreen() {
           style={{ backgroundColor: "hsl(36 30% 93%)" }}
         >
           <p className="text-[14px] text-foreground font-medium mb-1.5">
-            아재요는 기혼 남성 전용 커뮤니티예요
+            남편분을 잡으러 오셨나요?
           </p>
           <p className="text-[12px] text-muted-foreground leading-relaxed">
-            남편분이 관심 있으시다면<br />
-            남편분 계정으로 가입해주세요
+            남편분 계정으로 로그인해주세요
           </p>
         </div>
 
         <p className="text-[11px] text-muted-foreground mb-8">
-          관심 가져주셔서 감사합니다
+          아재요는 기혼 남성 전용 커뮤니티입니다
         </p>
 
         <button
@@ -81,14 +64,12 @@ export function MaleOnlyScreen() {
       </div>
 
       <style jsx>{`
-        @keyframes peek {
-          0%, 100% { transform: translateX(4px); opacity: 0; }
-          30%, 70% { transform: translateX(0); opacity: 1; }
+        @keyframes sparkle {
+          0%, 100% { opacity: 0.3; transform: scale(0.8); }
+          50% { opacity: 1; transform: scale(1.2); }
         }
-        .animate-peek {
-          animation: peek 3s ease-in-out infinite;
-          animation-delay: 1s;
-          opacity: 0;
+        .animate-sparkle {
+          animation: sparkle 2s ease-in-out infinite;
         }
       `}</style>
     </main>
