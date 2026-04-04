@@ -14,6 +14,19 @@ function getKakaoOAuthUrl() {
   return `https://kauth.kakao.com/oauth/authorize?${params.toString()}`;
 }
 
+function getNaverOAuthUrl() {
+  const clientId = process.env.NEXT_PUBLIC_NAVER_CLIENT_ID;
+  const redirectUri = `${window.location.origin}/auth/callback/naver`;
+  const state = Math.random().toString(36).substring(2);
+  const params = new URLSearchParams({
+    client_id: clientId!,
+    redirect_uri: redirectUri,
+    response_type: "code",
+    state,
+  });
+  return `https://nid.naver.com/oauth2.0/authorize?${params.toString()}`;
+}
+
 function getGoogleOAuthUrl() {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const redirectUri = `${window.location.origin}/auth/callback/google`;
@@ -61,6 +74,20 @@ export default function LoginPage() {
             <path d="M12 3C6.48 3 2 6.44 2 10.64c0 2.72 1.82 5.1 4.56 6.44-.2.72-.72 2.6-.82 3.01-.13.5.18.5.38.36.16-.1 2.5-1.7 3.52-2.39.76.1 1.56.16 2.36.16 5.52 0 10-3.44 10-7.58C22 6.44 17.52 3 12 3z" />
           </svg>
           카카오로 시작하기
+        </button>
+
+        {/* Naver */}
+        <button
+          onClick={() => {
+            window.location.href = getNaverOAuthUrl();
+          }}
+          className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl text-[14px] font-semibold text-white active:scale-[0.97] transition-all"
+          style={{ backgroundColor: "#03C75A" }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+            <path d="M16.27 3H7.73L3 12l4.73 9h8.54L21 12l-4.73-9zM13.2 14.4L10.47 10v4.4H8.4V5.6h2.13L13.2 10V5.6h2.07v8.8H13.2z" />
+          </svg>
+          네이버로 시작하기
         </button>
 
         {/* Google */}
