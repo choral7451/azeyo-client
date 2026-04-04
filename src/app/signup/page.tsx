@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth-context";
 import { BottomSheet } from "@/components/bottom-sheet";
 
-type Step = "terms" | "info" | "done";
+type Step = "terms" | "info" | "done" | "blocked";
 
 interface TermItem {
   id: string;
@@ -248,6 +248,12 @@ function SignupContent() {
 
         if (errorCode === "AZEYO-USER-002") {
           setSubmitError("이미 사용 중인 닉네임이에요.");
+          setIsSubmitting(false);
+          return;
+        }
+
+        if (errorCode === "AZEYO-AUTH-006") {
+          setStep("blocked");
           setIsSubmitting(false);
           return;
         }
@@ -566,6 +572,34 @@ function SignupContent() {
             style={{ backgroundColor: "hsl(22 60% 42%)" }}
           >
             시작하기
+          </button>
+        </div>
+      )}
+
+      {step === "blocked" && (
+        <div className="flex-1 flex flex-col items-center justify-center text-center animate-fade-up" style={{ animationDelay: "0.1s" }}>
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center mb-6"
+            style={{ backgroundColor: "hsl(22 60% 42% / 0.1)" }}
+          >
+            <span className="text-4xl">🙅‍♂️</span>
+          </div>
+          <h1 className="text-[22px] font-bold text-foreground mb-2">
+            형님, 여긴 아재들만...
+          </h1>
+          <p className="text-[14px] text-muted-foreground mb-2">
+            아재요는 <span className="font-semibold text-primary">남성 전용</span> 커뮤니티예요
+          </p>
+          <p className="text-[13px] text-muted-foreground">
+            혹시 남편분이 찾으시는 거라면<br />남편분 카카오로 다시 시도해주세요 😄
+          </p>
+
+          <button
+            onClick={() => router.push("/login")}
+            className="w-full mt-10 py-3.5 rounded-xl text-[14px] font-semibold text-white active:scale-[0.97] transition-all"
+            style={{ backgroundColor: "hsl(22 60% 42%)" }}
+          >
+            돌아가기
           </button>
         </div>
       )}
