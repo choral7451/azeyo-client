@@ -59,6 +59,7 @@ export default function SchedulePage() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<ApiSchedule | null>(null);
   const [selectedRec, setSelectedRec] = useState<ApiRecommendation | null>(null);
+  const [editingSchedule, setEditingSchedule] = useState<ApiSchedule | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -107,6 +108,29 @@ export default function SchedulePage() {
         method: "POST",
         body: JSON.stringify({ title, date, memo: null, tagIds, repeatType, startDate }),
       });
+      fetchData();
+    } catch {
+      // silently fail
+    }
+  }
+
+  async function handleDeleteSchedule(scheduleId: number) {
+    try {
+      await apiFetch(`/azeyo/schedules/${scheduleId}`, { method: "DELETE" });
+      setSelectedSchedule(null);
+      fetchData();
+    } catch {
+      // silently fail
+    }
+  }
+
+  async function handleUpdateSchedule(scheduleId: number, title: string, date: string, tagIds: number[], repeatType: "NONE" | "YEARLY", startDate: string | null) {
+    try {
+      await apiFetch(`/azeyo/schedules/${scheduleId}`, {
+        method: "PUT",
+        body: JSON.stringify({ title, date, memo: null, tagIds, repeatType, startDate }),
+      });
+      setEditingSchedule(null);
       fetchData();
     } catch {
       // silently fail
@@ -231,13 +255,29 @@ export default function SchedulePage() {
               </div>
             )}
 
-            <button
-              onClick={() => setSelectedSchedule(null)}
-              className="w-full mt-5 py-3 rounded-xl text-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform"
-              style={{ backgroundColor: "hsl(40 30% 93%)" }}
-            >
-              닫기
-            </button>
+            <div className="flex gap-3 mt-5">
+              <button
+                onClick={() => {
+                  if (confirm("이 일정을 삭제할까요?")) {
+                    handleDeleteSchedule(selectedSchedule.id);
+                  }
+                }}
+                className="flex-1 py-3 rounded-xl text-red-500 text-[14px] font-semibold active:scale-[0.98] transition-transform"
+                style={{ backgroundColor: "hsl(0 80% 95%)" }}
+              >
+                삭제
+              </button>
+              <button
+                onClick={() => {
+                  setEditingSchedule(selectedSchedule);
+                  setSelectedSchedule(null);
+                }}
+                className="flex-1 py-3 rounded-xl text-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform"
+                style={{ backgroundColor: "hsl(40 30% 93%)" }}
+              >
+                수정
+              </button>
+            </div>
           </div>
         </BottomSheet>
       )}
@@ -250,6 +290,18 @@ export default function SchedulePage() {
           onSubmit={(title, date, tagIds, repeatType, startDate) => {
             handleAddSchedule(title, date, tagIds, repeatType, startDate);
             setShowAddDialog(false);
+          }}
+        />
+      )}
+
+      {/* Edit Schedule Dialog */}
+      {editingSchedule && (
+        <AddScheduleDialog
+          allTags={allTags}
+          initialData={editingSchedule}
+          onClose={() => setEditingSchedule(null)}
+          onSubmit={(title, date, tagIds, repeatType, startDate) => {
+            handleUpdateSchedule(editingSchedule.id, title, date, tagIds, repeatType, startDate);
           }}
         />
       )}
@@ -340,11 +392,12 @@ function ScheduleCard({
   );
 }
 
-function AddScheduleDialog({ allTags, onClose, onSubmit }: { allTags: ApiTag[]; onClose: () => void; onSubmit: (title: string, date: string, tagIds: number[], repeatType: "NONE" | "YEARLY", startDate: string | null) => void }) {
-  const [title, setTitle] = useState("");
-  const [date, setDate] = useState("");
-  const [repeatType, setRepeatType] = useState<"NONE" | "YEARLY">("NONE");
-  const [selectedTagIds, setSelectedTagIds] = useState<Set<number>>(new Set());
+function AddScheduleDialog({ allTags, initialData, onClose, onSubmit }: { allTags: ApiTag[]; initialData?: ApiSchedule; onClose: () => void; onSubmit: (title: string, date: string, tagIds: number[], repeatType: "NONE" | "YEARLY", startDate: string | null) => void }) {
+  const isEdit = !!initialData;
+  const [title, setTitle] = useState(initialData?.title ?? "");
+  const [date, setDate] = useState(initialData?.date ?? "");
+  const [repeatType, setRepeatType] = useState<"NONE" | "YEARLY">(initialData?.repeatType ?? "NONE");
+  const [selectedTagIds, setSelectedTagIds] = useState<Set<number>>(new Set(initialData?.tags.map(t => t.id) ?? []));
 
   function toggleTag(tagId: number) {
     setSelectedTagIds(prev => {
@@ -358,7 +411,7 @@ function AddScheduleDialog({ allTags, onClose, onSubmit }: { allTags: ApiTag[]; 
   return (
     <BottomSheet onClose={onClose} className="max-h-[85dvh] overflow-y-auto" style={{ backgroundColor: "hsl(40 30% 99%)" }}>
       <div className="px-6 pb-24">
-        <h3 className="text-[18px] font-bold text-foreground mb-5">일정 등록</h3>
+        <h3 className="text-[18px] font-bold text-foreground mb-5">{isEdit ? "일정 수정" : "일정 등록"}</h3>
 
         <label className="block mb-4">
           <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">일정 이름</span>
@@ -444,7 +497,7 @@ function AddScheduleDialog({ allTags, onClose, onSubmit }: { allTags: ApiTag[]; 
             onClick={() => { if (title && date) onSubmit(title, date, Array.from(selectedTagIds), repeatType, repeatType === "YEARLY" ? date : null); }}
             className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform"
           >
-            등록하기
+            {isEdit ? "수정하기" : "등록하기"}
           </button>
         </div>
       </div>
