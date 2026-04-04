@@ -3,6 +3,17 @@
 import Image from "next/image";
 import Link from "next/link";
 
+function getKakaoOAuthUrl() {
+  const clientId = process.env.NEXT_PUBLIC_KAKAO_CLIENT_ID;
+  const redirectUri = `${window.location.origin}/auth/callback/kakao`;
+  const params = new URLSearchParams({
+    client_id: clientId!,
+    redirect_uri: redirectUri,
+    response_type: "code",
+  });
+  return `https://kauth.kakao.com/oauth/authorize?${params.toString()}`;
+}
+
 function getGoogleOAuthUrl() {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const redirectUri = `${window.location.origin}/auth/callback/google`;
@@ -39,8 +50,10 @@ export default function LoginPage() {
       {/* Social Login Buttons */}
       <div className="w-full space-y-3 animate-fade-up" style={{ animationDelay: "0.15s" }}>
         {/* Kakao */}
-        {/* <Link
-          href="/signup"
+        <button
+          onClick={() => {
+            window.location.href = getKakaoOAuthUrl();
+          }}
           className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl text-[14px] font-semibold active:scale-[0.97] transition-all"
           style={{ backgroundColor: "#FEE500", color: "#191919" }}
         >
@@ -48,19 +61,7 @@ export default function LoginPage() {
             <path d="M12 3C6.48 3 2 6.44 2 10.64c0 2.72 1.82 5.1 4.56 6.44-.2.72-.72 2.6-.82 3.01-.13.5.18.5.38.36.16-.1 2.5-1.7 3.52-2.39.76.1 1.56.16 2.36.16 5.52 0 10-3.44 10-7.58C22 6.44 17.52 3 12 3z" />
           </svg>
           카카오로 시작하기
-        </Link> */}
-
-        {/* Naver */}
-        {/* <Link
-          href="/signup"
-          className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl text-[14px] font-semibold text-white active:scale-[0.97] transition-all"
-          style={{ backgroundColor: "#03C75A" }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-            <path d="M16.27 3H7.73L3 12l4.73 9h8.54L21 12l-4.73-9zM13.2 14.4L10.47 10v4.4H8.4V5.6h2.13L13.2 10V5.6h2.07v8.8H13.2z" />
-          </svg>
-          네이버로 시작하기
-        </Link> */}
+        </button>
 
         {/* Google */}
         <button
@@ -83,8 +84,8 @@ export default function LoginPage() {
       {/* Footer */}
       <p className="text-[11px] text-muted-foreground mt-8 text-center leading-relaxed animate-fade-up" style={{ animationDelay: "0.25s" }}>
         시작하면{" "}
-        <span className="underline">이용약관</span> 및{" "}
-        <span className="underline">개인정보 처리방침</span>에 동의합니다
+        <Link href="/mypage/settings/terms" className="underline">이용약관</Link> 및{" "}
+        <Link href="/mypage/settings/privacy" className="underline">개인정보 처리방침</Link>에 동의합니다
       </p>
     </main>
   );
