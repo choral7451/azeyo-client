@@ -203,81 +203,103 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* No Schedules CTA (logged-in) */}
-      {isLoggedIn && schedulesLoaded && upcoming.length === 0 && (
-        <section className="mb-10 animate-fade-up" style={{ animationDelay: "0.05s" }}>
-          <div className="rounded-2xl px-5 pt-5 pb-5" style={{ backgroundColor: "hsl(38 35% 93%)" }}>
-            <p className="text-[13px] font-medium mb-1" style={{ color: "hsl(22 60% 42%)" }}>형님,</p>
-            <h2 className="text-[17px] font-bold leading-snug mb-3" style={{ color: "hsl(25 25% 18%)" }}>
-              다가오는 기념일<br />등록해두셨나요?
-            </h2>
-            <p className="text-[12px] leading-relaxed mb-5" style={{ color: "hsl(25 12% 48%)" }}>
-              아내 생일, 결혼기념일, 장모님 생신...<br />
-              미리 등록하면 선물 추천까지 해드려요.
-            </p>
-            <Link href="/schedule" className="flex items-center justify-center w-full py-3 rounded-xl text-[13px] font-semibold text-white active:scale-[0.97] transition-all" style={{ backgroundColor: "hsl(22 60% 42%)" }}>
-              일정 등록하러 가기
-            </Link>
-          </div>
-        </section>
-      )}
+      {/* Schedule Section (logged-in) */}
+      {isLoggedIn && (
+        <>
+          {!schedulesLoaded ? (
+            /* Skeleton for schedule area */
+            <section className="mb-10">
+              <div className="flex items-baseline justify-between mb-4">
+                <div className="h-[20px] w-24 bg-secondary rounded" />
+              </div>
+              <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-2">
+                {[0, 1].map((i) => (
+                  <div key={i} className="flex-shrink-0 w-[200px] rounded-2xl p-4" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
+                    <div className="h-[22px] w-12 bg-secondary rounded-full mb-3" />
+                    <div className="h-[20px] w-3/4 bg-secondary rounded" />
+                    <div className="flex gap-1.5 mt-2.5">
+                      <div className="h-[18px] w-10 bg-secondary rounded-md" />
+                      <div className="h-[18px] w-10 bg-secondary rounded-md" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : upcoming.length > 0 ? (
+            <>
+              <section className="mb-10">
+                <div className="flex items-baseline justify-between mb-4">
+                  <h2 className="text-[15px] font-bold text-foreground">다가오는 일정</h2>
+                  <Link href="/schedule" className="text-[12px] text-primary font-medium" aria-label="다가오는 일정 전체 보기">전체 보기</Link>
+                </div>
+                <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-2">
+                  {upcoming.map((schedule) => {
+                    const dday = getDday(schedule.date);
+                    const isUrgent = dday <= 7;
+                    return (
+                      <button
+                        key={schedule.id}
+                        onClick={() => setSelectedSchedule(schedule)}
+                        className={`flex-shrink-0 w-[200px] rounded-2xl p-4 text-left transition-transform duration-200 active:scale-[0.97] cursor-pointer ${isUrgent ? "bg-primary text-primary-foreground shadow-md" : ""}`}
+                        style={!isUrgent ? { backgroundColor: "hsl(36 30% 93%)" } : undefined}
+                      >
+                        <span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full mb-3 ${isUrgent ? "bg-white/20 text-white" : "bg-secondary text-primary"}`}>
+                          {formatDday(schedule.date)}
+                        </span>
+                        <p className={`text-[14px] font-semibold leading-snug ${isUrgent ? "text-white" : "text-foreground"}`}>{schedule.title}</p>
+                        <div className="flex flex-wrap gap-1.5 mt-2.5">
+                          {schedule.tags.map((tag) => (
+                            <span key={tag.id} className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${isUrgent ? "bg-white/15 text-white/80" : ""}`} style={!isUrgent ? { backgroundColor: tag.color + "18", color: tag.color } : undefined}>
+                              {tag.name}
+                            </span>
+                          ))}
+                        </div>
+                        {schedule.memo && (
+                          <p className={`text-[11px] mt-2 leading-relaxed line-clamp-1 ${isUrgent ? "text-white/60" : "text-muted-foreground"}`}>{schedule.memo}</p>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
 
-      {/* Upcoming Schedules */}
-      {isLoggedIn && upcoming.length > 0 && (
-        <section className="mb-10 animate-fade-up" style={{ animationDelay: "0.05s" }}>
-          <div className="flex items-baseline justify-between mb-4">
-            <h2 className="text-[15px] font-bold text-foreground">다가오는 일정</h2>
-            <Link href="/schedule" className="text-[12px] text-primary font-medium" aria-label="다가오는 일정 전체 보기">전체 보기</Link>
-          </div>
-          <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-2">
-            {upcoming.map((schedule) => {
-              const dday = getDday(schedule.date);
-              const isUrgent = dday <= 7;
-              return (
-                <button
-                  key={schedule.id}
-                  onClick={() => setSelectedSchedule(schedule)}
-                  className={`flex-shrink-0 w-[200px] rounded-2xl p-4 text-left transition-transform duration-200 active:scale-[0.97] cursor-pointer ${isUrgent ? "bg-primary text-primary-foreground shadow-md" : ""}`}
-                  style={!isUrgent ? { backgroundColor: "hsl(36 30% 93%)" } : undefined}
-                >
-                  <span className={`inline-block text-[11px] font-bold px-2.5 py-1 rounded-full mb-3 ${isUrgent ? "bg-white/20 text-white" : "bg-secondary text-primary"}`}>
-                    {formatDday(schedule.date)}
-                  </span>
-                  <p className={`text-[14px] font-semibold leading-snug ${isUrgent ? "text-white" : "text-foreground"}`}>{schedule.title}</p>
-                  <div className="flex flex-wrap gap-1.5 mt-2.5">
-                    {schedule.tags.map((tag) => (
-                      <span key={tag.id} className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${isUrgent ? "bg-white/15 text-white/80" : ""}`} style={!isUrgent ? { backgroundColor: tag.color + "18", color: tag.color } : undefined}>
-                        {tag.name}
-                      </span>
+              {/* Recommendation */}
+              {matchedRec && (
+                <section className="mb-10">
+                  <h2 className="text-[15px] font-bold text-foreground mb-4">{matchedRec.title}</h2>
+                  <div className="space-y-2.5">
+                    {matchedRec.items.slice(0, 3).map((item) => (
+                      <div key={item.rank} className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
+                        <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-secondary flex items-center justify-center text-[12px] font-bold text-primary">{item.rank}</span>
+                        <span className="text-base">{item.emoji}</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[13px] font-semibold text-foreground">{item.name}</p>
+                          <p className="text-[11px] text-muted-foreground">{item.description}</p>
+                        </div>
+                      </div>
                     ))}
                   </div>
-                  {schedule.memo && (
-                    <p className={`text-[11px] mt-2 leading-relaxed line-clamp-1 ${isUrgent ? "text-white/60" : "text-muted-foreground"}`}>{schedule.memo}</p>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* Recommendation */}
-      {isLoggedIn && matchedRec && (
-        <section className="mb-10 animate-fade-up" style={{ animationDelay: "0.1s" }}>
-          <h2 className="text-[15px] font-bold text-foreground mb-4">{matchedRec.title}</h2>
-          <div className="space-y-2.5">
-            {matchedRec.items.slice(0, 3).map((item) => (
-              <div key={item.rank} className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
-                <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-secondary flex items-center justify-center text-[12px] font-bold text-primary">{item.rank}</span>
-                <span className="text-base">{item.emoji}</span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-semibold text-foreground">{item.name}</p>
-                  <p className="text-[11px] text-muted-foreground">{item.description}</p>
-                </div>
+                </section>
+              )}
+            </>
+          ) : (
+            <section className="mb-10">
+              <div className="rounded-2xl px-5 pt-5 pb-5" style={{ backgroundColor: "hsl(38 35% 93%)" }}>
+                <p className="text-[13px] font-medium mb-1" style={{ color: "hsl(22 60% 42%)" }}>형님,</p>
+                <h2 className="text-[17px] font-bold leading-snug mb-3" style={{ color: "hsl(25 25% 18%)" }}>
+                  다가오는 기념일<br />등록해두셨나요?
+                </h2>
+                <p className="text-[12px] leading-relaxed mb-5" style={{ color: "hsl(25 12% 48%)" }}>
+                  아내 생일, 결혼기념일, 장모님 생신...<br />
+                  미리 등록하면 선물 추천까지 해드려요.
+                </p>
+                <Link href="/schedule" className="flex items-center justify-center w-full py-3 rounded-xl text-[13px] font-semibold text-white active:scale-[0.97] transition-all" style={{ backgroundColor: "hsl(22 60% 42%)" }}>
+                  일정 등록하러 가기
+                </Link>
               </div>
-            ))}
-          </div>
-        </section>
+            </section>
+          )}
+        </>
       )}
 
       {/* Monthly Top Users */}
