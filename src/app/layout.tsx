@@ -6,7 +6,6 @@ import { AppShell } from "@/components/app-shell";
 
 const notoSansKR = Noto_Sans_KR({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "900"],
   display: "swap",
   preload: true,
   adjustFontFallback: true,
@@ -117,6 +116,8 @@ export default function RootLayout({
   return (
     <html lang="ko" className={notoSansKR.className}>
       <head>
+        <link rel="preconnect" href="https://azeyo-storage.s3.ap-northeast-2.amazonaws.com" />
+        <link rel="dns-prefetch" href="https://azeyo-storage.s3.ap-northeast-2.amazonaws.com" />
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-7W3VLZ0NPY" strategy="afterInteractive" />
         <Script id="gtag-init" strategy="afterInteractive">
           {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-7W3VLZ0NPY');`}

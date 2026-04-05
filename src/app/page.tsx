@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/components/auth-context";
 import { useToast } from "@/components/toast";
 import { BottomSheet } from "@/components/bottom-sheet";
@@ -171,7 +172,7 @@ export default function HomePage() {
   }, [selectedPost]);
 
   return (
-    <main className="px-5 pb-6">
+    <main className="px-5 pb-6 min-h-[calc(100dvh-8rem)]">
 
       {/* Logged-out CTA Banner */}
       {!isLoggedIn && (
@@ -287,7 +288,7 @@ export default function HomePage() {
                 <button key={user.id} onClick={() => setSelectedUser(user)} className="flex-shrink-0 w-[150px] rounded-2xl p-4 text-center active:scale-[0.97] transition-all" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
                   <div className="relative inline-block mb-2">
                     {user.iconImageUrl ? (
-                      <img src={user.iconImageUrl} alt={user.nickname} className="w-12 h-12 rounded-full object-cover" />
+                      <Image src={user.iconImageUrl} alt={user.nickname} width={48} height={48} className="w-12 h-12 rounded-full object-cover" />
                     ) : (
                       <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white text-sm font-black">
                         {user.nickname.charAt(0)}
@@ -414,7 +415,7 @@ export default function HomePage() {
           <div className="px-5 pb-8">
             <div className="flex items-center gap-4 mb-5 mt-2">
               {selectedUser.iconImageUrl ? (
-                <img src={selectedUser.iconImageUrl} alt={selectedUser.nickname} className="w-14 h-14 rounded-full object-cover" />
+                <Image src={selectedUser.iconImageUrl} alt={selectedUser.nickname} width={56} height={56} className="w-14 h-14 rounded-full object-cover" />
               ) : (
                 <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-white text-lg font-black">
                   {selectedUser.nickname.charAt(0)}
@@ -595,7 +596,7 @@ function PostDetailSheet({ post, comments: initialComments, onClose, onUpdate }:
       <div className="flex-1 overflow-y-auto px-5 pb-4">
         <div className="flex items-center gap-2.5 mb-4">
           {post.authorIconImageUrl ? (
-            <img src={post.authorIconImageUrl} alt={post.authorName} className="w-9 h-9 rounded-full object-cover" />
+            <Image src={post.authorIconImageUrl} alt={post.authorName} width={36} height={36} className="w-9 h-9 rounded-full object-cover" />
           ) : (
             <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-[12px] font-bold text-primary">
               {post.authorName.charAt(0)}
@@ -675,7 +676,7 @@ function PostDetailSheet({ post, comments: initialComments, onClose, onUpdate }:
                 <div key={comment.id}>
                   <div className="flex items-center gap-2 mb-1">
                     {comment.userIconImageUrl ? (
-                      <img src={comment.userIconImageUrl} alt={comment.userNickname} className="w-6 h-6 rounded-full object-cover" />
+                      <Image src={comment.userIconImageUrl} alt={comment.userNickname} width={24} height={24} className="w-6 h-6 rounded-full object-cover" />
                     ) : (
                       <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-[9px] font-bold text-primary">
                         {comment.userNickname.charAt(0)}
