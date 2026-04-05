@@ -211,6 +211,7 @@ export default function HomePage() {
             <section className="mb-10">
               <div className="flex items-baseline justify-between mb-4">
                 <div className="h-[20px] w-24 bg-secondary rounded" />
+                <div className="h-[16px] w-14 bg-secondary rounded" />
               </div>
               <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-2">
                 {[0, 1].map((i) => (
@@ -221,6 +222,7 @@ export default function HomePage() {
                       <div className="h-[18px] w-10 bg-secondary rounded-md" />
                       <div className="h-[18px] w-10 bg-secondary rounded-md" />
                     </div>
+                    <div className="h-[16px] w-full bg-secondary rounded mt-2" />
                   </div>
                 ))}
               </div>
