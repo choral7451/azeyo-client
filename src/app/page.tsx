@@ -100,21 +100,25 @@ export default function HomePage() {
   const [schedulesLoaded, setSchedulesLoaded] = useState(false);
   const [matchedRec, setMatchedRec] = useState<ApiRecommendation | null>(null);
   const [topUsers, setTopUsers] = useState<ApiTopUser[]>([]);
+  const [topUsersLoaded, setTopUsersLoaded] = useState(false);
   const [trending, setTrending] = useState<ApiPost[]>([]);
+  const [trendingLoaded, setTrendingLoaded] = useState(false);
   const [postComments, setPostComments] = useState<ApiComment[]>([]);
 
   useEffect(() => {
     // Top monthly users (public)
     apiFetch<{ users: ApiTopUser[] }>("/azeyo/users/top-monthly?count=3")
       .then((data) => setTopUsers(data.users))
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setTopUsersLoaded(true));
   }, []);
 
   // Trending posts (re-fetch with auth to get isLiked/userVote)
   useEffect(() => {
     apiFetch<{ posts: ApiPost[]; totalCount: number }>("/azeyo/communities/top", isLoggedIn ? undefined : { noAuth: true })
       .then((data) => setTrending(data.posts.slice(0, 4)))
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setTrendingLoaded(true));
   }, [accessToken]);
 
   useEffect(() => {
@@ -172,7 +176,7 @@ export default function HomePage() {
   }, [selectedPost]);
 
   return (
-    <main className="px-5 pb-6 min-h-[calc(100dvh-8rem)]">
+    <main className="px-5 pb-6">
 
       {/* Logged-out CTA Banner */}
       {!isLoggedIn && (
@@ -277,11 +281,19 @@ export default function HomePage() {
       )}
 
       {/* Monthly Top Users */}
-      {topUsers.length > 0 && (
-        <section className="mb-10 animate-fade-up" style={{ animationDelay: "0.15s" }}>
-          <h2 className="text-[15px] font-bold text-foreground mb-4">이달의 활동왕 🔥</h2>
-          <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-2">
-            {topUsers.map((user, index) => {
+      <section className="mb-10">
+        <h2 className="text-[15px] font-bold text-foreground mb-4">이달의 활동왕 🔥</h2>
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-2">
+          {!topUsersLoaded ? (
+            [0, 1, 2].map((i) => (
+              <div key={i} className="flex-shrink-0 w-[150px] rounded-2xl p-4" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
+                <div className="w-12 h-12 rounded-full bg-secondary mx-auto mb-2" />
+                <div className="h-3 w-16 bg-secondary rounded mx-auto mb-1.5" />
+                <div className="h-2.5 w-12 bg-secondary rounded mx-auto" />
+              </div>
+            ))
+          ) : topUsers.length > 0 ? (
+            topUsers.map((user, index) => {
               const grade = getGradeFromPoints(user.activityPoints);
               const rankColors = ["hsl(35 80% 50%)", "hsl(220 10% 65%)", "hsl(25 50% 55%)"];
               return (
@@ -303,20 +315,28 @@ export default function HomePage() {
                   <p className="text-[11px] text-primary font-bold mt-1.5">{user.monthlyPoints}점</p>
                 </button>
               );
-            })}
-          </div>
-        </section>
-      )}
+            })
+          ) : null}
+        </div>
+      </section>
 
       {/* Trending */}
-      {trending.length > 0 && (
-        <section className="animate-fade-up" style={{ animationDelay: "0.2s" }}>
-          <div className="flex items-baseline justify-between mb-4">
-            <h2 className="text-[15px] font-bold text-foreground">인기 게시글</h2>
-            <Link href="/community" className="text-[12px] text-primary font-medium" aria-label="인기 게시글 전체 보기">전체 보기</Link>
-          </div>
-          <div className="space-y-2.5">
-            {trending.map((post) => (
+      <section>
+        <div className="flex items-baseline justify-between mb-4">
+          <h2 className="text-[15px] font-bold text-foreground">인기 게시글</h2>
+          <Link href="/community" className="text-[12px] text-primary font-medium" aria-label="인기 게시글 전체 보기">전체 보기</Link>
+        </div>
+        <div className="space-y-2.5">
+          {!trendingLoaded ? (
+            [0, 1, 2, 3].map((i) => (
+              <div key={i} className="rounded-xl px-4 py-3.5" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
+                <div className="h-2.5 w-12 bg-secondary rounded mb-2" />
+                <div className="h-3.5 w-3/4 bg-secondary rounded mb-2" />
+                <div className="h-2.5 w-20 bg-secondary rounded" />
+              </div>
+            ))
+          ) : (
+            trending.map((post) => (
               <article key={post.id} onClick={() => setSelectedPost(post)} className="rounded-xl px-4 py-3.5 transition-transform duration-200 active:scale-[0.98] cursor-pointer" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
@@ -354,10 +374,10 @@ export default function HomePage() {
                   <span className="ml-auto text-[10px]">{post.authorName}</span>
                 </div>
               </article>
-            ))}
-          </div>
-        </section>
-      )}
+            ))
+          )}
+        </div>
+      </section>
 
       {/* Schedule Detail Bottom Sheet */}
       {selectedSchedule && (
