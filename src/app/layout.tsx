@@ -1,12 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_KR } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { AppShell } from "@/components/app-shell";
 
 const notoSansKR = Noto_Sans_KR({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "900"],
+  weight: ["400", "500", "600", "700", "900"],
   display: "swap",
+  preload: true,
+  adjustFontFallback: true,
 });
 
 const SITE_NAME = "아재요";
@@ -114,12 +117,10 @@ export default function RootLayout({
   return (
     <html lang="ko" className={notoSansKR.className}>
       <head>
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-7W3VLZ0NPY" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-7W3VLZ0NPY');`,
-          }}
-        />
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-7W3VLZ0NPY" strategy="afterInteractive" />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-7W3VLZ0NPY');`}
+        </Script>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
