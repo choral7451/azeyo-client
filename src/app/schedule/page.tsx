@@ -17,6 +17,7 @@ interface ApiSchedule {
   date: string;
   memo: string | null;
   repeatType: "NONE" | "YEARLY";
+  calendarType: "SOLAR" | "LUNAR";
   startDate: string | null;
   alarmTimes: string[] | null;
   anniversaryLabel: string | null;
@@ -111,11 +112,11 @@ export default function SchedulePage() {
   const upcoming = sorted.filter((s) => getDday(s.date) >= 0);
   const past = sorted.filter((s) => getDday(s.date) < 0);
 
-  async function handleAddSchedule(title: string, date: string, tagIds: number[], repeatType: "NONE" | "YEARLY", startDate: string | null, alarmTimes: string[] | null) {
+  async function handleAddSchedule(title: string, date: string, tagIds: number[], repeatType: "NONE" | "YEARLY", calendarType: "SOLAR" | "LUNAR", startDate: string | null, alarmTimes: string[] | null) {
     try {
       await apiFetch("/azeyo/schedules", {
         method: "POST",
-        body: JSON.stringify({ title, date, memo: null, tagIds, repeatType, startDate, alarmTimes }),
+        body: JSON.stringify({ title, date, memo: null, tagIds, repeatType, calendarType, startDate, alarmTimes }),
       });
       fetchData();
     } catch {
@@ -133,11 +134,11 @@ export default function SchedulePage() {
     }
   }
 
-  async function handleUpdateSchedule(scheduleId: number, title: string, date: string, tagIds: number[], repeatType: "NONE" | "YEARLY", startDate: string | null, alarmTimes: string[] | null) {
+  async function handleUpdateSchedule(scheduleId: number, title: string, date: string, tagIds: number[], repeatType: "NONE" | "YEARLY", calendarType: "SOLAR" | "LUNAR", startDate: string | null, alarmTimes: string[] | null) {
     try {
       await apiFetch(`/azeyo/schedules/${scheduleId}`, {
         method: "PUT",
-        body: JSON.stringify({ title, date, memo: null, tagIds, repeatType, startDate, alarmTimes }),
+        body: JSON.stringify({ title, date, memo: null, tagIds, repeatType, calendarType, startDate, alarmTimes }),
       });
       setEditingSchedule(null);
       fetchData();
@@ -209,6 +210,11 @@ export default function SchedulePage() {
                 <h3 className="text-[18px] font-bold text-foreground">
                   {selectedSchedule.title}
                 </h3>
+                {selectedSchedule.calendarType === "LUNAR" && (
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-md" style={{ backgroundColor: "hsl(260 40% 95%)", color: "hsl(260 40% 50%)" }}>
+                    음력
+                  </span>
+                )}
                 {selectedSchedule.anniversaryLabel && (
                   <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary">
                     {selectedSchedule.anniversaryLabel}
@@ -308,8 +314,8 @@ export default function SchedulePage() {
         <AddScheduleDialog
           allTags={allTags}
           onClose={() => setShowAddDialog(false)}
-          onSubmit={(title, date, tagIds, repeatType, startDate, alarmTimes) => {
-            handleAddSchedule(title, date, tagIds, repeatType, startDate, alarmTimes);
+          onSubmit={(title, date, tagIds, repeatType, calendarType, startDate, alarmTimes) => {
+            handleAddSchedule(title, date, tagIds, repeatType, calendarType, startDate, alarmTimes);
             setShowAddDialog(false);
           }}
         />
@@ -321,8 +327,8 @@ export default function SchedulePage() {
           allTags={allTags}
           initialData={editingSchedule}
           onClose={() => setEditingSchedule(null)}
-          onSubmit={(title, date, tagIds, repeatType, startDate, alarmTimes) => {
-            handleUpdateSchedule(editingSchedule.id, title, date, tagIds, repeatType, startDate, alarmTimes);
+          onSubmit={(title, date, tagIds, repeatType, calendarType, startDate, alarmTimes) => {
+            handleUpdateSchedule(editingSchedule.id, title, date, tagIds, repeatType, calendarType, startDate, alarmTimes);
           }}
         />
       )}
@@ -378,6 +384,11 @@ function ScheduleCard({
               <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" />
             </svg>
           )}
+          {schedule.calendarType === "LUNAR" && (
+            <span className="flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-md" style={{ backgroundColor: "hsl(260 40% 95%)", color: "hsl(260 40% 50%)" }}>
+              음력
+            </span>
+          )}
           {schedule.anniversaryLabel && (
             <span className="flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-primary/10 text-primary">
               {schedule.anniversaryLabel}
@@ -418,11 +429,12 @@ function ScheduleCard({
   );
 }
 
-function AddScheduleDialog({ allTags, initialData, onClose, onSubmit }: { allTags: ApiTag[]; initialData?: ApiSchedule; onClose: () => void; onSubmit: (title: string, date: string, tagIds: number[], repeatType: "NONE" | "YEARLY", startDate: string | null, alarmTimes: string[] | null) => void }) {
+function AddScheduleDialog({ allTags, initialData, onClose, onSubmit }: { allTags: ApiTag[]; initialData?: ApiSchedule; onClose: () => void; onSubmit: (title: string, date: string, tagIds: number[], repeatType: "NONE" | "YEARLY", calendarType: "SOLAR" | "LUNAR", startDate: string | null, alarmTimes: string[] | null) => void }) {
   const isEdit = !!initialData;
   const [title, setTitle] = useState(initialData?.title ?? "");
   const [date, setDate] = useState(initialData?.date ?? "");
   const [repeatType, setRepeatType] = useState<"NONE" | "YEARLY">(initialData?.repeatType ?? "NONE");
+  const [calendarType, setCalendarType] = useState<"SOLAR" | "LUNAR">(initialData?.calendarType ?? "SOLAR");
   const [selectedTagIds, setSelectedTagIds] = useState<Set<number>>(new Set(initialData?.tags.map(t => t.id) ?? []));
   const [alarmTimes, setAlarmTimes] = useState<string[]>(initialData?.alarmTimes ?? []);
 
@@ -469,6 +481,27 @@ function AddScheduleDialog({ allTags, initialData, onClose, onSubmit }: { allTag
             </p>
           )}
         </label>
+
+        {/* Calendar Type */}
+        <div className="mb-4">
+          <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">달력 유형</span>
+          <div className="flex gap-2">
+            {([["SOLAR", "양력"], ["LUNAR", "음력"]] as const).map(([value, label]) => (
+              <button
+                key={value}
+                onClick={() => setCalendarType(value)}
+                className={`flex-1 py-2.5 rounded-xl text-[13px] font-medium transition-all ${
+                  calendarType === value
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground active:scale-95"
+                }`}
+                style={calendarType !== value ? { backgroundColor: "hsl(36 30% 93%)" } : undefined}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Repeat */}
         <div className="mb-4">
@@ -582,7 +615,7 @@ function AddScheduleDialog({ allTags, initialData, onClose, onSubmit }: { allTag
             취소
           </button>
           <button
-            onClick={() => { if (title && date) onSubmit(title, date, Array.from(selectedTagIds), repeatType, repeatType === "YEARLY" ? date : null, alarmTimes.length > 0 ? alarmTimes : null); }}
+            onClick={() => { if (title && date) onSubmit(title, date, Array.from(selectedTagIds), repeatType, calendarType, repeatType === "YEARLY" ? date : null, alarmTimes.length > 0 ? alarmTimes : null); }}
             className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform"
           >
             {isEdit ? "수정하기" : "등록하기"}

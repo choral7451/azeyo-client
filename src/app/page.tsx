@@ -107,7 +107,7 @@ export default function HomePage() {
 
   useEffect(() => {
     // Top monthly users (public)
-    apiFetch<{ users: ApiTopUser[] }>("/azeyo/users/top-monthly?count=3")
+    apiFetch<{ users: ApiTopUser[] }>("/azeyo/users/top-monthly?count=5")
       .then((data) => setTopUsers(data.users))
       .catch(() => {})
       .finally(() => setTopUsersLoaded(true));
@@ -320,7 +320,7 @@ export default function HomePage() {
           ) : topUsers.length > 0 ? (
             topUsers.map((user, index) => {
               const grade = getGradeFromPoints(user.activityPoints);
-              const rankColors = ["hsl(35 80% 50%)", "hsl(220 10% 65%)", "hsl(25 50% 55%)"];
+              const rankColors = ["hsl(35 80% 50%)", "hsl(220 10% 65%)", "hsl(25 50% 55%)", "hsl(30 10% 45%)", "hsl(30 10% 45%)"];
               return (
                 <button key={user.id} onClick={() => setSelectedUser(user)} className="flex-shrink-0 w-[150px] rounded-2xl p-4 text-center active:scale-[0.97] transition-all" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
                   <div className="relative inline-block mb-2">
