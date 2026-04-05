@@ -286,10 +286,11 @@ export default function HomePage() {
         <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-2">
           {!topUsersLoaded ? (
             [0, 1, 2].map((i) => (
-              <div key={i} className="flex-shrink-0 w-[150px] rounded-2xl p-4" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
+              <div key={i} className="flex-shrink-0 w-[150px] rounded-2xl p-4 text-center" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
                 <div className="w-12 h-12 rounded-full bg-secondary mx-auto mb-2" />
-                <div className="h-3 w-16 bg-secondary rounded mx-auto mb-1.5" />
-                <div className="h-2.5 w-12 bg-secondary rounded mx-auto" />
+                <div className="h-[18px] w-16 bg-secondary rounded mx-auto" />
+                <div className="h-[16px] w-20 bg-secondary rounded mx-auto mt-0.5" />
+                <div className="h-[16px] w-10 bg-secondary rounded mx-auto mt-1.5" />
               </div>
             ))
           ) : topUsers.length > 0 ? (
@@ -330,9 +331,15 @@ export default function HomePage() {
           {!trendingLoaded ? (
             [0, 1, 2, 3].map((i) => (
               <div key={i} className="rounded-xl px-4 py-3.5" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
-                <div className="h-2.5 w-12 bg-secondary rounded mb-2" />
-                <div className="h-3.5 w-3/4 bg-secondary rounded mb-2" />
-                <div className="h-2.5 w-20 bg-secondary rounded" />
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className="h-[18px] w-14 bg-secondary rounded-full" />
+                </div>
+                <div className="h-[18px] w-3/4 bg-secondary rounded" />
+                <div className="flex items-center gap-3 mt-2">
+                  <div className="h-[16px] w-8 bg-secondary rounded" />
+                  <div className="h-[16px] w-8 bg-secondary rounded" />
+                  <div className="h-[14px] w-14 bg-secondary rounded ml-auto" />
+                </div>
               </div>
             ))
           ) : (

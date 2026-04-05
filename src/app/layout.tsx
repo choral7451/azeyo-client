@@ -6,7 +6,7 @@ import { AppShell } from "@/components/app-shell";
 
 const notoSansKR = Noto_Sans_KR({
   subsets: ["latin"],
-  display: "swap",
+  display: "optional",
   preload: true,
   adjustFontFallback: true,
   fallback: ["system-ui", "sans-serif"],
@@ -117,10 +117,6 @@ export default function RootLayout({
   return (
     <html lang="ko" className={notoSansKR.className}>
       <head>
-        <Script src="https://www.googletagmanager.com/gtag/js?id=G-7W3VLZ0NPY" strategy="afterInteractive" />
-        <Script id="gtag-init" strategy="afterInteractive">
-          {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-7W3VLZ0NPY');`}
-        </Script>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -132,6 +128,10 @@ export default function RootLayout({
       </head>
       <body className="min-h-dvh">
         <AppShell>{children}</AppShell>
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-7W3VLZ0NPY" strategy="lazyOnload" />
+        <Script id="gtag-init" strategy="lazyOnload">
+          {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-7W3VLZ0NPY');`}
+        </Script>
       </body>
     </html>
   );
