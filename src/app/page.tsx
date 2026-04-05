@@ -232,7 +232,7 @@ export default function HomePage() {
               <section className="mb-10">
                 <div className="flex items-baseline justify-between mb-4">
                   <h2 className="text-[15px] font-bold text-foreground">다가오는 일정</h2>
-                  <Link href="/schedule" className="text-[12px] text-primary font-medium" aria-label="다가오는 일정 전체 보기">전체 보기</Link>
+                  <Link href="/schedule" className="text-[12px] text-primary font-medium">일정 전체 보기</Link>
                 </div>
                 <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-5 px-5 pb-2">
                   {upcoming.map((schedule) => {
@@ -349,7 +349,7 @@ export default function HomePage() {
       <section>
         <div className="flex items-baseline justify-between mb-4">
           <h2 className="text-[15px] font-bold text-foreground">인기 게시글</h2>
-          <Link href="/community" className="text-[12px] text-primary font-medium" aria-label="인기 게시글 전체 보기">전체 보기</Link>
+          <Link href="/community" className="text-[12px] text-primary font-medium">게시글 전체 보기</Link>
         </div>
         <div className="space-y-2.5">
           {!trendingLoaded ? (
