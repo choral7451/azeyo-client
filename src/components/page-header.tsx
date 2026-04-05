@@ -40,6 +40,7 @@ function HeaderContent({ compact, config, unreadCount }: { compact: boolean; con
       {hasCreate ? (
         <button
           onClick={emitCreate}
+          aria-label="글쓰기"
           className="w-9 h-9 flex items-center justify-center rounded-full text-foreground active:scale-90 transition-transform"
         >
           <WriteIcon />
@@ -54,6 +55,7 @@ function HeaderContent({ compact, config, unreadCount }: { compact: boolean; con
       </h1>
       <button
         onClick={() => window.dispatchEvent(new CustomEvent("header:notify"))}
+        aria-label="알림"
         className="w-9 h-9 flex items-center justify-center rounded-full text-foreground active:scale-90 transition-transform relative"
       >
         <BellIcon />
@@ -139,14 +141,14 @@ export function PageHeader() {
       </div>
 
       {/* Static header */}
-      <div className="px-5 pt-4 pb-3 animate-fade-up">
+      <header className="px-5 pt-4 pb-3 animate-fade-up">
         <HeaderContent compact={false} config={config} unreadCount={unreadCount} />
         {config.subtitle && (
           <p className="text-[12px] text-muted-foreground mt-1 text-center">
             {config.subtitle}
           </p>
         )}
-      </div>
+      </header>
     </>
   );
 }

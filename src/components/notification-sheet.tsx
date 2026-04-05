@@ -85,7 +85,7 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
         <div className="px-5 pt-4 pb-3 border-b border-border flex-shrink-0">
           <div className="flex items-center justify-between">
             <h3 className="text-[16px] font-bold text-foreground">알림</h3>
-            <button onClick={handleClose} className="text-muted-foreground p-1">
+            <button onClick={handleClose} aria-label="알림 닫기" className="text-muted-foreground p-1">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />

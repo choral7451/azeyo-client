@@ -83,7 +83,7 @@ export default function JokboDetailPage() {
   return (
     <main className="px-5 pb-6">
       {/* Back */}
-      <button onClick={() => router.back()} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-secondary active:scale-95 transition-all mb-4">
+      <button onClick={() => router.back()} aria-label="뒤로 가기" className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-secondary active:scale-95 transition-all mb-4">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M15 18l-6-6 6-6" />
         </svg>

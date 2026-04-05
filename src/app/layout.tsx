@@ -1,6 +1,13 @@
 import type { Metadata, Viewport } from "next";
+import { Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/app-shell";
+
+const notoSansKR = Noto_Sans_KR({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "900"],
+  display: "swap",
+});
 
 const SITE_NAME = "아재요";
 const SITE_URL = "https://azeyo.co.kr";
@@ -105,7 +112,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko">
+    <html lang="ko" className={notoSansKR.className}>
       <head>
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-7W3VLZ0NPY" />
         <script

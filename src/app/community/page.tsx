@@ -373,7 +373,7 @@ function ImageCarousel({ images, ratio = "4:5" }: { images: string[]; ratio?: st
     return (
       <div className={`relative w-full ${aspectClass}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={images[0]} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" draggable={false} />
+        <img src={images[0]} alt="게시글 이미지" className="absolute inset-0 w-full h-full object-cover" loading="lazy" draggable={false} />
       </div>
     );
   }
@@ -390,7 +390,7 @@ function ImageCarousel({ images, ratio = "4:5" }: { images: string[]; ratio?: st
         {images.map((src, i) => (
           <div key={i} className={`flex-shrink-0 w-full relative ${aspectClass}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover select-none" loading="lazy" draggable={false} />
+            <img src={src} alt={`게시글 이미지 ${i + 1}`} className="absolute inset-0 w-full h-full object-cover select-none" loading="lazy" draggable={false} />
           </div>
         ))}
       </div>
@@ -428,7 +428,7 @@ function PostCard({
         <div className="flex items-center gap-2 mb-2.5">
           {post.authorIconImageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={post.authorIconImageUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
+            <img src={post.authorIconImageUrl} alt={post.authorName} className="w-8 h-8 rounded-full object-cover" />
           ) : (
             <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[12px] font-bold text-primary">
               {post.authorName?.[0] || "?"}
@@ -682,7 +682,7 @@ function CommentSheet({
                 <div className="flex gap-2.5">
                   {comment.userIconImageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={comment.userIconImageUrl} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0 mt-0.5" />
+                    <img src={comment.userIconImageUrl} alt={comment.userNickname} className="w-7 h-7 rounded-full object-cover flex-shrink-0 mt-0.5" />
                   ) : (
                     <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-primary flex-shrink-0 mt-0.5">
                       {comment.userNickname?.[0] || "?"}
@@ -722,7 +722,7 @@ function CommentSheet({
                           <div key={reply.id} className="flex gap-2">
                             {reply.userIconImageUrl ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img src={reply.userIconImageUrl} alt="" className="w-6 h-6 rounded-full object-cover flex-shrink-0 mt-0.5" />
+                              <img src={reply.userIconImageUrl} alt={reply.userNickname} className="w-6 h-6 rounded-full object-cover flex-shrink-0 mt-0.5" />
                             ) : (
                               <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-[9px] font-bold text-primary flex-shrink-0 mt-0.5">
                                 {reply.userNickname?.[0] || "?"}
@@ -779,7 +779,9 @@ function CommentSheet({
           </div>
         )}
         <div className="flex items-center gap-2">
+          <label htmlFor="comment-input" className="sr-only">댓글</label>
           <input
+            id="comment-input"
             ref={inputRef}
             type="text"
             value={newComment}
@@ -791,6 +793,7 @@ function CommentSheet({
           <button
             onClick={handleSubmit}
             disabled={!newComment.trim() || submitting}
+            aria-label="댓글 전송"
             className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
               newComment.trim() ? "bg-primary text-white" : "bg-secondary text-muted-foreground"
             }`}
@@ -1004,7 +1007,7 @@ function WriteSheet({ accessToken, onClose, onSubmit }: { accessToken: string | 
                     {images.map((img, i) => (
                       <div key={i} className="relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={img.preview} alt="" className="w-full h-full object-cover" />
+                        <img src={img.preview} alt={`업로드 이미지 ${i + 1}`} className="w-full h-full object-cover" />
                         <button
                           onClick={() => removeImage(i)}
                           className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/50 text-white flex items-center justify-center text-[8px] leading-none"

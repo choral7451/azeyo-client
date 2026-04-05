@@ -137,8 +137,8 @@ export function BottomNav() {
                 transition-colors duration-200
                 ${
                   isActive
-                    ? "text-[var(--primary)]"
-                    : "text-[var(--muted-foreground)]"
+                    ? "text-primary"
+                    : "text-muted-foreground"
                 }
               `}
             >
