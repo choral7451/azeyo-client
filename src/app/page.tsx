@@ -6,6 +6,8 @@ import Image from "next/image";
 import { useAuth } from "@/components/auth-context";
 import { useToast } from "@/components/toast";
 import { BottomSheet } from "@/components/bottom-sheet";
+import { UserProfileSheet } from "@/components/user-profile-sheet";
+import type { UserProfile } from "@/components/user-profile-sheet";
 import { apiFetch } from "@/lib/api";
 import { grades } from "@/data/mock";
 import type { Category, PostType } from "@/data/mock";
@@ -95,12 +97,7 @@ export default function HomePage() {
   const [selectedSchedule, setSelectedSchedule] = useState<ApiSchedule | null>(null);
   const [scheduleRec, setScheduleRec] = useState<ApiRecommendation | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-  const [selectedUserProfile, setSelectedUserProfile] = useState<{ id: number; nickname: string; subtitle: string | null; iconImageUrl: string | null; activityPoints: number; monthlyPoints: number; postsCount: number; likesCount: number } | null>(null);
-  const [userPosts, setUserPosts] = useState<ApiPost[]>([]);
-  const [userPostPage, setUserPostPage] = useState(1);
-  const [userPostHasMore, setUserPostHasMore] = useState(true);
-  const [userPostLoading, setUserPostLoading] = useState(true);
-  const [reportUserId, setReportUserId] = useState<number | null>(null);
+  const [selectedUserProfile, setSelectedUserProfile] = useState<UserProfile | null>(null);
   const [selectedPost, setSelectedPost] = useState<ApiPost | null>(null);
   const [upcoming, setUpcoming] = useState<ApiSchedule[]>([]);
   const [schedulesLoaded, setSchedulesLoaded] = useState(false);
@@ -167,16 +164,10 @@ export default function HomePage() {
 
   // Load user profile when user selected
   useEffect(() => {
-    if (!selectedUserId) { setSelectedUserProfile(null); setUserPosts([]); setUserPostPage(1); setUserPostHasMore(true); setUserPostLoading(true); return; }
-    apiFetch<{ id: number; nickname: string; subtitle: string | null; iconImageUrl: string | null; activityPoints: number; monthlyPoints: number; postsCount: number; likesCount: number }>(`/azeyo/users/${selectedUserId}`, { noAuth: true })
+    if (!selectedUserId) { setSelectedUserProfile(null); return; }
+    apiFetch<UserProfile>(`/azeyo/users/${selectedUserId}`, { noAuth: true })
       .then((data) => setSelectedUserProfile(data))
       .catch(() => {});
-    // 첫 페이지 글 로드
-    fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/azeyo/communities?page=1&size=10&authorId=${selectedUserId}`)
-      .then(r => r.json())
-      .then(json => { const data = json.item ?? json; const items: ApiPost[] = data.posts ?? []; setUserPosts(items); setUserPostHasMore(items.length >= 10); })
-      .catch(() => {})
-      .finally(() => setUserPostLoading(false));
   }, [selectedUserId]);
 
   // Load comments when post selected
@@ -474,132 +465,12 @@ export default function HomePage() {
 
       {/* User Profile Bottom Sheet */}
       {selectedUserId && selectedUserProfile && (
-        <BottomSheet onClose={() => setSelectedUserId(null)} style={{ backgroundColor: "hsl(40 30% 99%)" }}>
-          <div
-            className="flex-1 overflow-y-auto px-5 pb-8"
-            onScroll={(e) => {
-              const el = e.currentTarget;
-              if (!userPostHasMore || userPostLoading) return;
-              if (el.scrollTop + el.clientHeight >= el.scrollHeight - 100) {
-                setUserPostLoading(true);
-                const next = userPostPage + 1;
-                setUserPostPage(next);
-                fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/azeyo/communities?page=${next}&size=10&authorId=${selectedUserId}`)
-                  .then(r => r.json())
-                  .then(json => { const data = json.item ?? json; const items: ApiPost[] = data.posts ?? []; setUserPosts(prev => [...prev, ...items]); setUserPostHasMore(items.length >= 10); })
-                  .catch(() => {})
-                  .finally(() => setUserPostLoading(false));
-              }
-            }}
-          >
-            <div className="flex items-center gap-4 mb-5 mt-2">
-              {selectedUserProfile.iconImageUrl ? (
-                <Image src={selectedUserProfile.iconImageUrl} alt={selectedUserProfile.nickname} width={56} height={56} className="w-14 h-14 rounded-full object-cover" />
-              ) : (
-                <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-white text-lg font-black">
-                  {selectedUserProfile.nickname.charAt(0)}
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <h3 className="text-[17px] font-bold text-foreground">{selectedUserProfile.nickname}</h3>
-                {selectedUserProfile.subtitle && (
-                  <p className="text-[12px] text-muted-foreground mt-0.5">{selectedUserProfile.subtitle}</p>
-                )}
-                <div className="flex gap-2 mt-1.5 flex-wrap">
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "hsl(22 60% 42% / 0.12)", color: "hsl(22 60% 42%)" }}>
-                    {getGradeFromPoints(selectedUserProfile.activityPoints).emoji} {getGradeFromPoints(selectedUserProfile.activityPoints).name}
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  if (!accessToken) { showToast("로그인이 필요한 기능이에요"); return; }
-                  setReportUserId(selectedUserProfile.id);
-                  setSelectedUserId(null);
-                }}
-                className="self-start mt-1 p-2 rounded-lg text-muted-foreground active:scale-95 transition-transform"
-                aria-label="유저 신고"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="1" /><circle cx="12" cy="5" r="1" /><circle cx="12" cy="19" r="1" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5">
-              <div className="rounded-xl py-3 text-center" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
-                <p className="text-[14px] font-bold text-foreground">{selectedUserProfile.activityPoints}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">총 활동점수</p>
-              </div>
-              <div className="rounded-xl py-3 text-center" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
-                <p className="text-[14px] font-bold text-foreground">{selectedUserProfile.monthlyPoints}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">이달 점수</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2.5 mt-2.5">
-              <div className="rounded-xl py-3 text-center" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
-                <p className="text-[14px] font-bold text-foreground">{selectedUserProfile.postsCount}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">게시글</p>
-              </div>
-              <div className="rounded-xl py-3 text-center" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
-                <p className="text-[14px] font-bold text-foreground">{selectedUserProfile.likesCount}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">받은 좋아요</p>
-              </div>
-            </div>
-
-            <div className="mt-5">
-              <h4 className="text-[13px] font-bold text-foreground mb-3">작성한 글</h4>
-              {userPosts.length > 0 ? (
-                <div className="space-y-2">
-                  {userPosts.map((post) => (
-                    <button
-                      key={post.id}
-                      onClick={() => { setSelectedUserId(null); setTimeout(() => setSelectedPost(post), 200); }}
-                      className="w-full text-left rounded-xl px-4 py-3 transition-all active:scale-[0.97]"
-                      style={{ backgroundColor: "hsl(36 30% 93%)" }}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-                          {CATEGORY_REVERSE[post.category] ?? post.category}
-                        </span>
-                        {post.type === "VOTE" && (
-                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: "hsl(40 80% 60% / 0.15)", color: "hsl(40 80% 45%)" }}>투표</span>
-                        )}
-                        <span className="text-[10px] text-muted-foreground ml-auto">{new Date(post.createdAt).toLocaleDateString()}</span>
-                      </div>
-                      <p className="text-[13px] font-semibold text-foreground leading-snug line-clamp-1">{post.title}</p>
-                      <div className="flex items-center gap-3 mt-1.5">
-                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" /></svg>
-                          {post.likeCount}
-                        </span>
-                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                          <CommentIcon />
-                          {post.commentCount}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
-                  {userPostLoading && <p className="text-center text-[12px] text-muted-foreground py-2">불러오는 중...</p>}
-                </div>
-              ) : !userPostLoading ? (
-                <p className="text-[12px] text-muted-foreground text-center py-4">작성한 글이 없어요</p>
-              ) : (
-                <p className="text-center text-[12px] text-muted-foreground py-2">불러오는 중...</p>
-              )}
-            </div>
-
-          </div>
-        </BottomSheet>
-      )}
-
-      {reportUserId && (
-        <UserReportSheet
-          userId={reportUserId}
+        <UserProfileSheet
+          user={selectedUserProfile}
           accessToken={accessToken}
-          onClose={() => setReportUserId(null)}
-          onSuccess={() => { setReportUserId(null); showToast("신고가 접수되었습니다"); }}
-          onDuplicate={() => { setReportUserId(null); showToast("이미 신고한 유저입니다"); }}
+          onClose={() => setSelectedUserId(null)}
+          onReportSuccess={() => { setSelectedUserId(null); showToast("신고가 접수되었습니다"); }}
+          onReportDuplicate={() => { setSelectedUserId(null); showToast("이미 신고한 유저입니다"); }}
         />
       )}
 
@@ -848,89 +719,3 @@ function CommentIcon() {
   return <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" /></svg>;
 }
 
-const USER_REPORT_REASONS = [
-  { value: "SPAM", label: "스팸/광고" },
-  { value: "INAPPROPRIATE", label: "부적절한 행동" },
-  { value: "HARASSMENT", label: "괴롭힘/혐오 표현" },
-  { value: "IMPERSONATION", label: "사칭" },
-  { value: "OTHER", label: "기타" },
-] as const;
-
-function UserReportSheet({
-  userId, accessToken, onClose, onSuccess, onDuplicate,
-}: {
-  userId: number; accessToken: string | null; onClose: () => void;
-  onSuccess: () => void; onDuplicate: () => void;
-}) {
-  const [reason, setReason] = useState<string | null>(null);
-  const [contents, setContents] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  async function handleSubmit() {
-    if (!reason || submitting) return;
-    setSubmitting(true);
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/azeyo/users/${userId}/report`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        },
-        body: JSON.stringify({ reason, contents: contents.trim() || null }),
-      });
-      if (res.status === 409) { onDuplicate(); return; }
-      if (!res.ok) throw new Error("신고 실패");
-      onSuccess();
-    } catch {
-      setSubmitting(false);
-    }
-  }
-
-  return (
-    <BottomSheet onClose={onClose} className="max-h-[70dvh]" style={{ backgroundColor: "hsl(40 30% 99%)" }}>
-      <div className="flex-1 overflow-y-auto px-6 pb-8">
-        <h3 className="text-[18px] font-bold text-foreground mb-1">유저 신고</h3>
-        <p className="text-[12px] text-muted-foreground mb-5">신고 사유를 선택해주세요</p>
-
-        <div className="space-y-2 mb-5">
-          {USER_REPORT_REASONS.map((r) => (
-            <button
-              key={r.value}
-              onClick={() => setReason(r.value)}
-              className={`w-full text-left rounded-xl px-4 py-3 text-[14px] font-medium transition-all active:scale-[0.98] ${
-                reason === r.value ? "bg-primary text-primary-foreground" : "text-foreground"
-              }`}
-              style={reason !== r.value ? { backgroundColor: "hsl(36 30% 93%)" } : undefined}
-            >
-              {r.label}
-            </button>
-          ))}
-        </div>
-
-        {reason === "OTHER" && (
-          <textarea
-            value={contents}
-            onChange={(e) => setContents(e.target.value)}
-            placeholder="신고 사유를 입력해주세요"
-            rows={3}
-            className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary/30 transition resize-none leading-relaxed mb-5"
-            style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)" }}
-          />
-        )}
-
-        <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-3 rounded-xl text-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform" style={{ backgroundColor: "hsl(40 30% 93%)" }}>
-            취소
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={!reason || submitting}
-            className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform disabled:opacity-50"
-          >
-            {submitting ? "접수 중..." : "신고하기"}
-          </button>
-        </div>
-      </div>
-    </BottomSheet>
-  );
-}
