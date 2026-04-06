@@ -481,8 +481,6 @@ function ImageCarousel({ images, ratio = "4:5" }: { images: string[]; ratio?: st
   );
 }
 
-const CONTENT_MAX_LENGTH = 80;
-
 function PostCard({
   post, onVote, onLike, onComment, onReport, onAuthorClick,
 }: {
@@ -494,7 +492,15 @@ function PostCard({
   onAuthorClick: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const isLong = post.contents.length > CONTENT_MAX_LENGTH;
+  const contentRef = useRef<HTMLParagraphElement>(null);
+  const [isClamped, setIsClamped] = useState(false);
+
+  useEffect(() => {
+    const el = contentRef.current;
+    if (el && !expanded) {
+      setIsClamped(el.scrollHeight > el.clientHeight);
+    }
+  }, [expanded, post.contents]);
   const displayCategory = CATEGORY_REVERSE[post.category] || post.category;
 
   return (
@@ -529,16 +535,15 @@ function PostCard({
 
         {/* Content */}
         <h3 className="text-[15px] font-bold text-foreground leading-snug mb-1.5">{post.title}</h3>
-        <p className="text-[13px] text-muted-foreground leading-relaxed">
-          {isLong && !expanded ? (
-            <>
-              {post.contents.slice(0, CONTENT_MAX_LENGTH)}...
-              <button onClick={(e) => { e.stopPropagation(); setExpanded(true); }} className="text-primary font-semibold ml-1">더보기</button>
-            </>
-          ) : (
-            post.contents
-          )}
+        <p
+          ref={contentRef}
+          className={`text-[13px] text-muted-foreground leading-relaxed whitespace-pre-line ${!expanded ? "line-clamp-3" : ""}`}
+        >
+          {post.contents}
         </p>
+        {isClamped && !expanded && (
+          <button onClick={(e) => { e.stopPropagation(); setExpanded(true); }} className="text-[13px] text-primary font-semibold mt-0.5">더보기</button>
+        )}
 
         {/* Vote */}
         {post.type === "VOTE" && post.voteOptionA && post.voteOptionB && (
