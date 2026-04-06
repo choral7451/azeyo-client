@@ -99,7 +99,7 @@ function formatDate(dateStr: string): string {
 
 export default function CommunityPage() {
   const router = useRouter();
-  const { accessToken } = useAuth();
+  const { accessToken, isWriteBanned } = useAuth();
   const { show: showToast } = useToast();
   const [activeCategory, setActiveCategory] = useState<"전체" | Category>("전체");
   const [posts, setPosts] = useState<ApiPost[]>([]);
@@ -175,7 +175,9 @@ export default function CommunityPage() {
 
   useEffect(() => {
     const handler = () => {
-      if (requireLogin()) setShowWrite(true);
+      if (!requireLogin()) return;
+      if (isWriteBanned) { showToast("글쓰기가 제한된 계정이에요"); return; }
+      setShowWrite(true);
     };
     window.addEventListener("header:create", handler);
     return () => window.removeEventListener("header:create", handler);

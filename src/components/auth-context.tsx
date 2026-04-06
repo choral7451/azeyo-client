@@ -9,6 +9,7 @@ const AuthContext = createContext<AuthContextValue>({
   isLoggedIn: false,
   accessToken: null,
   isLoading: true,
+  isWriteBanned: false,
   logout: () => {},
   loginWithTokens: () => {},
 });
@@ -17,6 +18,7 @@ interface AuthContextValue {
   isLoggedIn: boolean;
   accessToken: string | null;
   isLoading: boolean;
+  isWriteBanned: boolean;
   logout: () => void;
   loginWithTokens: (accessToken: string, refreshToken: string) => void;
 }
@@ -25,6 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Start with null on both server & client to avoid hydration mismatch
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isWriteBanned, setIsWriteBanned] = useState(false);
   const initializedRef = useRef(false);
 
   const isLoggedIn = accessToken !== null;
@@ -59,6 +62,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setIsLoading(false));
   }, []);
 
+  // 글쓰기 제한 상태 조회
+  useEffect(() => {
+    if (!accessToken) { setIsWriteBanned(false); return; }
+    fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/azeyo/users/me`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(json => {
+        if (json) {
+          const data = json.item ?? json;
+          setIsWriteBanned(data.isWriteBanned ?? false);
+        }
+      })
+      .catch(() => {});
+  }, [accessToken]);
+
   // 소켓 연결 관리
   useEffect(() => {
     if (accessToken) {
@@ -86,7 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, accessToken, isLoading, logout, loginWithTokens }}>
+    <AuthContext.Provider value={{ isLoggedIn, accessToken, isLoading, isWriteBanned, logout, loginWithTokens }}>
       {children}
     </AuthContext.Provider>
   );
