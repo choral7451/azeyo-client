@@ -91,11 +91,13 @@ function formatDday(dateStr: string): string {
 
 export default function HomePage() {
   const { isLoggedIn, accessToken } = useAuth();
+  const { show: showToast } = useToast();
   const [selectedSchedule, setSelectedSchedule] = useState<ApiSchedule | null>(null);
   const [scheduleRec, setScheduleRec] = useState<ApiRecommendation | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedUserProfile, setSelectedUserProfile] = useState<{ id: number; nickname: string; subtitle: string | null; iconImageUrl: string | null; activityPoints: number; monthlyPoints: number; postsCount: number; likesCount: number } | null>(null);
   const [userTopPosts, setUserTopPosts] = useState<ApiPost[]>([]);
+  const [reportUserId, setReportUserId] = useState<number | null>(null);
   const [selectedPost, setSelectedPost] = useState<ApiPost | null>(null);
   const [upcoming, setUpcoming] = useState<ApiSchedule[]>([]);
   const [schedulesLoaded, setSchedulesLoaded] = useState(false);
@@ -548,7 +550,9 @@ export default function HomePage() {
 
             <button
               onClick={() => {
-                // TODO: 신고 기능은 로그인 필요
+                if (!accessToken) { showToast("로그인이 필요한 기능이에요"); return; }
+                setReportUserId(selectedUserProfile.id);
+                setSelectedUserId(null);
               }}
               className="mt-5 py-2 px-4 rounded-lg text-[12px] font-medium text-muted-foreground active:scale-[0.97] transition-transform"
             >
@@ -556,6 +560,16 @@ export default function HomePage() {
             </button>
           </div>
         </BottomSheet>
+      )}
+
+      {reportUserId && (
+        <UserReportSheet
+          userId={reportUserId}
+          accessToken={accessToken}
+          onClose={() => setReportUserId(null)}
+          onSuccess={() => { setReportUserId(null); showToast("신고가 접수되었습니다"); }}
+          onDuplicate={() => { setReportUserId(null); showToast("이미 신고한 유저입니다"); }}
+        />
       )}
 
       {/* Post Detail Bottom Sheet */}
@@ -801,4 +815,91 @@ function PostDetailSheet({ post, comments: initialComments, onClose, onUpdate }:
 
 function CommentIcon() {
   return <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" /></svg>;
+}
+
+const USER_REPORT_REASONS = [
+  { value: "SPAM", label: "스팸/광고" },
+  { value: "INAPPROPRIATE", label: "부적절한 행동" },
+  { value: "HARASSMENT", label: "괴롭힘/혐오 표현" },
+  { value: "IMPERSONATION", label: "사칭" },
+  { value: "OTHER", label: "기타" },
+] as const;
+
+function UserReportSheet({
+  userId, accessToken, onClose, onSuccess, onDuplicate,
+}: {
+  userId: number; accessToken: string | null; onClose: () => void;
+  onSuccess: () => void; onDuplicate: () => void;
+}) {
+  const [reason, setReason] = useState<string | null>(null);
+  const [contents, setContents] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit() {
+    if (!reason || submitting) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/azeyo/users/${userId}/report`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({ reason, contents: contents.trim() || null }),
+      });
+      if (res.status === 409) { onDuplicate(); return; }
+      if (!res.ok) throw new Error("신고 실패");
+      onSuccess();
+    } catch {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <BottomSheet onClose={onClose} className="max-h-[70dvh]" style={{ backgroundColor: "hsl(40 30% 99%)" }}>
+      <div className="flex-1 overflow-y-auto px-6 pb-8">
+        <h3 className="text-[18px] font-bold text-foreground mb-1">유저 신고</h3>
+        <p className="text-[12px] text-muted-foreground mb-5">신고 사유를 선택해주세요</p>
+
+        <div className="space-y-2 mb-5">
+          {USER_REPORT_REASONS.map((r) => (
+            <button
+              key={r.value}
+              onClick={() => setReason(r.value)}
+              className={`w-full text-left rounded-xl px-4 py-3 text-[14px] font-medium transition-all active:scale-[0.98] ${
+                reason === r.value ? "bg-primary text-primary-foreground" : "text-foreground"
+              }`}
+              style={reason !== r.value ? { backgroundColor: "hsl(36 30% 93%)" } : undefined}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+
+        {reason === "OTHER" && (
+          <textarea
+            value={contents}
+            onChange={(e) => setContents(e.target.value)}
+            placeholder="신고 사유를 입력해주세요"
+            rows={3}
+            className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary/30 transition resize-none leading-relaxed mb-5"
+            style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)" }}
+          />
+        )}
+
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 py-3 rounded-xl text-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform" style={{ backgroundColor: "hsl(40 30% 93%)" }}>
+            취소
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!reason || submitting}
+            className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform disabled:opacity-50"
+          >
+            {submitting ? "접수 중..." : "신고하기"}
+          </button>
+        </div>
+      </div>
+    </BottomSheet>
+  );
 }
