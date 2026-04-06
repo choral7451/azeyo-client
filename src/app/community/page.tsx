@@ -9,6 +9,8 @@ import { getCookie } from "@/lib/cookie";
 import { BottomSheet } from "@/components/bottom-sheet";
 import { UserProfileSheet } from "@/components/user-profile-sheet";
 import type { UserProfile as ApiUserProfile } from "@/components/user-profile-sheet";
+import { PostDetailSheet } from "@/components/post-detail-sheet";
+import type { PostDetailData } from "@/components/post-detail-sheet";
 import type { Category, PostType } from "@/data/mock";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -98,6 +100,7 @@ export default function CommunityPage() {
   const [reportPost, setReportPost] = useState<ApiPost | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [userProfile, setUserProfile] = useState<ApiUserProfile | null>(null);
+  const [selectedPostDetail, setSelectedPostDetail] = useState<PostDetailData | null>(null);
   const { setStickyExtra } = useHeaderExtra();
   const loadingRef = useRef(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -332,9 +335,16 @@ export default function CommunityPage() {
             if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
             fetch(`${API_BASE}/azeyo/communities/${postId}`, { headers })
               .then(r => r.json())
-              .then(json => { const post = json.item ?? json; setCommentPost(post); })
+              .then(json => { setSelectedPostDetail(json.item ?? json); })
               .catch(() => {});
           }}
+        />
+      )}
+
+      {selectedPostDetail && (
+        <PostDetailSheet
+          post={selectedPostDetail}
+          onClose={() => setSelectedPostDetail(null)}
         />
       )}
 
