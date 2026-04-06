@@ -9,7 +9,7 @@ import { apiFetch } from "@/lib/api";
 
 interface ApiNotification {
   id: number;
-  type: "LIKE" | "COMMENT" | "SCHEDULE" | "JOKBO_COPY" | "SYSTEM";
+  type: "LIKE" | "COMMENT" | "MENTION" | "SCHEDULE" | "JOKBO_COPY" | "SYSTEM";
   title: string;
   body: string;
   referenceId: string | null;
@@ -20,6 +20,7 @@ interface ApiNotification {
 const typeIcon: Record<ApiNotification["type"], { emoji: string; bg: string }> = {
   LIKE: { emoji: "❤️", bg: "hsl(0 70% 95%)" },
   COMMENT: { emoji: "💬", bg: "hsl(210 60% 94%)" },
+  MENTION: { emoji: "📢", bg: "hsl(270 50% 94%)" },
   SCHEDULE: { emoji: "📅", bg: "hsl(40 60% 93%)" },
   JOKBO_COPY: { emoji: "📋", bg: "hsl(150 40% 93%)" },
   SYSTEM: { emoji: "🎉", bg: "hsl(150 40% 93%)" },
@@ -49,7 +50,7 @@ function getNotificationHref(n: ApiNotification): string | null {
   }
 }
 
-const DETAIL_TYPES = new Set<ApiNotification["type"]>(["LIKE", "COMMENT", "JOKBO_COPY"]);
+const DETAIL_TYPES = new Set<ApiNotification["type"]>(["LIKE", "COMMENT", "MENTION", "JOKBO_COPY"]);
 
 export function NotificationSheet({ onClose }: { onClose: () => void }) {
   const router = useRouter();
@@ -78,7 +79,7 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
   function handleNotificationClick(n: ApiNotification) {
     if (!n.referenceId) return;
 
-    if (n.type === "LIKE" || n.type === "COMMENT") {
+    if (n.type === "LIKE" || n.type === "COMMENT" || n.type === "MENTION") {
       apiFetch<PostDetailData>(`/azeyo/communities/${n.referenceId}`)
         .then((post) => setSelectedPost(post))
         .catch(() => {});
