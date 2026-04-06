@@ -99,7 +99,7 @@ function formatDate(dateStr: string): string {
 
 export default function CommunityPage() {
   const router = useRouter();
-  const { accessToken, isWriteBanned } = useAuth();
+  const { accessToken } = useAuth();
   const { show: showToast } = useToast();
   const [activeCategory, setActiveCategory] = useState<"전체" | Category>("전체");
   const [posts, setPosts] = useState<ApiPost[]>([]);
@@ -174,15 +174,33 @@ export default function CommunityPage() {
   }
 
   useEffect(() => {
-    const handler = () => {
+    const handler = async () => {
       if (!requireLogin()) return;
-      if (isWriteBanned) { showToast("글쓰기가 제한된 계정이에요"); return; }
+      // 글쓰기 제한 여부를 API로 직접 확인
+      try {
+        const token = accessToken;
+        if (token) {
+          const res = await fetch(`${API_BASE}/azeyo/users/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            const json = await res.json();
+            const data = json.item ?? json;
+            if (data.isWriteBanned) {
+              showToast("글쓰기가 제한된 계정이에요");
+              return;
+            }
+          }
+        }
+      } catch {
+        // 확인 실패 시 일단 허용
+      }
       setShowWrite(true);
     };
     window.addEventListener("header:create", handler);
     return () => window.removeEventListener("header:create", handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isWriteBanned]);
+  }, [accessToken]);
 
   useEffect(() => {
     setStickyExtra(
