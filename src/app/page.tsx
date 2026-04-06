@@ -511,6 +511,19 @@ export default function HomePage() {
                   </span>
                 </div>
               </div>
+              <button
+                onClick={() => {
+                  if (!accessToken) { showToast("로그인이 필요한 기능이에요"); return; }
+                  setReportUserId(selectedUserProfile.id);
+                  setSelectedUserId(null);
+                }}
+                className="self-start mt-1 p-2 rounded-lg text-muted-foreground active:scale-95 transition-transform"
+                aria-label="유저 신고"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="1" /><circle cx="12" cy="5" r="1" /><circle cx="12" cy="19" r="1" />
+                </svg>
+              </button>
             </div>
 
             <div className="grid grid-cols-2 gap-2.5">
@@ -576,16 +589,6 @@ export default function HomePage() {
               )}
             </div>
 
-            <button
-              onClick={() => {
-                if (!accessToken) { showToast("로그인이 필요한 기능이에요"); return; }
-                setReportUserId(selectedUserProfile.id);
-                setSelectedUserId(null);
-              }}
-              className="mt-5 py-2 px-4 rounded-lg text-[12px] font-medium text-muted-foreground active:scale-[0.97] transition-transform"
-            >
-              이 유저 신고하기
-            </button>
           </div>
         </BottomSheet>
       )}
