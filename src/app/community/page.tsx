@@ -92,6 +92,7 @@ export default function CommunityPage() {
   const [hasMore, setHasMore] = useState(true);
   const [commentPost, setCommentPost] = useState<ApiPost | null>(null);
   const [showWrite, setShowWrite] = useState(false);
+  const [reportPost, setReportPost] = useState<ApiPost | null>(null);
   const { setStickyExtra } = useHeaderExtra();
   const loadingRef = useRef(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -249,6 +250,10 @@ export default function CommunityPage() {
                 onVote={(option) => handleVote(post.id, option)}
                 onLike={(isLike) => handleLike(post.id, isLike)}
                 onComment={() => setCommentPost(post)}
+                onReport={() => {
+                  if (!accessToken) { showToast("로그인이 필요한 기능이에요"); return; }
+                  setReportPost(post);
+                }}
               />
             ))
           )}
@@ -278,6 +283,22 @@ export default function CommunityPage() {
           accessToken={accessToken}
           onClose={() => setShowWrite(false)}
           onSubmit={handleNewPost}
+        />
+      )}
+
+      {reportPost && (
+        <ReportSheet
+          post={reportPost}
+          accessToken={accessToken}
+          onClose={() => setReportPost(null)}
+          onSuccess={() => {
+            setReportPost(null);
+            showToast("신고가 접수되었습니다");
+          }}
+          onDuplicate={() => {
+            setReportPost(null);
+            showToast("이미 신고한 게시글입니다");
+          }}
         />
       )}
     </>
@@ -406,12 +427,13 @@ function ImageCarousel({ images, ratio = "4:5" }: { images: string[]; ratio?: st
 const CONTENT_MAX_LENGTH = 80;
 
 function PostCard({
-  post, onVote, onLike, onComment,
+  post, onVote, onLike, onComment, onReport,
 }: {
   post: ApiPost;
   onVote: (option: "A" | "B") => void;
   onLike: (isLike: boolean) => void;
   onComment: () => void;
+  onReport: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const isLong = post.contents.length > CONTENT_MAX_LENGTH;
@@ -486,6 +508,14 @@ function PostCard({
               <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" />
             </svg>
             {post.commentCount}
+          </button>
+          <div className="flex-1" />
+          <button onClick={onReport} className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground/60 active:scale-95 transition-transform">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+              <line x1="4" y1="22" x2="4" y2="15" />
+            </svg>
+            신고
           </button>
         </div>
       </div>
@@ -1065,6 +1095,98 @@ function WriteSheet({ accessToken, onClose, onSubmit }: { accessToken: string | 
       </div>
 
       <div className="h-8 flex-shrink-0" />
+    </BottomSheet>
+  );
+}
+
+const REPORT_REASONS = [
+  { value: "SPAM", label: "스팸/광고" },
+  { value: "INAPPROPRIATE", label: "부적절한 콘텐츠" },
+  { value: "HARASSMENT", label: "괴롭힘/혐오 표현" },
+  { value: "FALSE_INFO", label: "허위 정보" },
+  { value: "OTHER", label: "기타" },
+] as const;
+
+function ReportSheet({
+  post, accessToken, onClose, onSuccess, onDuplicate,
+}: {
+  post: ApiPost; accessToken: string | null; onClose: () => void;
+  onSuccess: () => void; onDuplicate: () => void;
+}) {
+  const [reason, setReason] = useState<string | null>(null);
+  const [contents, setContents] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit() {
+    if (!reason || submitting) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${API_BASE}/azeyo/communities/${post.id}/report`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({ reason, contents: contents.trim() || null }),
+      });
+      if (res.status === 409) {
+        onDuplicate();
+        return;
+      }
+      if (!res.ok) throw new Error("신고 실패");
+      onSuccess();
+    } catch {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <BottomSheet onClose={onClose} className="max-h-[70dvh]" style={{ backgroundColor: "hsl(40 30% 99%)" }}>
+      <div className="flex-1 overflow-y-auto px-6 pb-8">
+        <h3 className="text-[18px] font-bold text-foreground mb-1">게시글 신고</h3>
+        <p className="text-[12px] text-muted-foreground mb-5">신고 사유를 선택해주세요</p>
+
+        <div className="space-y-2 mb-5">
+          {REPORT_REASONS.map((r) => (
+            <button
+              key={r.value}
+              onClick={() => setReason(r.value)}
+              className={`w-full text-left rounded-xl px-4 py-3 text-[14px] font-medium transition-all active:scale-[0.98] ${
+                reason === r.value
+                  ? "bg-primary text-primary-foreground"
+                  : "text-foreground"
+              }`}
+              style={reason !== r.value ? { backgroundColor: "hsl(36 30% 93%)" } : undefined}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+
+        {reason === "OTHER" && (
+          <textarea
+            value={contents}
+            onChange={(e) => setContents(e.target.value)}
+            placeholder="신고 사유를 입력해주세요"
+            rows={3}
+            className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary/30 transition resize-none leading-relaxed mb-5"
+            style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)" }}
+          />
+        )}
+
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 py-3 rounded-xl text-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform" style={{ backgroundColor: "hsl(40 30% 93%)" }}>
+            취소
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!reason || submitting}
+            className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform disabled:opacity-50"
+          >
+            {submitting ? "접수 중..." : "신고하기"}
+          </button>
+        </div>
+      </div>
     </BottomSheet>
   );
 }
