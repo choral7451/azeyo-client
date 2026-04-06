@@ -182,7 +182,7 @@ export default function CommunityPage() {
     window.addEventListener("header:create", handler);
     return () => window.removeEventListener("header:create", handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isWriteBanned]);
 
   useEffect(() => {
     setStickyExtra(
