@@ -93,7 +93,8 @@ export default function HomePage() {
   const { isLoggedIn, accessToken } = useAuth();
   const [selectedSchedule, setSelectedSchedule] = useState<ApiSchedule | null>(null);
   const [scheduleRec, setScheduleRec] = useState<ApiRecommendation | null>(null);
-  const [selectedUser, setSelectedUser] = useState<ApiTopUser | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [selectedUserProfile, setSelectedUserProfile] = useState<{ id: number; nickname: string; subtitle: string | null; iconImageUrl: string | null; activityPoints: number; monthlyPoints: number; postsCount: number; likesCount: number } | null>(null);
   const [userTopPosts, setUserTopPosts] = useState<ApiPost[]>([]);
   const [selectedPost, setSelectedPost] = useState<ApiPost | null>(null);
   const [upcoming, setUpcoming] = useState<ApiSchedule[]>([]);
@@ -159,13 +160,16 @@ export default function HomePage() {
       .catch(() => setScheduleRec(null));
   }, [selectedSchedule]);
 
-  // Load user's top posts when user selected
+  // Load user profile & top posts when user selected
   useEffect(() => {
-    if (!selectedUser) { setUserTopPosts([]); return; }
-    apiFetch<{ posts: ApiPost[]; totalCount: number }>(`/azeyo/communities/top/user/${selectedUser.id}?count=5`, { noAuth: true })
+    if (!selectedUserId) { setSelectedUserProfile(null); setUserTopPosts([]); return; }
+    apiFetch<{ id: number; nickname: string; subtitle: string | null; iconImageUrl: string | null; activityPoints: number; monthlyPoints: number; postsCount: number; likesCount: number }>(`/azeyo/users/${selectedUserId}`, { noAuth: true })
+      .then((data) => setSelectedUserProfile(data))
+      .catch(() => {});
+    apiFetch<{ posts: ApiPost[]; totalCount: number }>(`/azeyo/communities/top/user/${selectedUserId}?count=5`, { noAuth: true })
       .then((data) => setUserTopPosts(data.posts))
       .catch(() => setUserTopPosts([]));
-  }, [selectedUser]);
+  }, [selectedUserId]);
 
   // Load comments when post selected
   useEffect(() => {
@@ -322,7 +326,7 @@ export default function HomePage() {
               const grade = getGradeFromPoints(user.activityPoints);
               const rankColors = ["hsl(35 80% 50%)", "hsl(220 10% 65%)", "hsl(25 50% 55%)", "hsl(30 10% 45%)", "hsl(30 10% 45%)"];
               return (
-                <button key={user.id} onClick={() => setSelectedUser(user)} className="flex-shrink-0 w-[150px] rounded-2xl p-4 text-center active:scale-[0.97] transition-all" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
+                <button key={user.id} onClick={() => setSelectedUserId(user.id)} className="flex-shrink-0 w-[150px] rounded-2xl p-4 text-center active:scale-[0.97] transition-all" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
                   <div className="relative inline-block mb-2">
                     {user.iconImageUrl ? (
                       <Image src={user.iconImageUrl} alt={user.nickname} width={48} height={48} className="w-12 h-12 rounded-full object-cover" />
@@ -461,38 +465,51 @@ export default function HomePage() {
       )}
 
       {/* User Profile Bottom Sheet */}
-      {selectedUser && (
-        <BottomSheet onClose={() => setSelectedUser(null)}>
+      {selectedUserId && selectedUserProfile && (
+        <BottomSheet onClose={() => setSelectedUserId(null)} style={{ backgroundColor: "hsl(40 30% 99%)" }}>
           <div className="px-5 pb-8">
             <div className="flex items-center gap-4 mb-5 mt-2">
-              {selectedUser.iconImageUrl ? (
-                <Image src={selectedUser.iconImageUrl} alt={selectedUser.nickname} width={56} height={56} className="w-14 h-14 rounded-full object-cover" />
+              {selectedUserProfile.iconImageUrl ? (
+                <Image src={selectedUserProfile.iconImageUrl} alt={selectedUserProfile.nickname} width={56} height={56} className="w-14 h-14 rounded-full object-cover" />
               ) : (
                 <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-white text-lg font-black">
-                  {selectedUser.nickname.charAt(0)}
+                  {selectedUserProfile.nickname.charAt(0)}
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <h3 className="text-[17px] font-bold text-foreground">{selectedUser.nickname}</h3>
+                <h3 className="text-[17px] font-bold text-foreground">{selectedUserProfile.nickname}</h3>
+                {selectedUserProfile.subtitle && (
+                  <p className="text-[12px] text-muted-foreground mt-0.5">{selectedUserProfile.subtitle}</p>
+                )}
                 <div className="flex gap-2 mt-1.5 flex-wrap">
                   <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "hsl(22 60% 42% / 0.12)", color: "hsl(22 60% 42%)" }}>
-                    {getGradeFromPoints(selectedUser.activityPoints).emoji} {getGradeFromPoints(selectedUser.activityPoints).name}
+                    {getGradeFromPoints(selectedUserProfile.activityPoints).emoji} {getGradeFromPoints(selectedUserProfile.activityPoints).name}
                   </span>
                 </div>
               </div>
             </div>
+
             <div className="grid grid-cols-2 gap-2.5">
               <div className="rounded-xl py-3 text-center" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
-                <p className="text-[14px] font-bold text-foreground">{selectedUser.activityPoints}</p>
+                <p className="text-[14px] font-bold text-foreground">{selectedUserProfile.activityPoints}</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">총 활동점수</p>
               </div>
               <div className="rounded-xl py-3 text-center" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
-                <p className="text-[14px] font-bold text-foreground">{selectedUser.monthlyPoints}</p>
+                <p className="text-[14px] font-bold text-foreground">{selectedUserProfile.monthlyPoints}</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">이달 점수</p>
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-2.5 mt-2.5">
+              <div className="rounded-xl py-3 text-center" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
+                <p className="text-[14px] font-bold text-foreground">{selectedUserProfile.postsCount}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">게시글</p>
+              </div>
+              <div className="rounded-xl py-3 text-center" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
+                <p className="text-[14px] font-bold text-foreground">{selectedUserProfile.likesCount}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">받은 좋아요</p>
+              </div>
+            </div>
 
-            {/* 인기글 */}
             {userTopPosts.length > 0 && (
               <div className="mt-5">
                 <h4 className="text-[13px] font-bold text-foreground mb-3">인기글</h4>
@@ -500,7 +517,7 @@ export default function HomePage() {
                   {userTopPosts.map((post) => (
                     <button
                       key={post.id}
-                      onClick={() => { setSelectedUser(null); setTimeout(() => setSelectedPost(post), 200); }}
+                      onClick={() => { setSelectedUserId(null); setTimeout(() => setSelectedPost(post), 200); }}
                       className="w-full text-left rounded-xl px-4 py-3 transition-all active:scale-[0.97]"
                       style={{ backgroundColor: "hsl(36 30% 93%)" }}
                     >
@@ -528,6 +545,15 @@ export default function HomePage() {
                 </div>
               </div>
             )}
+
+            <button
+              onClick={() => {
+                // TODO: 신고 기능은 로그인 필요
+              }}
+              className="mt-5 py-2 px-4 rounded-lg text-[12px] font-medium text-muted-foreground active:scale-[0.97] transition-transform"
+            >
+              이 유저 신고하기
+            </button>
           </div>
         </BottomSheet>
       )}
