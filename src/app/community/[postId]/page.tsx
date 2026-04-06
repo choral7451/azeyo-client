@@ -252,7 +252,7 @@ function ReportSheet({
   }
 
   return (
-    <BottomSheet onClose={onClose} className="max-h-[70dvh]" style={{ backgroundColor: "hsl(40 30% 99%)" }}>
+    <BottomSheet onClose={onClose} className="" style={{ backgroundColor: "hsl(40 30% 99%)" }}>
       <div className="flex-1 overflow-y-auto px-6 pb-8">
         <h3 className="text-[18px] font-bold text-foreground mb-1">게시글 신고</h3>
         <p className="text-[12px] text-muted-foreground mb-5">신고 사유를 선택해주세요</p>

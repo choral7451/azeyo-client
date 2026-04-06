@@ -80,7 +80,7 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <BottomSheet onClose={handleClose} className="max-h-[85dvh] flex flex-col" hideHeader>
+    <BottomSheet onClose={handleClose} className="flex flex-col" hideHeader>
         {/* Header */}
         <div className="px-5 pt-4 pb-3 border-b border-border flex-shrink-0">
           <div className="flex items-center justify-between">

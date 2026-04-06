@@ -211,7 +211,7 @@ function EditPostSheet({ post, onClose, onSubmit }: { post: ApiPost; onClose: ()
   }
 
   return (
-    <BottomSheet onClose={onClose} className="max-h-[90dvh] flex flex-col" hideHeader>
+    <BottomSheet onClose={onClose} className="flex flex-col" hideHeader>
       <div className="px-5 pt-4 pb-3 border-b border-border flex-shrink-0">
         <div className="flex items-center justify-between">
           <button onClick={onClose} className="text-[14px] text-muted-foreground font-medium">취소</button>
