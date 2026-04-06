@@ -137,7 +137,7 @@ export function NotificationDetailSheet({ type, referenceId, onClose }: Props) {
       <div className="absolute inset-0 bg-black/20" />
       <div
         className="relative w-full max-w-[480px] rounded-t-3xl bg-background animate-fade-up flex flex-col"
-        style={{ maxHeight: "80dvh" }}
+        style={{ height: "80dvh" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
