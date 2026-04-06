@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { BottomSheet } from "@/components/bottom-sheet";
-import { NotificationDetailSheet } from "@/components/notification-detail-sheet";
+import { PostDetailSheet, PostDetailData } from "@/components/post-detail-sheet";
+import { JokboDetailSheet } from "@/components/jokbo-detail-sheet";
 import { apiFetch } from "@/lib/api";
 
 interface ApiNotification {
@@ -41,11 +42,6 @@ function formatTime(dateStr: string): string {
 function getNotificationHref(n: ApiNotification): string | null {
   if (!n.referenceId) return null;
   switch (n.type) {
-    case "LIKE":
-    case "COMMENT":
-      return `/community/${n.referenceId}`;
-    case "JOKBO_COPY":
-      return `/jokbo/${n.referenceId}`;
     case "SCHEDULE":
       return "/schedule";
     default:
@@ -59,7 +55,8 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const [notifications, setNotifications] = useState<ApiNotification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [detailTarget, setDetailTarget] = useState<{ type: "LIKE" | "COMMENT" | "JOKBO_COPY"; referenceId: string } | null>(null);
+  const [selectedPost, setSelectedPost] = useState<PostDetailData | null>(null);
+  const [selectedJokboId, setSelectedJokboId] = useState<string | null>(null);
 
   useEffect(() => {
     apiFetch<{ notifications: ApiNotification[]; totalCount: number; unreadCount: number }>(
@@ -73,14 +70,32 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
   }, []);
 
   function handleClose() {
-    // 닫을 때 항상 모두 읽음 처리
     apiFetch("/azeyo/notifications/read-all", { method: "POST" }).catch(() => {});
     window.dispatchEvent(new CustomEvent("notification:read"));
     onClose();
   }
 
+  function handleNotificationClick(n: ApiNotification) {
+    if (!n.referenceId) return;
+
+    if (n.type === "LIKE" || n.type === "COMMENT") {
+      apiFetch<PostDetailData>(`/azeyo/communities/${n.referenceId}`)
+        .then((post) => setSelectedPost(post))
+        .catch(() => {});
+    } else if (n.type === "JOKBO_COPY") {
+      setSelectedJokboId(n.referenceId);
+    } else {
+      const href = getNotificationHref(n);
+      if (href) {
+        handleClose();
+        router.push(href);
+      }
+    }
+  }
+
   return (
-    <BottomSheet onClose={handleClose} className="flex flex-col" hideHeader>
+    <>
+      <BottomSheet onClose={handleClose} className="flex flex-col" hideHeader>
         {/* Header */}
         <div className="px-5 pt-4 pb-3 border-b border-border flex-shrink-0">
           <div className="flex items-center justify-between">
@@ -108,21 +123,13 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
           ) : (
             notifications.map((n) => {
               const icon = typeIcon[n.type];
-              const href = getNotificationHref(n);
               return (
                 <div
                   key={n.id}
-                  onClick={() => {
-                    if (DETAIL_TYPES.has(n.type) && n.referenceId) {
-                      setDetailTarget({ type: n.type as "LIKE" | "COMMENT" | "JOKBO_COPY", referenceId: n.referenceId });
-                    } else if (href) {
-                      handleClose();
-                      router.push(href);
-                    }
-                  }}
+                  onClick={() => handleNotificationClick(n)}
                   className={`px-5 py-3.5 flex items-start gap-3 transition-colors ${
                     !n.isRead ? "" : "opacity-60"
-                  } ${href || (DETAIL_TYPES.has(n.type) && n.referenceId) ? "cursor-pointer active:scale-[0.98]" : ""}`}
+                  } ${(DETAIL_TYPES.has(n.type) || getNotificationHref(n)) && n.referenceId ? "cursor-pointer active:scale-[0.98]" : ""}`}
                   style={!n.isRead ? { backgroundColor: "hsl(36 30% 93%)" } : undefined}
                 >
                   <div
@@ -149,17 +156,22 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
           )}
         </div>
 
-        {/* Bottom safe area */}
         <div className="h-8 flex-shrink-0" />
+      </BottomSheet>
 
-        {/* Detail overlay */}
-        {detailTarget && (
-          <NotificationDetailSheet
-            type={detailTarget.type}
-            referenceId={detailTarget.referenceId}
-            onClose={() => setDetailTarget(null)}
-          />
-        )}
-    </BottomSheet>
+      {selectedPost && (
+        <PostDetailSheet
+          post={selectedPost}
+          onClose={() => setSelectedPost(null)}
+        />
+      )}
+
+      {selectedJokboId && (
+        <JokboDetailSheet
+          templateId={selectedJokboId}
+          onClose={() => setSelectedJokboId(null)}
+        />
+      )}
+    </>
   );
 }
