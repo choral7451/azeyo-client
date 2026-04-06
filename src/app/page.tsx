@@ -96,7 +96,10 @@ export default function HomePage() {
   const [scheduleRec, setScheduleRec] = useState<ApiRecommendation | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedUserProfile, setSelectedUserProfile] = useState<{ id: number; nickname: string; subtitle: string | null; iconImageUrl: string | null; activityPoints: number; monthlyPoints: number; postsCount: number; likesCount: number } | null>(null);
-  const [userTopPosts, setUserTopPosts] = useState<ApiPost[]>([]);
+  const [userPosts, setUserPosts] = useState<ApiPost[]>([]);
+  const [userPostPage, setUserPostPage] = useState(1);
+  const [userPostHasMore, setUserPostHasMore] = useState(true);
+  const [userPostLoading, setUserPostLoading] = useState(true);
   const [reportUserId, setReportUserId] = useState<number | null>(null);
   const [selectedPost, setSelectedPost] = useState<ApiPost | null>(null);
   const [upcoming, setUpcoming] = useState<ApiSchedule[]>([]);
@@ -162,15 +165,18 @@ export default function HomePage() {
       .catch(() => setScheduleRec(null));
   }, [selectedSchedule]);
 
-  // Load user profile & top posts when user selected
+  // Load user profile when user selected
   useEffect(() => {
-    if (!selectedUserId) { setSelectedUserProfile(null); setUserTopPosts([]); return; }
+    if (!selectedUserId) { setSelectedUserProfile(null); setUserPosts([]); setUserPostPage(1); setUserPostHasMore(true); setUserPostLoading(true); return; }
     apiFetch<{ id: number; nickname: string; subtitle: string | null; iconImageUrl: string | null; activityPoints: number; monthlyPoints: number; postsCount: number; likesCount: number }>(`/azeyo/users/${selectedUserId}`, { noAuth: true })
       .then((data) => setSelectedUserProfile(data))
       .catch(() => {});
-    apiFetch<{ posts: ApiPost[]; totalCount: number }>(`/azeyo/communities/top/user/${selectedUserId}?count=5`, { noAuth: true })
-      .then((data) => setUserTopPosts(data.posts))
-      .catch(() => setUserTopPosts([]));
+    // 첫 페이지 글 로드
+    fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/azeyo/communities?page=1&size=10&authorId=${selectedUserId}`)
+      .then(r => r.json())
+      .then(json => { const data = json.item ?? json; const items: ApiPost[] = data.posts ?? []; setUserPosts(items); setUserPostHasMore(items.length >= 10); })
+      .catch(() => {})
+      .finally(() => setUserPostLoading(false));
   }, [selectedUserId]);
 
   // Load comments when post selected
@@ -469,7 +475,23 @@ export default function HomePage() {
       {/* User Profile Bottom Sheet */}
       {selectedUserId && selectedUserProfile && (
         <BottomSheet onClose={() => setSelectedUserId(null)} style={{ backgroundColor: "hsl(40 30% 99%)" }}>
-          <div className="px-5 pb-8">
+          <div
+            className="flex-1 overflow-y-auto px-5 pb-8"
+            onScroll={(e) => {
+              const el = e.currentTarget;
+              if (!userPostHasMore || userPostLoading) return;
+              if (el.scrollTop + el.clientHeight >= el.scrollHeight - 100) {
+                setUserPostLoading(true);
+                const next = userPostPage + 1;
+                setUserPostPage(next);
+                fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/azeyo/communities?page=${next}&size=10&authorId=${selectedUserId}`)
+                  .then(r => r.json())
+                  .then(json => { const data = json.item ?? json; const items: ApiPost[] = data.posts ?? []; setUserPosts(prev => [...prev, ...items]); setUserPostHasMore(items.length >= 10); })
+                  .catch(() => {})
+                  .finally(() => setUserPostLoading(false));
+              }
+            }}
+          >
             <div className="flex items-center gap-4 mb-5 mt-2">
               {selectedUserProfile.iconImageUrl ? (
                 <Image src={selectedUserProfile.iconImageUrl} alt={selectedUserProfile.nickname} width={56} height={56} className="w-14 h-14 rounded-full object-cover" />
@@ -512,11 +534,11 @@ export default function HomePage() {
               </div>
             </div>
 
-            {userTopPosts.length > 0 && (
-              <div className="mt-5">
-                <h4 className="text-[13px] font-bold text-foreground mb-3">인기글</h4>
+            <div className="mt-5">
+              <h4 className="text-[13px] font-bold text-foreground mb-3">작성한 글</h4>
+              {userPosts.length > 0 ? (
                 <div className="space-y-2">
-                  {userTopPosts.map((post) => (
+                  {userPosts.map((post) => (
                     <button
                       key={post.id}
                       onClick={() => { setSelectedUserId(null); setTimeout(() => setSelectedPost(post), 200); }}
@@ -530,6 +552,7 @@ export default function HomePage() {
                         {post.type === "VOTE" && (
                           <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: "hsl(40 80% 60% / 0.15)", color: "hsl(40 80% 45%)" }}>투표</span>
                         )}
+                        <span className="text-[10px] text-muted-foreground ml-auto">{new Date(post.createdAt).toLocaleDateString()}</span>
                       </div>
                       <p className="text-[13px] font-semibold text-foreground leading-snug line-clamp-1">{post.title}</p>
                       <div className="flex items-center gap-3 mt-1.5">
@@ -544,9 +567,14 @@ export default function HomePage() {
                       </div>
                     </button>
                   ))}
+                  {userPostLoading && <p className="text-center text-[12px] text-muted-foreground py-2">불러오는 중...</p>}
                 </div>
-              </div>
-            )}
+              ) : !userPostLoading ? (
+                <p className="text-[12px] text-muted-foreground text-center py-4">작성한 글이 없어요</p>
+              ) : (
+                <p className="text-center text-[12px] text-muted-foreground py-2">불러오는 중...</p>
+              )}
+            </div>
 
             <button
               onClick={() => {

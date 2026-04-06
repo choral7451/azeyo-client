@@ -111,7 +111,6 @@ export default function CommunityPage() {
   const [reportPost, setReportPost] = useState<ApiPost | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [userProfile, setUserProfile] = useState<ApiUserProfile | null>(null);
-  const [userTopPosts, setUserTopPosts] = useState<ApiPost[]>([]);
   const { setStickyExtra } = useHeaderExtra();
   const loadingRef = useRef(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -215,13 +214,11 @@ export default function CommunityPage() {
   }, [activeCategory, setStickyExtra]);
 
   useEffect(() => {
-    if (!selectedUserId) { setUserProfile(null); setUserTopPosts([]); return; }
+    if (!selectedUserId) { setUserProfile(null); return; }
     const headers: Record<string, string> = {};
     if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
     fetch(`${API_BASE}/azeyo/users/${selectedUserId}`, { headers })
       .then(r => r.json()).then(json => setUserProfile(json.item ?? json)).catch(() => {});
-    fetch(`${API_BASE}/azeyo/communities/top/user/${selectedUserId}?count=5`, { headers })
-      .then(r => r.json()).then(json => { const data = json.item ?? json; setUserTopPosts(data.posts ?? []); }).catch(() => {});
   }, [selectedUserId, accessToken]);
 
   function handleCategoryChange(cat: "전체" | Category) {
@@ -339,7 +336,6 @@ export default function CommunityPage() {
       {selectedUserId && userProfile && (
         <UserProfileSheet
           user={userProfile}
-          topPosts={userTopPosts}
           accessToken={accessToken}
           onClose={() => setSelectedUserId(null)}
           onReportSuccess={() => { setSelectedUserId(null); showToast("신고가 접수되었습니다"); }}
@@ -1264,13 +1260,49 @@ const USER_REPORT_REASONS = [
 ] as const;
 
 function UserProfileSheet({
-  user, topPosts, accessToken, onClose, onReportSuccess, onReportDuplicate,
+  user, accessToken, onClose, onReportSuccess, onReportDuplicate,
 }: {
-  user: ApiUserProfile; topPosts: ApiPost[]; accessToken: string | null;
+  user: ApiUserProfile; accessToken: string | null;
   onClose: () => void; onReportSuccess: () => void; onReportDuplicate: () => void;
 }) {
   const [showReport, setShowReport] = useState(false);
+  const [posts, setPosts] = useState<ApiPost[]>([]);
+  const [postPage, setPostPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingPosts, setLoadingPosts] = useState(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const grade = getGradeFromPoints(user.activityPoints);
+
+  const fetchPosts = useCallback(async (page: number, reset = false) => {
+    try {
+      const headers: Record<string, string> = {};
+      if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
+      const res = await fetch(`${API_BASE}/azeyo/communities?page=${page}&size=10&authorId=${user.id}`, { headers });
+      if (!res.ok) return;
+      const json = await res.json();
+      const data = json.item ?? json;
+      const items: ApiPost[] = data.posts ?? [];
+      setPosts(prev => reset ? items : [...prev, ...items]);
+      setHasMore(items.length >= 10);
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingPosts(false);
+    }
+  }, [user.id, accessToken]);
+
+  useEffect(() => { fetchPosts(1, true); }, [fetchPosts]);
+
+  function handleScroll() {
+    const el = scrollRef.current;
+    if (!el || !hasMore || loadingPosts) return;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 100) {
+      setLoadingPosts(true);
+      const next = postPage + 1;
+      setPostPage(next);
+      fetchPosts(next);
+    }
+  }
 
   if (showReport) {
     return (
@@ -1286,7 +1318,7 @@ function UserProfileSheet({
 
   return (
     <BottomSheet onClose={onClose} style={{ backgroundColor: "hsl(40 30% 99%)" }}>
-      <div className="px-5 pb-8">
+      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto px-5 pb-8">
         <div className="flex items-center gap-4 mb-5 mt-2">
           {user.iconImageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -1331,11 +1363,11 @@ function UserProfileSheet({
           </div>
         </div>
 
-        {topPosts.length > 0 && (
-          <div className="mt-5">
-            <h4 className="text-[13px] font-bold text-foreground mb-3">인기글</h4>
+        <div className="mt-5">
+          <h4 className="text-[13px] font-bold text-foreground mb-3">작성한 글</h4>
+          {posts.length > 0 ? (
             <div className="space-y-2">
-              {topPosts.map((post) => (
+              {posts.map((post) => (
                 <div key={post.id} className="rounded-xl px-4 py-3" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
@@ -1344,6 +1376,7 @@ function UserProfileSheet({
                     {post.type === "VOTE" && (
                       <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: "hsl(40 80% 60% / 0.15)", color: "hsl(40 80% 45%)" }}>투표</span>
                     )}
+                    <span className="text-[10px] text-muted-foreground ml-auto">{new Date(post.createdAt).toLocaleDateString()}</span>
                   </div>
                   <p className="text-[13px] font-semibold text-foreground leading-snug line-clamp-1">{post.title}</p>
                   <div className="flex items-center gap-3 mt-1.5">
@@ -1358,9 +1391,14 @@ function UserProfileSheet({
                   </div>
                 </div>
               ))}
+              {loadingPosts && <p className="text-center text-[12px] text-muted-foreground py-2">불러오는 중...</p>}
             </div>
-          </div>
-        )}
+          ) : !loadingPosts ? (
+            <p className="text-[12px] text-muted-foreground text-center py-4">작성한 글이 없어요</p>
+          ) : (
+            <p className="text-center text-[12px] text-muted-foreground py-2">불러오는 중...</p>
+          )}
+        </div>
 
         <button
           onClick={() => {
