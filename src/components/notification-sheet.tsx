@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { BottomSheet } from "@/components/bottom-sheet";
 import { PostDetailSheet, PostDetailData } from "@/components/post-detail-sheet";
 import { JokboDetailSheet } from "@/components/jokbo-detail-sheet";
+import { useToast } from "@/components/toast";
 import { apiFetch } from "@/lib/api";
 
 interface ApiNotification {
@@ -54,6 +55,7 @@ const DETAIL_TYPES = new Set<ApiNotification["type"]>(["LIKE", "COMMENT", "MENTI
 
 export function NotificationSheet({ onClose }: { onClose: () => void }) {
   const router = useRouter();
+  const { show: showToast } = useToast();
   const [notifications, setNotifications] = useState<ApiNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPost, setSelectedPost] = useState<PostDetailData | null>(null);
@@ -82,7 +84,7 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
     if (n.type === "LIKE" || n.type === "COMMENT" || n.type === "MENTION") {
       apiFetch<PostDetailData>(`/azeyo/communities/${n.referenceId}`)
         .then((post) => setSelectedPost(post))
-        .catch(() => {});
+        .catch(() => showToast("삭제된 게시글이에요"));
     } else if (n.type === "JOKBO_COPY") {
       setSelectedJokboId(n.referenceId);
     } else {
@@ -171,6 +173,7 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
         <JokboDetailSheet
           templateId={selectedJokboId}
           onClose={() => setSelectedJokboId(null)}
+          onError={() => { setSelectedJokboId(null); showToast("삭제된 족보예요"); }}
         />
       )}
     </>

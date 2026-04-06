@@ -21,7 +21,7 @@ interface ApiTemplate {
   isLiked: boolean;
 }
 
-export function JokboDetailSheet({ templateId, onClose }: { templateId: string; onClose: () => void }) {
+export function JokboDetailSheet({ templateId, onClose, onError }: { templateId: string; onClose: () => void; onError?: () => void }) {
   const { accessToken } = useAuth();
   const [template, setTemplate] = useState<ApiTemplate | null>(null);
   const [liked, setLiked] = useState(false);
@@ -37,7 +37,7 @@ export function JokboDetailSheet({ templateId, onClose }: { templateId: string; 
         setLiked(data.isLiked);
         setLikeCount(data.likeCount);
       })
-      .catch(() => setError(true))
+      .catch(() => { setError(true); onError?.(); })
       .finally(() => setLoading(false));
   }, [templateId]);
 
