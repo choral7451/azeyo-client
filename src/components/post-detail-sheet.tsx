@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/components/auth-context";
 import { useToast } from "@/components/toast";
 import { BottomSheet } from "@/components/bottom-sheet";
@@ -41,6 +41,20 @@ interface Comment {
   createdAt: string;
 }
 
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diff = now.getTime() - d.getTime();
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return "방금 전";
+  if (min < 60) return `${min}분 전`;
+  const hrs = Math.floor(min / 60);
+  if (hrs < 24) return `${hrs}시간 전`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}일 전`;
+  return d.toLocaleDateString();
+}
+
 export function PostDetailSheet({
   post, onClose, onUpdate,
 }: {
@@ -59,9 +73,13 @@ export function PostDetailSheet({
   const [voted, setVoted] = useState<"A" | "B" | null>(post.userVote);
   const [voteCountA, setVoteCountA] = useState(post.voteCountA);
   const [voteCountB, setVoteCountB] = useState(post.voteCountB);
+  const [replyTarget, setReplyTarget] = useState<{ commentId: number; author: string } | null>(null);
+  const [expandedReplies, setExpandedReplies] = useState<Record<number, Comment[]>>({});
+  const [loadingReplies, setLoadingReplies] = useState<Set<number>>(new Set());
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    apiFetch<{ comments: Comment[]; totalCount: number }>(`/azeyo/communities/${post.id}/comments?page=1&size=20`, { noAuth: true })
+    apiFetch<{ comments: Comment[]; totalCount: number }>(`/azeyo/communities/${post.id}/comments?page=1&size=100`, { noAuth: true })
       .then((data) => setComments(data.comments))
       .catch(() => {});
   }, [post.id]);
@@ -83,21 +101,62 @@ export function PostDetailSheet({
     });
   }
 
+  async function loadReplies(parentId: number) {
+    if (expandedReplies[parentId]) {
+      setExpandedReplies(prev => {
+        const next = { ...prev };
+        delete next[parentId];
+        return next;
+      });
+      return;
+    }
+    setLoadingReplies(prev => new Set(prev).add(parentId));
+    try {
+      const data = await apiFetch<{ comments: Comment[]; totalCount: number }>(
+        `/azeyo/communities/${post.id}/comments?page=1&size=100&parentId=${parentId}`,
+        { noAuth: true },
+      );
+      setExpandedReplies(prev => ({ ...prev, [parentId]: data.comments }));
+    } finally {
+      setLoadingReplies(prev => { const next = new Set(prev); next.delete(parentId); return next; });
+    }
+  }
+
+  function handleReply(commentId: number, author: string) {
+    setReplyTarget({ commentId, author });
+    setCommentText(`@${author} `);
+    inputRef.current?.focus();
+  }
+
   async function handleSubmitComment() {
     if (!commentText.trim() || submitting || !accessToken) return;
     setSubmitting(true);
     try {
       await apiFetch("/azeyo/communities/comments", {
         method: "POST",
-        body: JSON.stringify({ postId: post.id, contents: commentText.trim() }),
+        body: JSON.stringify({
+          postId: post.id,
+          parentId: replyTarget?.commentId ?? null,
+          contents: commentText.trim(),
+        }),
       });
       const data = await apiFetch<{ comments: Comment[]; totalCount: number }>(
-        `/azeyo/communities/${post.id}/comments?page=1&size=20`,
+        `/azeyo/communities/${post.id}/comments?page=1&size=100`,
         { noAuth: true },
       );
       setComments(data.comments);
-      setCommentCount(prev => prev + 1);
+      setCommentCount(data.totalCount);
+
+      if (replyTarget) {
+        const replyData = await apiFetch<{ comments: Comment[]; totalCount: number }>(
+          `/azeyo/communities/${post.id}/comments?page=1&size=100&parentId=${replyTarget.commentId}`,
+          { noAuth: true },
+        );
+        setExpandedReplies(prev => ({ ...prev, [replyTarget.commentId]: replyData.comments }));
+      }
+
       setCommentText("");
+      setReplyTarget(null);
       showToast("댓글이 등록되었어요");
     } catch {
       showToast("댓글 등록에 실패했어요");
@@ -211,52 +270,138 @@ export function PostDetailSheet({
           </span>
         </div>
 
+        {/* Comments */}
         {comments.length > 0 && (
           <div>
             <h4 className="text-[13px] font-bold text-foreground mb-3">댓글</h4>
-            <div className="space-y-3">
-              {comments.map((comment) => (
-                <div key={comment.id}>
-                  <div className="flex items-center gap-2 mb-1">
-                    {comment.userIconImageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={comment.userIconImageUrl} alt={comment.userNickname} className="w-6 h-6 rounded-full object-cover" />
-                    ) : (
-                      <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-[9px] font-bold text-primary">
-                        {comment.userNickname.charAt(0)}
+            <div className="space-y-4">
+              {comments.map((comment) => {
+                const replies = expandedReplies[comment.id];
+                const isLoadingR = loadingReplies.has(comment.id);
+                return (
+                  <div key={comment.id}>
+                    <div className="flex gap-2.5">
+                      {comment.userIconImageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={comment.userIconImageUrl} alt={comment.userNickname} className="w-7 h-7 rounded-full object-cover flex-shrink-0 mt-0.5" />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-primary flex-shrink-0 mt-0.5">
+                          {comment.userNickname?.[0] || "?"}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[12px] font-semibold text-foreground">{comment.userNickname}</span>
+                          <span className="text-[10px] text-muted-foreground">{formatDate(comment.createdAt)}</span>
+                        </div>
+                        <p className="text-[13px] text-foreground leading-relaxed mt-0.5">{comment.contents}</p>
+                        <div className="flex items-center gap-3 mt-1">
+                          <button
+                            onClick={() => handleReply(comment.id, comment.userNickname)}
+                            className="text-[10px] font-medium text-muted-foreground"
+                          >
+                            답글 달기
+                          </button>
+                        </div>
+
+                        {comment.childrenCount > 0 && !replies && (
+                          <button
+                            onClick={() => loadReplies(comment.id)}
+                            className="flex items-center gap-1 mt-2 text-[11px] font-semibold text-primary"
+                            disabled={isLoadingR}
+                          >
+                            <span className="w-5 border-t border-primary/30" />
+                            {isLoadingR ? "불러오는 중..." : `답글 ${comment.childrenCount}개 더 보기`}
+                          </button>
+                        )}
+
+                        {replies && (
+                          <div className="mt-3 space-y-3">
+                            {replies.map((reply) => (
+                              <div key={reply.id} className="flex gap-2">
+                                {reply.userIconImageUrl ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={reply.userIconImageUrl} alt={reply.userNickname} className="w-6 h-6 rounded-full object-cover flex-shrink-0 mt-0.5" />
+                                ) : (
+                                  <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-[9px] font-bold text-primary flex-shrink-0 mt-0.5">
+                                    {reply.userNickname?.[0] || "?"}
+                                  </div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[11px] font-semibold text-foreground">{reply.userNickname}</span>
+                                    <span className="text-[9px] text-muted-foreground">{formatDate(reply.createdAt)}</span>
+                                  </div>
+                                  <p className="text-[12px] text-foreground leading-relaxed mt-0.5">
+                                    {reply.contents.split(/(@\S+)/).map((part, i) =>
+                                      part.startsWith("@") ? (
+                                        <span key={i} className="text-primary font-semibold">{part}</span>
+                                      ) : (
+                                        <span key={i}>{part}</span>
+                                      )
+                                    )}
+                                  </p>
+                                  <button
+                                    onClick={() => handleReply(comment.id, reply.userNickname)}
+                                    className="text-[10px] font-medium text-muted-foreground mt-1"
+                                  >
+                                    답글 달기
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                            <button
+                              onClick={() => loadReplies(comment.id)}
+                              className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground"
+                            >
+                              <span className="w-5 border-t border-muted-foreground/30" />
+                              답글 숨기기
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    )}
-                    <span className="text-[12px] font-semibold text-foreground">{comment.userNickname}</span>
-                    <span className="text-[10px] text-muted-foreground">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                    </div>
                   </div>
-                  <p className="text-[12px] text-muted-foreground leading-relaxed pl-8">{comment.contents}</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
       </div>
 
+      {/* Comment Input */}
       {isLoggedIn && (
         <div className="flex-shrink-0 px-4 py-3 border-t border-border" style={{ backgroundColor: "hsl(30 20% 97%)" }}>
+          {replyTarget && (
+            <div className="flex items-center justify-between mb-2 px-1">
+              <span className="text-[11px] text-muted-foreground">
+                <span className="font-semibold text-primary">{replyTarget.author}</span>님에게 답글 작성 중
+              </span>
+              <button onClick={() => { setReplyTarget(null); setCommentText(""); }} className="text-[11px] text-muted-foreground font-medium">취소</button>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <input
+              ref={inputRef}
               type="text"
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) handleSubmitComment(); }}
-              placeholder="댓글을 입력하세요"
-              className="flex-1 rounded-xl px-4 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/50 outline-none"
-              style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)" }}
+              placeholder={replyTarget ? "답글을 입력하세요..." : "댓글을 입력하세요..."}
+              className="flex-1 rounded-full px-4 py-2.5 text-[13px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary/30"
+              style={{ backgroundColor: "hsl(36 30% 93%)" }}
             />
             <button
               onClick={handleSubmitComment}
               disabled={!commentText.trim() || submitting}
-              className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-[13px] font-semibold text-white transition-all active:scale-95 ${
-                commentText.trim() && !submitting ? "bg-primary" : "bg-muted-foreground/30"
+              aria-label="댓글 전송"
+              className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+                commentText.trim() ? "bg-primary text-white" : "bg-secondary text-muted-foreground"
               }`}
             >
-              등록
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+              </svg>
             </button>
           </div>
         </div>
