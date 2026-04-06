@@ -37,6 +37,7 @@ interface ApiComment {
   id: number;
   contents: string;
   userNickname: string;
+  userIconImageUrl: string | null;
   createdAt: string;
 }
 
@@ -100,7 +101,7 @@ export default function PostDetailPage() {
   return (
     <main className="px-5 pb-6">
       {/* Back */}
-      <button onClick={() => router.back()} aria-label="뒤로 가기" className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-secondary active:scale-95 transition-all mb-4">
+      <button onClick={() => router.back()} aria-label="뒤로 가기" className="w-11 h-11 -ml-1.5 flex items-center justify-center rounded-full hover:bg-secondary active:scale-95 transition-all mb-3">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M15 18l-6-6 6-6" />
         </svg>
@@ -108,15 +109,21 @@ export default function PostDetailPage() {
 
       {/* Author */}
       <div className="flex items-center gap-2.5 mb-4 animate-fade-up">
-        <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-[13px] font-bold text-primary">
-          {post.authorName.charAt(0)}
-        </div>
+        {post.authorIconImageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={post.authorIconImageUrl} alt={post.authorName} className="w-10 h-10 rounded-full object-cover" />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-[13px] font-bold text-primary">
+            {post.authorName.charAt(0)}
+          </div>
+        )}
         <div className="flex-1">
           <span className="text-[14px] font-semibold text-foreground">{post.authorName}</span>
-          <br />
-          <span className="text-[11px] text-muted-foreground">{new Date(post.createdAt).toLocaleDateString()}</span>
+          <div>
+            <span className="text-[11px] text-muted-foreground">{new Date(post.createdAt).toLocaleDateString()}</span>
+          </div>
         </div>
-        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+        <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">
           {CATEGORY_REVERSE[post.category] ?? post.category}
         </span>
       </div>
@@ -144,15 +151,15 @@ export default function PostDetailPage() {
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-4 py-3 border-t border-b border-border mb-5 animate-fade-up">
-        <button onClick={handleLike} className={`flex items-center gap-1.5 text-[13px] font-medium transition-colors ${liked ? "text-primary" : "text-muted-foreground"}`}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill={liked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+      <div className="flex items-center gap-2 py-3 border-t border-b border-border mb-5 animate-fade-up">
+        <button onClick={handleLike} className={`flex items-center gap-1.5 py-2 px-3 -ml-3 rounded-lg text-[13px] font-medium transition-colors active:scale-95 ${liked ? "text-primary" : "text-muted-foreground"}`}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill={liked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
             <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
           </svg>
           {likeCount}
         </button>
-        <span className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <span className="flex items-center gap-1.5 py-2 px-3 text-[13px] font-medium text-muted-foreground">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" />
           </svg>
           {post.commentCount}
@@ -163,9 +170,9 @@ export default function PostDetailPage() {
             if (!accessToken) { showToast("로그인이 필요한 기능이에요"); return; }
             setShowReport(true);
           }}
-          className="flex items-center gap-1 text-[12px] font-medium text-muted-foreground/60 active:scale-95 transition-transform"
+          className="flex items-center gap-1.5 py-2 px-3 -mr-3 rounded-lg text-[12px] font-medium text-muted-foreground active:scale-95 transition-all"
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
             <line x1="4" y1="22" x2="4" y2="15" />
           </svg>
@@ -181,9 +188,14 @@ export default function PostDetailPage() {
             {comments.map((c) => (
               <div key={c.id}>
                 <div className="flex items-center gap-2 mb-1">
-                  <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-primary">
-                    {c.userNickname.charAt(0)}
-                  </div>
+                  {c.userIconImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={c.userIconImageUrl} alt={c.userNickname} className="w-7 h-7 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-primary">
+                      {c.userNickname.charAt(0)}
+                    </div>
+                  )}
                   <span className="text-[12px] font-semibold text-foreground">{c.userNickname}</span>
                   <span className="text-[10px] text-muted-foreground">{new Date(c.createdAt).toLocaleDateString()}</span>
                 </div>

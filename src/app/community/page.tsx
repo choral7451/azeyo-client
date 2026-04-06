@@ -462,7 +462,7 @@ function PostCard({
               <span className="text-[10px] text-muted-foreground">{formatDate(post.createdAt)}</span>
             </div>
           </div>
-          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+          <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">
             {displayCategory}
           </span>
         </div>
@@ -493,25 +493,25 @@ function PostCard({
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
+        <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border -mx-1">
           <button
             onClick={() => onLike(!post.isLiked)}
-            className={`flex items-center gap-1.5 text-[12px] font-medium transition-colors ${post.isLiked ? "text-primary" : "text-muted-foreground"}`}
+            className={`flex items-center gap-1.5 py-2 px-3 rounded-lg text-[12px] font-medium transition-colors active:scale-95 ${post.isLiked ? "text-primary" : "text-muted-foreground"}`}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill={post.isLiked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill={post.isLiked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
               <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
             </svg>
             {post.likeCount}
           </button>
-          <button onClick={onComment} className="flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <button onClick={onComment} className="flex items-center gap-1.5 py-2 px-3 rounded-lg text-[12px] font-medium text-muted-foreground active:scale-95 transition-colors">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" />
             </svg>
             {post.commentCount}
           </button>
           <div className="flex-1" />
-          <button onClick={onReport} className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground/60 active:scale-95 transition-transform">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <button onClick={onReport} className="flex items-center gap-1.5 py-2 px-3 rounded-lg text-[11px] font-medium text-muted-foreground active:scale-95 transition-all">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
               <line x1="4" y1="22" x2="4" y2="15" />
             </svg>
