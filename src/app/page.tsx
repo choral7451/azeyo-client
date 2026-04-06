@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-context";
 import { useToast } from "@/components/toast";
 import { BottomSheet } from "@/components/bottom-sheet";
@@ -92,6 +93,7 @@ function formatDday(dateStr: string): string {
 }
 
 export default function HomePage() {
+  const router = useRouter();
   const { isLoggedIn, accessToken } = useAuth();
   const { show: showToast } = useToast();
   const [selectedSchedule, setSelectedSchedule] = useState<ApiSchedule | null>(null);
@@ -471,6 +473,7 @@ export default function HomePage() {
           onClose={() => setSelectedUserId(null)}
           onReportSuccess={() => { setSelectedUserId(null); showToast("신고가 접수되었습니다"); }}
           onReportDuplicate={() => { setSelectedUserId(null); showToast("이미 신고한 유저입니다"); }}
+          onPostClick={(postId) => { setSelectedUserId(null); router.push(`/community/${postId}`); }}
         />
       )}
 

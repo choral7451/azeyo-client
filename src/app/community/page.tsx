@@ -327,6 +327,7 @@ export default function CommunityPage() {
           onClose={() => setSelectedUserId(null)}
           onReportSuccess={() => { setSelectedUserId(null); showToast("신고가 접수되었습니다"); }}
           onReportDuplicate={() => { setSelectedUserId(null); showToast("이미 신고한 유저입니다"); }}
+          onPostClick={(postId) => { setSelectedUserId(null); router.push(`/community/${postId}`); }}
         />
       )}
 
