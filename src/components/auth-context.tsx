@@ -8,6 +8,7 @@ import { refreshTokens } from "@/lib/api";
 const AuthContext = createContext<AuthContextValue>({
   isLoggedIn: false,
   accessToken: null,
+  myId: null,
   isLoading: true,
   isWriteBanned: false,
   logout: () => {},
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthContextValue>({
 interface AuthContextValue {
   isLoggedIn: boolean;
   accessToken: string | null;
+  myId: number | null;
   isLoading: boolean;
   isWriteBanned: boolean;
   logout: () => void;
@@ -26,6 +28,7 @@ interface AuthContextValue {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Start with null on both server & client to avoid hydration mismatch
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [myId, setMyId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isWriteBanned, setIsWriteBanned] = useState(false);
   const initializedRef = useRef(false);
@@ -62,9 +65,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setIsLoading(false));
   }, []);
 
-  // 글쓰기 제한 상태 조회
+  // 유저 정보 조회 (글쓰기 제한, 유저 ID)
   useEffect(() => {
-    if (!accessToken) { setIsWriteBanned(false); return; }
+    if (!accessToken) { setIsWriteBanned(false); setMyId(null); return; }
     fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/azeyo/users/me`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
@@ -73,6 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (json) {
           const data = json.item ?? json;
           setIsWriteBanned(data.isWriteBanned ?? false);
+          setMyId(data.id ?? null);
         }
       })
       .catch(() => {});
@@ -105,7 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, accessToken, isLoading, isWriteBanned, logout, loginWithTokens }}>
+    <AuthContext.Provider value={{ isLoggedIn, accessToken, myId, isLoading, isWriteBanned, logout, loginWithTokens }}>
       {children}
     </AuthContext.Provider>
   );

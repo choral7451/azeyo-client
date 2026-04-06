@@ -88,7 +88,7 @@ function formatDate(dateStr: string): string {
 
 export default function CommunityPage() {
   const router = useRouter();
-  const { accessToken } = useAuth();
+  const { accessToken, myId } = useAuth();
   const { show: showToast } = useToast();
   const [activeCategory, setActiveCategory] = useState<"전체" | Category>("전체");
   const [posts, setPosts] = useState<ApiPost[]>([]);
@@ -308,6 +308,7 @@ export default function CommunityPage() {
         <CommentSheet
           post={commentPost}
           accessToken={accessToken}
+          myId={myId}
           onClose={() => setCommentPost(null)}
           onCommentCountChange={(count) => {
             setPosts(prev => prev.map(p => p.id === commentPost.id ? { ...p, commentCount: count } : p));
@@ -644,11 +645,12 @@ function VoteSection({
 }
 
 function CommentSheet({
-  post, accessToken, onClose, onCommentCountChange,
+  post, accessToken, myId, onClose, onCommentCountChange,
 }: {
-  post: ApiPost; accessToken: string | null; onClose: () => void;
+  post: ApiPost; accessToken: string | null; myId: number | null; onClose: () => void;
   onCommentCountChange: (count: number) => void;
 }) {
+  const { show: showToast } = useToast();
   const [comments, setComments] = useState<ApiComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState("");
@@ -741,6 +743,36 @@ function CommentSheet({
     }
   }
 
+  async function handleDeleteComment(commentId: number, parentId?: number) {
+    if (!accessToken) return;
+    try {
+      await fetch(`${API_BASE}/azeyo/communities/comments/${commentId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const headers: Record<string, string> = { Authorization: `Bearer ${accessToken}` };
+      const refreshRes = await fetch(`${API_BASE}/azeyo/communities/${post.id}/comments?page=1&size=100`, { headers });
+      const refreshJson = await refreshRes.json();
+      const data: { comments: ApiComment[]; totalCount: number } = refreshJson.item ?? refreshJson;
+      setComments(data.comments);
+      setTotalCount(data.totalCount);
+      onCommentCountChange(data.totalCount);
+      if (parentId && expandedReplies[parentId]) {
+        const replyRes = await fetch(`${API_BASE}/azeyo/communities/${post.id}/comments?page=1&size=100&parentId=${parentId}`, { headers });
+        const replyJson = await replyRes.json();
+        const replyData: { comments: ApiComment[]; totalCount: number } = replyJson.item ?? replyJson;
+        if (replyData.comments.length > 0) {
+          setExpandedReplies(prev => ({ ...prev, [parentId]: replyData.comments }));
+        } else {
+          setExpandedReplies(prev => { const next = { ...prev }; delete next[parentId]; return next; });
+        }
+      }
+      showToast("댓글이 삭제되었어요");
+    } catch {
+      showToast("댓글 삭제에 실패했어요");
+    }
+  }
+
   function handleReply(commentId: number, author: string) {
     setReplyTarget({ commentId, author });
     setNewComment(`@${author} `);
@@ -801,6 +833,14 @@ function CommentSheet({
                       >
                         답글 달기
                       </button>
+                      {myId === comment.userId && (
+                        <button
+                          onClick={() => handleDeleteComment(comment.id)}
+                          className="text-[10px] font-medium text-muted-foreground"
+                        >
+                          삭제
+                        </button>
+                      )}
                     </div>
 
                     {/* Replies toggle */}
@@ -842,12 +882,22 @@ function CommentSheet({
                                   )
                                 )}
                               </p>
-                              <button
-                                onClick={() => handleReply(comment.id, reply.userNickname)}
-                                className="text-[10px] font-medium text-muted-foreground mt-1"
-                              >
-                                답글 달기
-                              </button>
+                              <div className="flex items-center gap-3 mt-1">
+                                <button
+                                  onClick={() => handleReply(comment.id, reply.userNickname)}
+                                  className="text-[10px] font-medium text-muted-foreground"
+                                >
+                                  답글 달기
+                                </button>
+                                {myId === reply.userId && (
+                                  <button
+                                    onClick={() => handleDeleteComment(reply.id, comment.id)}
+                                    className="text-[10px] font-medium text-muted-foreground"
+                                  >
+                                    삭제
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
                         ))}

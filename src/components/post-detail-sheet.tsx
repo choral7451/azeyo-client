@@ -62,7 +62,7 @@ export function PostDetailSheet({
   onClose: () => void;
   onUpdate?: (updated: { id: number; likeCount: number; isLiked: boolean; voteCountA: number; voteCountB: number; userVote: "A" | "B" | null }) => void;
 }) {
-  const { accessToken, isLoggedIn } = useAuth();
+  const { accessToken, myId, isLoggedIn } = useAuth();
   const { show: showToast } = useToast();
   const [liked, setLiked] = useState(post.isLiked);
   const [likeCount, setLikeCount] = useState(post.likeCount);
@@ -119,6 +119,33 @@ export function PostDetailSheet({
       setExpandedReplies(prev => ({ ...prev, [parentId]: data.comments }));
     } finally {
       setLoadingReplies(prev => { const next = new Set(prev); next.delete(parentId); return next; });
+    }
+  }
+
+  async function handleDeleteComment(commentId: number, parentId?: number) {
+    if (!accessToken) return;
+    try {
+      await apiFetch(`/azeyo/communities/comments/${commentId}`, { method: "DELETE" });
+      const data = await apiFetch<{ comments: Comment[]; totalCount: number }>(
+        `/azeyo/communities/${post.id}/comments?page=1&size=100`,
+        { noAuth: true },
+      );
+      setComments(data.comments);
+      setCommentCount(data.totalCount);
+      if (parentId && expandedReplies[parentId]) {
+        const replyData = await apiFetch<{ comments: Comment[]; totalCount: number }>(
+          `/azeyo/communities/${post.id}/comments?page=1&size=100&parentId=${parentId}`,
+          { noAuth: true },
+        );
+        if (replyData.comments.length > 0) {
+          setExpandedReplies(prev => ({ ...prev, [parentId]: replyData.comments }));
+        } else {
+          setExpandedReplies(prev => { const next = { ...prev }; delete next[parentId]; return next; });
+        }
+      }
+      showToast("댓글이 삭제되었어요");
+    } catch {
+      showToast("댓글 삭제에 실패했어요");
     }
   }
 
@@ -302,6 +329,14 @@ export function PostDetailSheet({
                           >
                             답글 달기
                           </button>
+                          {myId === comment.userId && (
+                            <button
+                              onClick={() => handleDeleteComment(comment.id)}
+                              className="text-[10px] font-medium text-muted-foreground"
+                            >
+                              삭제
+                            </button>
+                          )}
                         </div>
 
                         {comment.childrenCount > 0 && !replies && (
@@ -341,12 +376,22 @@ export function PostDetailSheet({
                                       )
                                     )}
                                   </p>
-                                  <button
-                                    onClick={() => handleReply(comment.id, reply.userNickname)}
-                                    className="text-[10px] font-medium text-muted-foreground mt-1"
-                                  >
-                                    답글 달기
-                                  </button>
+                                  <div className="flex items-center gap-3 mt-1">
+                                    <button
+                                      onClick={() => handleReply(comment.id, reply.userNickname)}
+                                      className="text-[10px] font-medium text-muted-foreground"
+                                    >
+                                      답글 달기
+                                    </button>
+                                    {myId === reply.userId && (
+                                      <button
+                                        onClick={() => handleDeleteComment(reply.id, comment.id)}
+                                        className="text-[10px] font-medium text-muted-foreground"
+                                      >
+                                        삭제
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             ))}
