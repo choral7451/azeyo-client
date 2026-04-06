@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { BottomSheet } from "@/components/bottom-sheet";
+import { NotificationDetailSheet } from "@/components/notification-detail-sheet";
 import { apiFetch } from "@/lib/api";
 
 interface ApiNotification {
@@ -52,11 +53,14 @@ function getNotificationHref(n: ApiNotification): string | null {
   }
 }
 
+const DETAIL_TYPES = new Set<ApiNotification["type"]>(["LIKE", "COMMENT", "JOKBO_COPY"]);
+
 export function NotificationSheet({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const [notifications, setNotifications] = useState<ApiNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const hasUnreadRef = { current: false };
+  const [detailTarget, setDetailTarget] = useState<{ type: "LIKE" | "COMMENT" | "JOKBO_COPY"; referenceId: string } | null>(null);
 
   useEffect(() => {
     apiFetch<{ notifications: ApiNotification[]; totalCount: number; unreadCount: number }>(
@@ -112,10 +116,17 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
               return (
                 <div
                   key={n.id}
-                  onClick={() => { if (href) { handleClose(); router.push(href); } }}
+                  onClick={() => {
+                    if (DETAIL_TYPES.has(n.type) && n.referenceId) {
+                      setDetailTarget({ type: n.type as "LIKE" | "COMMENT" | "JOKBO_COPY", referenceId: n.referenceId });
+                    } else if (href) {
+                      handleClose();
+                      router.push(href);
+                    }
+                  }}
                   className={`px-5 py-3.5 flex items-start gap-3 transition-colors ${
                     !n.isRead ? "" : "opacity-60"
-                  } ${href ? "cursor-pointer active:scale-[0.98]" : ""}`}
+                  } ${href || (DETAIL_TYPES.has(n.type) && n.referenceId) ? "cursor-pointer active:scale-[0.98]" : ""}`}
                   style={!n.isRead ? { backgroundColor: "hsl(36 30% 93%)" } : undefined}
                 >
                   <div
@@ -144,6 +155,15 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
 
         {/* Bottom safe area */}
         <div className="h-8 flex-shrink-0" />
+
+        {/* Detail overlay */}
+        {detailTarget && (
+          <NotificationDetailSheet
+            type={detailTarget.type}
+            referenceId={detailTarget.referenceId}
+            onClose={() => setDetailTarget(null)}
+          />
+        )}
     </BottomSheet>
   );
 }
