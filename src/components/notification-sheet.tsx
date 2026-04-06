@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { BottomSheet } from "@/components/bottom-sheet";
 import { NotificationDetailSheet } from "@/components/notification-detail-sheet";
@@ -59,7 +59,7 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const [notifications, setNotifications] = useState<ApiNotification[]>([]);
   const [loading, setLoading] = useState(true);
-  const hasUnreadRef = { current: false };
+  const hasUnreadRef = useRef(false);
   const [detailTarget, setDetailTarget] = useState<{ type: "LIKE" | "COMMENT" | "JOKBO_COPY"; referenceId: string } | null>(null);
 
   useEffect(() => {
