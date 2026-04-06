@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { BottomSheet } from "@/components/bottom-sheet";
 import { NotificationDetailSheet } from "@/components/notification-detail-sheet";
@@ -59,7 +59,6 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const [notifications, setNotifications] = useState<ApiNotification[]>([]);
   const [loading, setLoading] = useState(true);
-  const hasUnreadRef = useRef(false);
   const [detailTarget, setDetailTarget] = useState<{ type: "LIKE" | "COMMENT" | "JOKBO_COPY"; referenceId: string } | null>(null);
 
   useEffect(() => {
@@ -68,17 +67,14 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
     )
       .then((data) => {
         setNotifications(data.notifications);
-        hasUnreadRef.current = data.unreadCount > 0;
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
   function handleClose() {
-    // 읽지 않은 알림이 있었으면 닫을 때 모두 읽음 처리
-    if (hasUnreadRef.current) {
-      apiFetch("/azeyo/notifications/read-all", { method: "POST" }).catch(() => {});
-    }
+    // 닫을 때 항상 모두 읽음 처리
+    apiFetch("/azeyo/notifications/read-all", { method: "POST" }).catch(() => {});
     window.dispatchEvent(new CustomEvent("notification:read"));
     onClose();
   }
