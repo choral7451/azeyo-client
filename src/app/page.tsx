@@ -472,7 +472,6 @@ export default function HomePage() {
           onReportSuccess={() => { setSelectedUserId(null); showToast("신고가 접수되었습니다"); }}
           onReportDuplicate={() => { setSelectedUserId(null); showToast("이미 신고한 유저입니다"); }}
           onPostClick={(postId) => {
-            setSelectedUserId(null);
             apiFetch<ApiPost>(`/azeyo/communities/${postId}`, { noAuth: true })
               .then((post) => setSelectedPost(post))
               .catch(() => {});
