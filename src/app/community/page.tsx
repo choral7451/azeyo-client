@@ -8,6 +8,11 @@ import { useToast } from "@/components/toast";
 import { getCookie } from "@/lib/cookie";
 import { BottomSheet } from "@/components/bottom-sheet";
 import type { Category, PostType } from "@/data/mock";
+import { grades } from "@/data/mock";
+
+function getGradeFromPoints(points: number) {
+  return [...grades].reverse().find((g) => points >= g.minPoints) ?? grades[0];
+}
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -67,6 +72,17 @@ interface ApiComment {
   createdAt: string;
 }
 
+interface ApiUserProfile {
+  id: number;
+  nickname: string;
+  subtitle: string | null;
+  iconImageUrl: string | null;
+  activityPoints: number;
+  monthlyPoints: number;
+  postsCount: number;
+  likesCount: number;
+}
+
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
   const now = new Date();
@@ -93,6 +109,9 @@ export default function CommunityPage() {
   const [commentPost, setCommentPost] = useState<ApiPost | null>(null);
   const [showWrite, setShowWrite] = useState(false);
   const [reportPost, setReportPost] = useState<ApiPost | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [userProfile, setUserProfile] = useState<ApiUserProfile | null>(null);
+  const [userTopPosts, setUserTopPosts] = useState<ApiPost[]>([]);
   const { setStickyExtra } = useHeaderExtra();
   const loadingRef = useRef(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -175,6 +194,16 @@ export default function CommunityPage() {
     return () => setStickyExtra(null);
   }, [activeCategory, setStickyExtra]);
 
+  useEffect(() => {
+    if (!selectedUserId) { setUserProfile(null); setUserTopPosts([]); return; }
+    const headers: Record<string, string> = {};
+    if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
+    fetch(`${API_BASE}/azeyo/users/${selectedUserId}`, { headers })
+      .then(r => r.json()).then(json => setUserProfile(json.item ?? json)).catch(() => {});
+    fetch(`${API_BASE}/azeyo/communities/top/user/${selectedUserId}?count=5`, { headers })
+      .then(r => r.json()).then(json => { const data = json.item ?? json; setUserTopPosts(data.posts ?? []); }).catch(() => {});
+  }, [selectedUserId, accessToken]);
+
   function handleCategoryChange(cat: "전체" | Category) {
     setActiveCategory(cat);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -254,6 +283,7 @@ export default function CommunityPage() {
                   if (!accessToken) { showToast("로그인이 필요한 기능이에요"); return; }
                   setReportPost(post);
                 }}
+                onAuthorClick={() => setSelectedUserId(post.authorId)}
               />
             ))
           )}
@@ -283,6 +313,17 @@ export default function CommunityPage() {
           accessToken={accessToken}
           onClose={() => setShowWrite(false)}
           onSubmit={handleNewPost}
+        />
+      )}
+
+      {selectedUserId && userProfile && (
+        <UserProfileSheet
+          user={userProfile}
+          topPosts={userTopPosts}
+          accessToken={accessToken}
+          onClose={() => setSelectedUserId(null)}
+          onReportSuccess={() => { setSelectedUserId(null); showToast("신고가 접수되었습니다"); }}
+          onReportDuplicate={() => { setSelectedUserId(null); showToast("이미 신고한 유저입니다"); }}
         />
       )}
 
@@ -427,13 +468,14 @@ function ImageCarousel({ images, ratio = "4:5" }: { images: string[]; ratio?: st
 const CONTENT_MAX_LENGTH = 80;
 
 function PostCard({
-  post, onVote, onLike, onComment, onReport,
+  post, onVote, onLike, onComment, onReport, onAuthorClick,
 }: {
   post: ApiPost;
   onVote: (option: "A" | "B") => void;
   onLike: (isLike: boolean) => void;
   onComment: () => void;
   onReport: () => void;
+  onAuthorClick: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const isLong = post.contents.length > CONTENT_MAX_LENGTH;
@@ -448,20 +490,22 @@ function PostCard({
       <div className="p-4">
         {/* Meta */}
         <div className="flex items-center gap-2 mb-2.5">
-          {post.authorIconImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={post.authorIconImageUrl} alt={post.authorName} className="w-8 h-8 rounded-full object-cover" />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[12px] font-bold text-primary">
-              {post.authorName?.[0] || "?"}
+          <button onClick={onAuthorClick} className="flex items-center gap-2 flex-1 min-w-0 active:opacity-70 transition-opacity">
+            {post.authorIconImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={post.authorIconImageUrl} alt={post.authorName} className="w-8 h-8 rounded-full object-cover" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[12px] font-bold text-primary">
+                {post.authorName?.[0] || "?"}
+              </div>
+            )}
+            <div className="flex-1 min-w-0 text-left">
+              <span className="text-[13px] font-semibold text-foreground">{post.authorName}</span>
+              <div>
+                <span className="text-[10px] text-muted-foreground">{formatDate(post.createdAt)}</span>
+              </div>
             </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <span className="text-[13px] font-semibold text-foreground">{post.authorName}</span>
-            <div>
-              <span className="text-[10px] text-muted-foreground">{formatDate(post.createdAt)}</span>
-            </div>
-          </div>
+          </button>
           <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">
             {displayCategory}
           </span>
@@ -1148,6 +1192,209 @@ function ReportSheet({
 
         <div className="space-y-2 mb-5">
           {REPORT_REASONS.map((r) => (
+            <button
+              key={r.value}
+              onClick={() => setReason(r.value)}
+              className={`w-full text-left rounded-xl px-4 py-3 text-[14px] font-medium transition-all active:scale-[0.98] ${
+                reason === r.value
+                  ? "bg-primary text-primary-foreground"
+                  : "text-foreground"
+              }`}
+              style={reason !== r.value ? { backgroundColor: "hsl(36 30% 93%)" } : undefined}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+
+        {reason === "OTHER" && (
+          <textarea
+            value={contents}
+            onChange={(e) => setContents(e.target.value)}
+            placeholder="신고 사유를 입력해주세요"
+            rows={3}
+            className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary/30 transition resize-none leading-relaxed mb-5"
+            style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)" }}
+          />
+        )}
+
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 py-3 rounded-xl text-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform" style={{ backgroundColor: "hsl(40 30% 93%)" }}>
+            취소
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!reason || submitting}
+            className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform disabled:opacity-50"
+          >
+            {submitting ? "접수 중..." : "신고하기"}
+          </button>
+        </div>
+      </div>
+    </BottomSheet>
+  );
+}
+
+const USER_REPORT_REASONS = [
+  { value: "SPAM", label: "스팸/광고" },
+  { value: "INAPPROPRIATE", label: "부적절한 행동" },
+  { value: "HARASSMENT", label: "괴롭힘/혐오 표현" },
+  { value: "IMPERSONATION", label: "사칭" },
+  { value: "OTHER", label: "기타" },
+] as const;
+
+function UserProfileSheet({
+  user, topPosts, accessToken, onClose, onReportSuccess, onReportDuplicate,
+}: {
+  user: ApiUserProfile; topPosts: ApiPost[]; accessToken: string | null;
+  onClose: () => void; onReportSuccess: () => void; onReportDuplicate: () => void;
+}) {
+  const [showReport, setShowReport] = useState(false);
+  const grade = getGradeFromPoints(user.activityPoints);
+
+  if (showReport) {
+    return (
+      <UserReportSheet
+        userId={user.id}
+        accessToken={accessToken}
+        onClose={() => setShowReport(false)}
+        onSuccess={onReportSuccess}
+        onDuplicate={onReportDuplicate}
+      />
+    );
+  }
+
+  return (
+    <BottomSheet onClose={onClose} style={{ backgroundColor: "hsl(40 30% 99%)" }}>
+      <div className="px-5 pb-8">
+        <div className="flex items-center gap-4 mb-5 mt-2">
+          {user.iconImageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={user.iconImageUrl} alt={user.nickname} className="w-14 h-14 rounded-full object-cover" />
+          ) : (
+            <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-white text-lg font-black">
+              {user.nickname.charAt(0)}
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <h3 className="text-[17px] font-bold text-foreground">{user.nickname}</h3>
+            {user.subtitle && (
+              <p className="text-[12px] text-muted-foreground mt-0.5">{user.subtitle}</p>
+            )}
+            <div className="flex gap-2 mt-1.5 flex-wrap">
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "hsl(22 60% 42% / 0.12)", color: "hsl(22 60% 42%)" }}>
+                {grade.emoji} {grade.name}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="rounded-xl py-3 text-center" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
+            <p className="text-[14px] font-bold text-foreground">{user.activityPoints}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">총 활동점수</p>
+          </div>
+          <div className="rounded-xl py-3 text-center" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
+            <p className="text-[14px] font-bold text-foreground">{user.monthlyPoints}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">이달 점수</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2.5 mt-2.5">
+          <div className="rounded-xl py-3 text-center" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
+            <p className="text-[14px] font-bold text-foreground">{user.postsCount}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">게시글</p>
+          </div>
+          <div className="rounded-xl py-3 text-center" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
+            <p className="text-[14px] font-bold text-foreground">{user.likesCount}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">받은 좋아요</p>
+          </div>
+        </div>
+
+        {topPosts.length > 0 && (
+          <div className="mt-5">
+            <h4 className="text-[13px] font-bold text-foreground mb-3">인기글</h4>
+            <div className="space-y-2">
+              {topPosts.map((post) => (
+                <div key={post.id} className="rounded-xl px-4 py-3" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+                      {CATEGORY_REVERSE[post.category] ?? post.category}
+                    </span>
+                    {post.type === "VOTE" && (
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: "hsl(40 80% 60% / 0.15)", color: "hsl(40 80% 45%)" }}>투표</span>
+                    )}
+                  </div>
+                  <p className="text-[13px] font-semibold text-foreground leading-snug line-clamp-1">{post.title}</p>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" /></svg>
+                      {post.likeCount}
+                    </span>
+                    <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" /></svg>
+                      {post.commentCount}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <button
+          onClick={() => {
+            if (!accessToken) return;
+            setShowReport(true);
+          }}
+          className="w-full mt-5 py-3 rounded-xl text-[13px] font-medium text-muted-foreground active:scale-[0.98] transition-transform"
+          style={{ backgroundColor: "hsl(36 30% 93%)" }}
+        >
+          이 유저 신고하기
+        </button>
+      </div>
+    </BottomSheet>
+  );
+}
+
+function UserReportSheet({
+  userId, accessToken, onClose, onSuccess, onDuplicate,
+}: {
+  userId: number; accessToken: string | null; onClose: () => void;
+  onSuccess: () => void; onDuplicate: () => void;
+}) {
+  const [reason, setReason] = useState<string | null>(null);
+  const [contents, setContents] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit() {
+    if (!reason || submitting) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${API_BASE}/azeyo/users/${userId}/report`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({ reason, contents: contents.trim() || null }),
+      });
+      if (res.status === 409) { onDuplicate(); return; }
+      if (!res.ok) throw new Error("신고 실패");
+      onSuccess();
+    } catch {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <BottomSheet onClose={onClose} className="max-h-[70dvh]" style={{ backgroundColor: "hsl(40 30% 99%)" }}>
+      <div className="flex-1 overflow-y-auto px-6 pb-8">
+        <h3 className="text-[18px] font-bold text-foreground mb-1">유저 신고</h3>
+        <p className="text-[12px] text-muted-foreground mb-5">신고 사유를 선택해주세요</p>
+
+        <div className="space-y-2 mb-5">
+          {USER_REPORT_REASONS.map((r) => (
             <button
               key={r.value}
               onClick={() => setReason(r.value)}
