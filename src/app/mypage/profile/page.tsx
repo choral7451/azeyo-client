@@ -15,6 +15,8 @@ interface ApiProfile {
   iconImageUrl: string | null;
   email: string | null;
   phone: string | null;
+  gender: string | null;
+  birthDate: string | null;
 }
 
 export default function ProfileEditPage() {
@@ -23,6 +25,8 @@ export default function ProfileEditPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [gender, setGender] = useState<string | null>(null);
+  const [birthDate, setBirthDate] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -35,6 +39,8 @@ export default function ProfileEditPage() {
         setName(data.nickname);
         setEmail(data.email ?? "");
         setPhone(data.phone ?? "");
+        setGender(data.gender);
+        setBirthDate(data.birthDate);
         setImageUrl(data.iconImageUrl);
       })
       .catch(() => {})
@@ -146,6 +152,27 @@ export default function ProfileEditPage() {
               className="w-full px-4 py-3 rounded-xl text-[14px] text-muted-foreground outline-none cursor-not-allowed"
               style={{ backgroundColor: "hsl(36 30% 93%)", opacity: 0.6 }}
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">성별</label>
+              <div
+                className="w-full px-4 py-3 rounded-xl text-[14px] text-muted-foreground"
+                style={{ backgroundColor: "hsl(36 30% 93%)", opacity: 0.6 }}
+              >
+                {gender === "male" ? "남성" : gender === "female" ? "여성" : "미설정"}
+              </div>
+            </div>
+            <div>
+              <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">생년월일</label>
+              <div
+                className="w-full px-4 py-3 rounded-xl text-[14px] text-muted-foreground"
+                style={{ backgroundColor: "hsl(36 30% 93%)", opacity: 0.6 }}
+              >
+                {birthDate ?? "미설정"}
+              </div>
+            </div>
           </div>
 
           <div>
