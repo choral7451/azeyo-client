@@ -1347,8 +1347,7 @@ function UserProfileSheet({
             if (!accessToken) return;
             setShowReport(true);
           }}
-          className="w-full mt-5 py-3 rounded-xl text-[13px] font-medium text-muted-foreground active:scale-[0.98] transition-transform"
-          style={{ backgroundColor: "hsl(36 30% 93%)" }}
+          className="mt-5 py-2 px-4 rounded-lg text-[12px] font-medium text-muted-foreground active:scale-[0.97] transition-transform"
         >
           이 유저 신고하기
         </button>
