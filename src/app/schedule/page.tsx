@@ -437,6 +437,24 @@ function AddScheduleDialog({ allTags, initialData, onClose, onSubmit }: { allTag
   const [calendarType, setCalendarType] = useState<"SOLAR" | "LUNAR">(initialData?.calendarType ?? "SOLAR");
   const [selectedTagIds, setSelectedTagIds] = useState<Set<number>>(new Set(initialData?.tags.map(t => t.id) ?? []));
   const [alarmTimes, setAlarmTimes] = useState<string[]>(initialData?.alarmTimes ?? []);
+  const [lunarYear, setLunarYear] = useState(() => {
+    if (initialData?.calendarType === "LUNAR" && initialData?.startDate) {
+      return new Date(initialData.startDate + "T00:00:00").getFullYear();
+    }
+    return new Date().getFullYear();
+  });
+  const [lunarMonth, setLunarMonth] = useState(() => {
+    if (initialData?.calendarType === "LUNAR" && initialData?.startDate) {
+      return new Date(initialData.startDate + "T00:00:00").getMonth() + 1;
+    }
+    return 1;
+  });
+  const [lunarDay, setLunarDay] = useState(() => {
+    if (initialData?.calendarType === "LUNAR" && initialData?.startDate) {
+      return new Date(initialData.startDate + "T00:00:00").getDate();
+    }
+    return 1;
+  });
 
   function toggleTag(tagId: number) {
     setSelectedTagIds(prev => {
@@ -464,23 +482,76 @@ function AddScheduleDialog({ allTags, initialData, onClose, onSubmit }: { allTag
           />
         </label>
 
-        <label className="block mb-4">
+        <div className="block mb-4">
           <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">
             {repeatType === "YEARLY" ? "최초 날짜 (매년 이 날짜에 반복)" : "날짜"}
           </span>
-          <input
-            type="date" value={date} onChange={(e) => setDate(e.target.value)}
-            className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground outline-none transition appearance-none min-h-[48px]"
-            style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)", WebkitAppearance: "none" }}
-            onFocus={(e) => { e.currentTarget.style.boxShadow = "0 0 0 2px hsl(22 60% 42% / 0.2)"; e.currentTarget.style.borderColor = "hsl(22 60% 42% / 0.4)"; }}
-            onBlur={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "hsl(35 20% 90%)"; }}
-          />
-          {repeatType === "YEARLY" && date && (
-            <p className="text-[11px] text-muted-foreground mt-1.5">
-              매년 {new Date(date + "T00:00:00").getMonth() + 1}월 {new Date(date + "T00:00:00").getDate()}일에 반복됩니다
-            </p>
+          {calendarType === "LUNAR" ? (
+            <>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <span className="text-[11px] text-muted-foreground block mb-1">년</span>
+                  <select
+                    value={lunarYear}
+                    onChange={(e) => setLunarYear(parseInt(e.target.value))}
+                    className="w-full rounded-xl px-3 py-3 text-[14px] text-foreground outline-none transition appearance-none min-h-[48px]"
+                    style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)" }}
+                  >
+                    {Array.from({ length: 101 }, (_, i) => new Date().getFullYear() - 100 + i).map(y => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <span className="text-[11px] text-muted-foreground block mb-1">월</span>
+                  <select
+                    value={lunarMonth}
+                    onChange={(e) => setLunarMonth(parseInt(e.target.value))}
+                    className="w-full rounded-xl px-3 py-3 text-[14px] text-foreground outline-none transition appearance-none min-h-[48px]"
+                    style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)" }}
+                  >
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <span className="text-[11px] text-muted-foreground block mb-1">일</span>
+                  <select
+                    value={lunarDay}
+                    onChange={(e) => setLunarDay(parseInt(e.target.value))}
+                    className="w-full rounded-xl px-3 py-3 text-[14px] text-foreground outline-none transition appearance-none min-h-[48px]"
+                    style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)" }}
+                  >
+                    {Array.from({ length: 30 }, (_, i) => i + 1).map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              {repeatType === "YEARLY" && (
+                <p className="text-[11px] text-muted-foreground mt-1.5">
+                  매년 음력 {lunarMonth}월 {lunarDay}일에 반복됩니다
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              <input
+                type="date" value={date} onChange={(e) => setDate(e.target.value)}
+                className="w-full rounded-xl px-4 py-3 text-[14px] text-foreground outline-none transition appearance-none min-h-[48px]"
+                style={{ backgroundColor: "hsl(36 30% 93%)", border: "1px solid hsl(35 20% 90%)", WebkitAppearance: "none" }}
+                onFocus={(e) => { e.currentTarget.style.boxShadow = "0 0 0 2px hsl(22 60% 42% / 0.2)"; e.currentTarget.style.borderColor = "hsl(22 60% 42% / 0.4)"; }}
+                onBlur={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "hsl(35 20% 90%)"; }}
+              />
+              {repeatType === "YEARLY" && date && (
+                <p className="text-[11px] text-muted-foreground mt-1.5">
+                  매년 {new Date(date + "T00:00:00").getMonth() + 1}월 {new Date(date + "T00:00:00").getDate()}일에 반복됩니다
+                </p>
+              )}
+            </>
           )}
-        </label>
+        </div>
 
         {/* Calendar Type */}
         <div className="mb-4">
@@ -615,7 +686,12 @@ function AddScheduleDialog({ allTags, initialData, onClose, onSubmit }: { allTag
             취소
           </button>
           <button
-            onClick={() => { if (title && date) onSubmit(title, date, Array.from(selectedTagIds), repeatType, calendarType, repeatType === "YEARLY" ? date : null, alarmTimes.length > 0 ? alarmTimes : null); }}
+            onClick={() => {
+              const finalDate = calendarType === "LUNAR"
+                ? `${lunarYear}-${String(lunarMonth).padStart(2, '0')}-${String(lunarDay).padStart(2, '0')}`
+                : date;
+              if (title && finalDate) onSubmit(title, finalDate, Array.from(selectedTagIds), repeatType, calendarType, repeatType === "YEARLY" ? finalDate : null, alarmTimes.length > 0 ? alarmTimes : null);
+            }}
             className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform"
           >
             {isEdit ? "수정하기" : "등록하기"}
