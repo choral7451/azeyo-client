@@ -19,7 +19,6 @@ interface ApiSchedule {
   repeatType: "NONE" | "YEARLY";
   calendarType: "SOLAR" | "LUNAR";
   startDate: string | null;
-  alarmTimes: string[] | null;
   anniversaryLabel: string | null;
   tags: ApiTag[];
   createdAt: string;
@@ -37,14 +36,6 @@ interface ApiRecommendation {
   tagId: number;
   title: string;
   items: ApiRecommendationItem[];
-}
-
-function formatAlarmLabel(time: string): string {
-  const [h, m] = time.split(":");
-  const hour = parseInt(h);
-  const period = hour < 12 ? "오전" : "오후";
-  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return `${period} ${displayHour}시${m !== "00" ? ` ${m}분` : ""}`;
 }
 
 function getDday(dateStr: string): number {
@@ -112,11 +103,11 @@ export default function SchedulePage() {
   const upcoming = sorted.filter((s) => getDday(s.date) >= 0);
   const past = sorted.filter((s) => getDday(s.date) < 0);
 
-  async function handleAddSchedule(title: string, date: string, tagIds: number[], repeatType: "NONE" | "YEARLY", calendarType: "SOLAR" | "LUNAR", startDate: string | null, alarmTimes: string[] | null) {
+  async function handleAddSchedule(title: string, date: string, tagIds: number[], repeatType: "NONE" | "YEARLY", calendarType: "SOLAR" | "LUNAR", startDate: string | null) {
     try {
       await apiFetch("/azeyo/schedules", {
         method: "POST",
-        body: JSON.stringify({ title, date, memo: null, tagIds, repeatType, calendarType, startDate, alarmTimes }),
+        body: JSON.stringify({ title, date, memo: null, tagIds, repeatType, calendarType, startDate }),
       });
       fetchData();
     } catch {
@@ -134,11 +125,11 @@ export default function SchedulePage() {
     }
   }
 
-  async function handleUpdateSchedule(scheduleId: number, title: string, date: string, tagIds: number[], repeatType: "NONE" | "YEARLY", calendarType: "SOLAR" | "LUNAR", startDate: string | null, alarmTimes: string[] | null) {
+  async function handleUpdateSchedule(scheduleId: number, title: string, date: string, tagIds: number[], repeatType: "NONE" | "YEARLY", calendarType: "SOLAR" | "LUNAR", startDate: string | null) {
     try {
       await apiFetch(`/azeyo/schedules/${scheduleId}`, {
         method: "PUT",
-        body: JSON.stringify({ title, date, memo: null, tagIds, repeatType, calendarType, startDate, alarmTimes }),
+        body: JSON.stringify({ title, date, memo: null, tagIds, repeatType, calendarType, startDate }),
       });
       setEditingSchedule(null);
       fetchData();
@@ -232,16 +223,6 @@ export default function SchedulePage() {
               {selectedSchedule.memo && ` · ${selectedSchedule.memo}`}
             </p>
 
-            {selectedSchedule.alarmTimes && selectedSchedule.alarmTimes.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-4">
-                {selectedSchedule.alarmTimes.map((alarm, i) => (
-                  <span key={i} className="text-[11px] px-2.5 py-1 rounded-lg font-medium" style={{ backgroundColor: "hsl(22 60% 42% / 0.1)", color: "hsl(22 60% 42%)" }}>
-                    {formatAlarmLabel(alarm)}
-                  </span>
-                ))}
-              </div>
-            )}
-
             {selectedRec ? (
               <>
                 <h4 className="text-[14px] font-bold text-foreground mb-3">
@@ -314,8 +295,8 @@ export default function SchedulePage() {
         <AddScheduleDialog
           allTags={allTags}
           onClose={() => setShowAddDialog(false)}
-          onSubmit={(title, date, tagIds, repeatType, calendarType, startDate, alarmTimes) => {
-            handleAddSchedule(title, date, tagIds, repeatType, calendarType, startDate, alarmTimes);
+          onSubmit={(title, date, tagIds, repeatType, calendarType, startDate) => {
+            handleAddSchedule(title, date, tagIds, repeatType, calendarType, startDate);
             setShowAddDialog(false);
           }}
         />
@@ -327,8 +308,8 @@ export default function SchedulePage() {
           allTags={allTags}
           initialData={editingSchedule}
           onClose={() => setEditingSchedule(null)}
-          onSubmit={(title, date, tagIds, repeatType, calendarType, startDate, alarmTimes) => {
-            handleUpdateSchedule(editingSchedule.id, title, date, tagIds, repeatType, calendarType, startDate, alarmTimes);
+          onSubmit={(title, date, tagIds, repeatType, calendarType, startDate) => {
+            handleUpdateSchedule(editingSchedule.id, title, date, tagIds, repeatType, calendarType, startDate);
           }}
         />
       )}
@@ -379,11 +360,6 @@ function ScheduleCard({
           <h3 className="text-[14px] font-semibold text-foreground truncate">
             {schedule.title}
           </h3>
-          {schedule.alarmTimes && schedule.alarmTimes.length > 0 && (
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="hsl(22 60% 42%)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
-              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" />
-            </svg>
-          )}
           {schedule.calendarType === "LUNAR" && (
             <span className="flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-md" style={{ backgroundColor: "hsl(260 40% 95%)", color: "hsl(260 40% 50%)" }}>
               음력
@@ -429,14 +405,13 @@ function ScheduleCard({
   );
 }
 
-function AddScheduleDialog({ allTags, initialData, onClose, onSubmit }: { allTags: ApiTag[]; initialData?: ApiSchedule; onClose: () => void; onSubmit: (title: string, date: string, tagIds: number[], repeatType: "NONE" | "YEARLY", calendarType: "SOLAR" | "LUNAR", startDate: string | null, alarmTimes: string[] | null) => void }) {
+function AddScheduleDialog({ allTags, initialData, onClose, onSubmit }: { allTags: ApiTag[]; initialData?: ApiSchedule; onClose: () => void; onSubmit: (title: string, date: string, tagIds: number[], repeatType: "NONE" | "YEARLY", calendarType: "SOLAR" | "LUNAR", startDate: string | null) => void }) {
   const isEdit = !!initialData;
   const [title, setTitle] = useState(initialData?.title ?? "");
   const [date, setDate] = useState(initialData?.date ?? "");
   const [repeatType, setRepeatType] = useState<"NONE" | "YEARLY">(initialData?.repeatType ?? "NONE");
   const [calendarType, setCalendarType] = useState<"SOLAR" | "LUNAR">(initialData?.calendarType ?? "SOLAR");
   const [selectedTagIds, setSelectedTagIds] = useState<Set<number>>(new Set(initialData?.tags.map(t => t.id) ?? []));
-  const [alarmTimes, setAlarmTimes] = useState<string[]>(initialData?.alarmTimes ?? []);
   const [lunarYear, setLunarYear] = useState(() => {
     if (initialData?.calendarType === "LUNAR" && initialData?.startDate) {
       return new Date(initialData.startDate + "T00:00:00").getFullYear();
@@ -620,67 +595,6 @@ function AddScheduleDialog({ allTags, initialData, onClose, onSubmit }: { allTag
           </div>
         </div>
 
-        {/* Alarm Times */}
-        <div className="mb-5">
-          <span className="text-[12px] font-semibold text-muted-foreground block mb-1.5">알람 (최대 2개)</span>
-          <div className="space-y-2">
-            {alarmTimes.map((time, idx) => {
-              const [h, m] = time.split(":");
-              const hour = parseInt(h);
-              const isPM = hour >= 12;
-              const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-              return (
-                <div key={idx} className="flex items-center gap-2 rounded-xl px-3 py-2.5" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
-                  <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid hsl(35 20% 88%)" }}>
-                    <button
-                      onClick={() => { const next = [...alarmTimes]; const nh = isPM ? hour - 12 : hour; next[idx] = `${String(nh < 0 ? 0 : nh).padStart(2, "0")}:${m}`; setAlarmTimes(next); }}
-                      className="px-2.5 py-1 text-[11px] font-semibold transition-all"
-                      style={!isPM ? { backgroundColor: "hsl(22 60% 42%)", color: "white" } : { color: "hsl(30 10% 45%)" }}
-                    >오전</button>
-                    <button
-                      onClick={() => { const next = [...alarmTimes]; const nh = isPM ? hour : hour + 12; next[idx] = `${String(nh >= 24 ? 12 : nh).padStart(2, "0")}:${m}`; setAlarmTimes(next); }}
-                      className="px-2.5 py-1 text-[11px] font-semibold transition-all"
-                      style={isPM ? { backgroundColor: "hsl(22 60% 42%)", color: "white" } : { color: "hsl(30 10% 45%)" }}
-                    >오후</button>
-                  </div>
-                  <select
-                    value={displayHour}
-                    onChange={(e) => { const next = [...alarmTimes]; let nh = parseInt(e.target.value); if (isPM) nh = nh === 12 ? 12 : nh + 12; else nh = nh === 12 ? 0 : nh; next[idx] = `${String(nh).padStart(2, "0")}:${m}`; setAlarmTimes(next); }}
-                    className="w-14 text-center text-[15px] font-bold text-foreground bg-transparent outline-none appearance-none"
-                  >
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map(v => (<option key={v} value={v}>{v}</option>))}
-                  </select>
-                  <span className="text-[15px] font-bold text-muted-foreground">:</span>
-                  <select
-                    value={parseInt(m)}
-                    onChange={(e) => { const next = [...alarmTimes]; next[idx] = `${h}:${String(e.target.value).padStart(2, "0")}`; setAlarmTimes(next); }}
-                    className="w-14 text-center text-[15px] font-bold text-foreground bg-transparent outline-none appearance-none"
-                  >
-                    {Array.from({ length: 60 }, (_, i) => i).map(v => (<option key={v} value={v}>{String(v).padStart(2, "0")}</option>))}
-                  </select>
-                  <div className="flex-1" />
-                  <button
-                    onClick={() => setAlarmTimes(alarmTimes.filter((_, i) => i !== idx))}
-                    className="w-7 h-7 flex items-center justify-center rounded-full active:scale-90 transition-all"
-                    style={{ color: "hsl(0 40% 55%)" }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
-                  </button>
-                </div>
-              );
-            })}
-            {alarmTimes.length < 2 && (
-              <button
-                onClick={() => setAlarmTimes([...alarmTimes, "09:00"])}
-                className="w-full py-2.5 rounded-xl text-[13px] font-medium text-primary active:scale-[0.98] transition-all"
-                style={{ backgroundColor: "hsl(22 60% 42% / 0.08)" }}
-              >
-                + 알람 추가
-              </button>
-            )}
-          </div>
-        </div>
-
         <div className="flex gap-3">
           <button onClick={onClose} className="flex-1 py-3 rounded-xl text-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform" style={{ backgroundColor: "hsl(40 30% 93%)" }}>
             취소
@@ -690,7 +604,7 @@ function AddScheduleDialog({ allTags, initialData, onClose, onSubmit }: { allTag
               const finalDate = calendarType === "LUNAR"
                 ? `${lunarYear}-${String(lunarMonth).padStart(2, '0')}-${String(lunarDay).padStart(2, '0')}`
                 : date;
-              if (title && finalDate) onSubmit(title, finalDate, Array.from(selectedTagIds), repeatType, calendarType, repeatType === "YEARLY" ? finalDate : null, alarmTimes.length > 0 ? alarmTimes : null);
+              if (title && finalDate) onSubmit(title, finalDate, Array.from(selectedTagIds), repeatType, calendarType, repeatType === "YEARLY" ? finalDate : null);
             }}
             className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-[14px] font-semibold active:scale-[0.98] transition-transform"
           >
