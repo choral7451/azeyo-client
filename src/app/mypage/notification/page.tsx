@@ -15,7 +15,7 @@ interface NotificationSettings {
 
 const settingItems: { id: keyof NotificationSettings; label: string; description: string }[] = [
   { id: "scheduleEnabled", label: "일정 알림", description: "다가오는 일정을 미리 알려드려요" },
-  { id: "commentEnabled", label: "댓글 알림", description: "내 글에 댓글이나 언급이 달리면 알려드려요" },
+  { id: "commentEnabled", label: "댓글 알림", description: "내 글에 댓글이 달리거나 누군가 나를 언급하면 알려드려요" },
   { id: "likeEnabled", label: "좋아요 알림", description: "내 글에 좋아요가 달리면 알려드려요" },
   { id: "jokboCopyEnabled", label: "족보 복사 알림", description: "내 족보가 복사되면 알려드려요" },
   // { id: "communityEnabled", label: "인기글 알림", description: "커뮤니티 인기글을 알려드려요" },
