@@ -18,8 +18,8 @@ const settingItems: { id: keyof NotificationSettings; label: string; description
   { id: "commentEnabled", label: "댓글 알림", description: "내 글에 댓글이 달리면 알려드려요" },
   { id: "likeEnabled", label: "좋아요 알림", description: "내 글에 좋아요가 달리면 알려드려요" },
   { id: "jokboCopyEnabled", label: "족보 복사 알림", description: "내 족보가 복사되면 알려드려요" },
-  { id: "communityEnabled", label: "인기글 알림", description: "커뮤니티 인기글을 알려드려요" },
-  { id: "marketingEnabled", label: "이벤트 / 공지", description: "아재요 소식과 이벤트를 알려드려요" },
+  // { id: "communityEnabled", label: "인기글 알림", description: "커뮤니티 인기글을 알려드려요" },
+  // { id: "marketingEnabled", label: "이벤트 / 공지", description: "아재요 소식과 이벤트를 알려드려요" },
 ];
 
 export default function NotificationSettingPage() {
