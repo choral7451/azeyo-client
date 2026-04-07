@@ -19,7 +19,7 @@ const SITE_DESCRIPTION = "편지 족보, 기념일 관리, 선물 추천까지. 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "아재요 — 유부남들의 사랑방",
+    default: "아재요 - 유부남들의 사랑방",
     template: "%s | 아재요",
   },
   description: SITE_DESCRIPTION,
