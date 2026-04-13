@@ -7,6 +7,8 @@ import { useAuth } from "@/components/auth-context";
 import { useToast } from "@/components/toast";
 import { BottomSheet } from "@/components/bottom-sheet";
 import { apiFetch } from "@/lib/api";
+import { grades, getGrade } from "@/data/mock";
+import Link from "next/link";
 
 const CATEGORY_MAP = {
   "아내 생일 편지": "WIFE_BIRTHDAY",
@@ -73,8 +75,10 @@ function CategoryTabs<T extends string>({
   );
 }
 
+const REQUIRED_GRADE = grades.find(g => g.name === "동네 아재")!;
+
 export default function JokboPage() {
-  const { isLoggedIn, accessToken, isLoading } = useAuth();
+  const { isLoggedIn, accessToken, isLoading, activityPoints } = useAuth();
   const { show: showToast } = useToast();
   const router = useRouter();
   const [activeCategory, setActiveCategory] = useState<TemplateCategory>(categories[0]);
@@ -158,6 +162,44 @@ export default function JokboPage() {
   }
 
   if (isLoading || !isLoggedIn) return null;
+
+  const currentGrade = getGrade(activityPoints);
+  if (currentGrade.level < REQUIRED_GRADE.level) {
+    return (
+      <main className="pb-6 px-5">
+        <div className="flex flex-col items-center justify-center py-20 animate-fade-up">
+          <p className="text-[48px] mb-4">{REQUIRED_GRADE.emoji}</p>
+          <h2 className="text-[18px] font-bold text-foreground mb-2">
+            족보는 {REQUIRED_GRADE.emoji} {REQUIRED_GRADE.name} 부터!
+          </h2>
+          <p className="text-[13px] text-muted-foreground text-center leading-relaxed mb-2">
+            활동점수 {REQUIRED_GRADE.minPoints}점 이상이면 열려요
+          </p>
+          <p className="text-[13px] text-muted-foreground mb-6">
+            현재 내 점수: <span className="font-semibold text-foreground">{activityPoints}점</span>
+          </p>
+          <div
+            className="w-full max-w-[240px] h-2 rounded-full overflow-hidden mb-6"
+            style={{ backgroundColor: "hsl(35 20% 90%)" }}
+          >
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{
+                width: `${Math.min((activityPoints / REQUIRED_GRADE.minPoints) * 100, 100)}%`,
+                backgroundColor: "hsl(22 60% 42%)",
+              }}
+            />
+          </div>
+          <Link
+            href="/mypage/grade"
+            className="text-[13px] font-semibold text-primary underline underline-offset-2"
+          >
+            등급 올리는 방법 보기
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="pb-6">
