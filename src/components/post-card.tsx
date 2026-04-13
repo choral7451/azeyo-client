@@ -56,17 +56,17 @@ export function ImageCarousel({ images, ratio = "4:5" }: { images: string[]; rat
   const activeIdxRef = useRef(activeIdx);
   activeIdxRef.current = activeIdx;
 
-  const handleTouchStart = useCallback((e: TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
+  const handleStart = useCallback((x: number, y: number) => {
+    touchStartX.current = x;
+    touchStartY.current = y;
     isDragging.current = true;
     directionLocked.current = null;
   }, []);
 
-  const handleTouchMove = useCallback((e: TouchEvent) => {
+  const handleMove = useCallback((x: number, y: number, preventDefault?: () => void) => {
     if (!isDragging.current) return;
-    const dx = e.touches[0].clientX - touchStartX.current;
-    const dy = e.touches[0].clientY - touchStartY.current;
+    const dx = x - touchStartX.current;
+    const dy = y - touchStartY.current;
     if (!directionLocked.current) {
       if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
         directionLocked.current = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
@@ -74,12 +74,12 @@ export function ImageCarousel({ images, ratio = "4:5" }: { images: string[]; rat
       return;
     }
     if (directionLocked.current === "v") return;
-    e.preventDefault();
+    preventDefault?.();
     touchDeltaX.current = dx;
     setOffsetX(dx);
   }, []);
 
-  const handleTouchEnd = useCallback(() => {
+  const handleEnd = useCallback(() => {
     isDragging.current = false;
     directionLocked.current = null;
     const threshold = 50;
@@ -95,15 +95,35 @@ export function ImageCarousel({ images, ratio = "4:5" }: { images: string[]; rat
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    el.addEventListener("touchstart", handleTouchStart, { passive: true });
-    el.addEventListener("touchmove", handleTouchMove, { passive: false });
-    el.addEventListener("touchend", handleTouchEnd, { passive: true });
+
+    // Touch events
+    const onTouchStart = (e: TouchEvent) => handleStart(e.touches[0].clientX, e.touches[0].clientY);
+    const onTouchMove = (e: TouchEvent) => handleMove(e.touches[0].clientX, e.touches[0].clientY, () => e.preventDefault());
+    const onTouchEnd = () => handleEnd();
+
+    // Mouse events
+    const onMouseDown = (e: MouseEvent) => { e.preventDefault(); handleStart(e.clientX, e.clientY); };
+    const onMouseMove = (e: MouseEvent) => handleMove(e.clientX, e.clientY, () => e.preventDefault());
+    const onMouseUp = () => handleEnd();
+    const onMouseLeave = () => { if (isDragging.current) handleEnd(); };
+
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
+    el.addEventListener("mousedown", onMouseDown);
+    el.addEventListener("mousemove", onMouseMove);
+    el.addEventListener("mouseup", onMouseUp);
+    el.addEventListener("mouseleave", onMouseLeave);
     return () => {
-      el.removeEventListener("touchstart", handleTouchStart);
-      el.removeEventListener("touchmove", handleTouchMove);
-      el.removeEventListener("touchend", handleTouchEnd);
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("mousedown", onMouseDown);
+      el.removeEventListener("mousemove", onMouseMove);
+      el.removeEventListener("mouseup", onMouseUp);
+      el.removeEventListener("mouseleave", onMouseLeave);
     };
-  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
+  }, [handleStart, handleMove, handleEnd]);
 
   const aspectClass = ratio === "1:1" ? "aspect-square" : "aspect-[4/5]";
 
@@ -117,7 +137,7 @@ export function ImageCarousel({ images, ratio = "4:5" }: { images: string[]; rat
   }
 
   return (
-    <div ref={containerRef} className="relative overflow-hidden">
+    <div ref={containerRef} className="relative overflow-hidden select-none cursor-grab active:cursor-grabbing">
       <div
         className="flex transition-transform duration-300 ease-out"
         style={{
