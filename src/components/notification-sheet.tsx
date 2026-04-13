@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { BottomSheet } from "@/components/bottom-sheet";
-import { PostDetailSheet, PostDetailData } from "@/components/post-detail-sheet";
-import { JokboDetailSheet } from "@/components/jokbo-detail-sheet";
+import { PostDetailData } from "@/components/post-detail-sheet";
 import { useToast } from "@/components/toast";
 import { apiFetch } from "@/lib/api";
 
@@ -53,13 +52,15 @@ function getNotificationHref(n: ApiNotification): string | null {
 
 const DETAIL_TYPES = new Set<ApiNotification["type"]>(["LIKE", "COMMENT", "MENTION", "JOKBO_COPY"]);
 
-export function NotificationSheet({ onClose }: { onClose: () => void }) {
+export function NotificationSheet({ onClose, onOpenPost, onOpenJokbo }: {
+  onClose: () => void;
+  onOpenPost?: (post: PostDetailData) => void;
+  onOpenJokbo?: (id: string) => void;
+}) {
   const router = useRouter();
   const { show: showToast } = useToast();
   const [notifications, setNotifications] = useState<ApiNotification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPost, setSelectedPost] = useState<PostDetailData | null>(null);
-  const [selectedJokboId, setSelectedJokboId] = useState<string | null>(null);
 
   useEffect(() => {
     apiFetch<{ notifications: ApiNotification[]; totalCount: number; unreadCount: number }>(
@@ -83,10 +84,14 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
 
     if (n.type === "LIKE" || n.type === "COMMENT" || n.type === "MENTION") {
       apiFetch<PostDetailData>(`/azeyo/communities/${n.referenceId}`)
-        .then((post) => setSelectedPost(post))
+        .then((post) => {
+          handleClose();
+          onOpenPost?.(post);
+        })
         .catch(() => showToast("삭제된 게시글이에요"));
     } else if (n.type === "JOKBO_COPY") {
-      setSelectedJokboId(n.referenceId);
+      handleClose();
+      onOpenJokbo?.(n.referenceId!);
     } else {
       const href = getNotificationHref(n);
       if (href) {
@@ -97,7 +102,6 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <>
       <BottomSheet onClose={handleClose} className="flex flex-col" hideHeader>
         {/* Header */}
         <div className="px-5 pt-4 pb-3 border-b border-border flex-shrink-0">
@@ -161,21 +165,5 @@ export function NotificationSheet({ onClose }: { onClose: () => void }) {
 
         <div className="h-8 flex-shrink-0" />
       </BottomSheet>
-
-      {selectedPost && (
-        <PostDetailSheet
-          post={selectedPost}
-          onClose={() => setSelectedPost(null)}
-        />
-      )}
-
-      {selectedJokboId && (
-        <JokboDetailSheet
-          templateId={selectedJokboId}
-          onClose={() => setSelectedJokboId(null)}
-          onError={() => { setSelectedJokboId(null); showToast("삭제된 족보예요"); }}
-        />
-      )}
-    </>
   );
 }
