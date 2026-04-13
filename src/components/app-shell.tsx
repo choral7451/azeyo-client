@@ -8,7 +8,7 @@ import { NotificationListener } from "@/components/notification-listener";
 import { AuthProvider } from "@/components/auth-context";
 import { ToastProvider } from "@/components/toast";
 
-const AUTH_ROUTES = ["/login", "/signup", "/auth", "/terms", "/privacy"];
+const AUTH_ROUTES = ["/login", "/signup", "/auth", "/terms", "/privacy", "/admin"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

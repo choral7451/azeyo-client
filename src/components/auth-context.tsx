@@ -12,6 +12,7 @@ const AuthContext = createContext<AuthContextValue>({
   isLoading: true,
   isWriteBanned: false,
   activityPoints: 0,
+  isAdmin: false,
   logout: () => {},
   loginWithTokens: () => {},
 });
@@ -23,6 +24,7 @@ interface AuthContextValue {
   isLoading: boolean;
   isWriteBanned: boolean;
   activityPoints: number;
+  isAdmin: boolean;
   logout: () => void;
   loginWithTokens: (accessToken: string, refreshToken: string) => void;
 }
@@ -34,6 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isWriteBanned, setIsWriteBanned] = useState(false);
   const [activityPoints, setActivityPoints] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
   const initializedRef = useRef(false);
 
   const isLoggedIn = accessToken !== null;
@@ -70,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // 유저 정보 조회 (글쓰기 제한, 유저 ID)
   useEffect(() => {
-    if (!accessToken) { setIsWriteBanned(false); setMyId(null); setActivityPoints(0); return; }
+    if (!accessToken) { setIsWriteBanned(false); setMyId(null); setActivityPoints(0); setIsAdmin(false); return; }
     fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/azeyo/users/me`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
@@ -81,6 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsWriteBanned(data.isWriteBanned ?? false);
           setMyId(data.id ?? null);
           setActivityPoints(data.activityPoints ?? 0);
+          setIsAdmin(data.isAdmin ?? false);
         }
       })
       .catch(() => {});
@@ -113,7 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, accessToken, myId, isLoading, isWriteBanned, activityPoints, logout, loginWithTokens }}>
+    <AuthContext.Provider value={{ isLoggedIn, accessToken, myId, isLoading, isWriteBanned, activityPoints, isAdmin, logout, loginWithTokens }}>
       {children}
     </AuthContext.Provider>
   );
