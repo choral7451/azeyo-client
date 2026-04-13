@@ -36,7 +36,7 @@ export function BottomSheet({ onClose, children, className = "", style, hideHead
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       <div
         className={`relative w-full max-w-[480px] rounded-t-3xl bg-background animate-fade-up flex flex-col ${className}`}
-        style={{ height: "80dvh", ...style }}
+        style={{ height: "90dvh", ...style }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header: Handle + Close */}
