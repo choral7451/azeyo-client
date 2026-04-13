@@ -222,88 +222,94 @@ export function PostDetailSheet({
 
   return (
     <BottomSheet onClose={onClose} className="flex flex-col">
-      <div className="flex-1 overflow-y-auto px-5 pb-4">
-        <div className="flex items-center gap-2.5 mb-4">
-          {post.authorIconImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={post.authorIconImageUrl} alt={post.authorName} className="w-9 h-9 rounded-full object-cover" />
-          ) : (
-            <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-[12px] font-bold text-primary">
-              {post.authorName.charAt(0)}
+      <div className="flex-1 overflow-y-auto pb-4">
+        {/* Image on top, outside padding */}
+        {post.imageUrls && post.imageUrls.length > 0 && (
+          <ImageCarousel images={post.imageUrls} ratio={post.imageRatio ?? "4:5"} />
+        )}
+
+        <div className="px-5">
+          {/* Author meta */}
+          <div className="flex items-center gap-2 mt-4 mb-2.5">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              {post.authorIconImageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={post.authorIconImageUrl} alt={post.authorName} className="w-8 h-8 rounded-full object-cover" />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[12px] font-bold text-primary">
+                  {post.authorName.charAt(0)}
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <span className="text-[13px] font-semibold text-foreground">{post.authorName}</span>
+                <div>
+                  <span className="text-[10px] text-muted-foreground">{formatDate(post.createdAt)}</span>
+                </div>
+              </div>
+            </div>
+            <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">
+              {CATEGORY_REVERSE[post.category] ?? post.category}
+            </span>
+          </div>
+
+          {/* Content */}
+          <h3 className="text-[15px] font-bold text-foreground leading-snug mb-1.5">{post.title}</h3>
+          <p className="text-[13px] text-muted-foreground leading-relaxed mb-4 whitespace-pre-line">{post.contents}</p>
+
+          {/* Vote */}
+          {hasVote && (
+            <div className="rounded-xl border border-border overflow-hidden bg-secondary/50 mb-4">
+              <div className="flex items-center justify-between px-3.5 py-2 border-b border-border">
+                <span className="text-[11px] font-bold text-primary tracking-wide">
+                  {voted ? "투표 완료" : "눌러서 투표하기"}
+                </span>
+                <span className="text-[10px] text-muted-foreground">{voteTotal.toLocaleString()}명 참여</span>
+              </div>
+              <div className="p-2 space-y-1.5">
+                {(["A", "B"] as const).map((opt) => {
+                  const label = opt === "A" ? post.voteOptionA! : post.voteOptionB!;
+                  const pct = opt === "A" ? pctA : pctB;
+                  const isSelected = voted === opt;
+                  return (
+                    <button
+                      key={opt}
+                      onClick={() => handleVote(opt)}
+                      className={`relative w-full text-left rounded-lg overflow-hidden h-10 transition-all duration-200 active:scale-[0.98] cursor-pointer ${isSelected ? "ring-[1.5px] ring-primary" : ""}`}
+                    >
+                      <div
+                        className={`absolute inset-y-0 left-0 rounded-lg ${isSelected ? "" : voted ? "bg-muted/80" : "bg-secondary"}`}
+                        style={{
+                          width: voted ? `${pct}%` : "100%",
+                          transition: "width 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
+                          ...(isSelected ? { backgroundColor: "hsl(22 60% 42% / 0.15)" } : {}),
+                        }}
+                      />
+                      <div className="relative z-10 flex items-center justify-between h-full px-3.5">
+                        <span className={`text-[13px] ${isSelected ? "font-bold text-primary" : "font-medium text-foreground"}`}>{label}</span>
+                        <span className={`text-[12px] font-bold tabular-nums ${isSelected ? "text-primary" : "text-muted-foreground"}`}>{pct}%</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
-          <div className="flex-1 min-w-0">
-            <span className="text-[13px] font-semibold text-foreground">{post.authorName}</span>
-            <div>
-              <span className="text-[10px] text-muted-foreground">{new Date(post.createdAt).toLocaleDateString()}</span>
-            </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-1 pt-3 border-t border-border mb-4 -mx-1">
+            <button onClick={handleLike} className={`flex items-center gap-1.5 py-2 px-3 rounded-lg text-[12px] font-medium transition-colors active:scale-95 ${liked ? "text-primary" : "text-muted-foreground"}`}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill={liked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+              </svg>
+              {likeCount}
+            </button>
+            <span className="flex items-center gap-1.5 py-2 px-3 rounded-lg text-[12px] font-medium text-muted-foreground">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" />
+              </svg>
+              {commentCount}
+            </span>
           </div>
-          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-            {CATEGORY_REVERSE[post.category] ?? post.category}
-          </span>
-        </div>
-
-        <h3 className="text-[16px] font-bold text-foreground leading-snug mb-2">{post.title}</h3>
-        <p className="text-[13px] text-muted-foreground leading-relaxed mb-4 whitespace-pre-line">{post.contents}</p>
-
-        {post.imageUrls && post.imageUrls.length > 0 && (
-          <div className="mb-4 rounded-xl overflow-hidden">
-            <ImageCarousel images={post.imageUrls} ratio={post.imageRatio ?? "4:5"} />
-          </div>
-        )}
-
-        {hasVote && (
-          <div className="rounded-xl border border-border overflow-hidden bg-secondary/50 mb-4">
-            <div className="flex items-center justify-between px-3.5 py-2 border-b border-border">
-              <span className="text-[11px] font-bold text-primary tracking-wide">
-                {voted ? "투표 완료" : "눌러서 투표하기"}
-              </span>
-              <span className="text-[10px] text-muted-foreground">{voteTotal.toLocaleString()}명 참여</span>
-            </div>
-            <div className="p-2 space-y-1.5">
-              {(["A", "B"] as const).map((opt) => {
-                const label = opt === "A" ? post.voteOptionA! : post.voteOptionB!;
-                const pct = opt === "A" ? pctA : pctB;
-                const isSelected = voted === opt;
-                return (
-                  <button
-                    key={opt}
-                    onClick={() => handleVote(opt)}
-                    className={`relative w-full text-left rounded-lg overflow-hidden h-10 transition-all duration-200 active:scale-[0.98] cursor-pointer ${isSelected ? "ring-[1.5px] ring-primary" : ""}`}
-                  >
-                    <div
-                      className={`absolute inset-y-0 left-0 rounded-lg ${isSelected ? "" : voted ? "bg-muted/80" : "bg-secondary"}`}
-                      style={{
-                        width: voted ? `${pct}%` : "100%",
-                        transition: "width 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
-                        ...(isSelected ? { backgroundColor: "hsl(22 60% 42% / 0.15)" } : {}),
-                      }}
-                    />
-                    <div className="relative z-10 flex items-center justify-between h-full px-3.5">
-                      <span className={`text-[13px] ${isSelected ? "font-bold text-primary" : "font-medium text-foreground"}`}>{label}</span>
-                      <span className={`text-[12px] font-bold tabular-nums ${isSelected ? "text-primary" : "text-muted-foreground"}`}>{pct}%</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        <div className="flex items-center gap-4 py-3 border-t border-b border-border mb-4">
-          <button onClick={handleLike} className={`flex items-center gap-1.5 text-[12px] font-medium transition-colors ${liked ? "text-primary" : "text-muted-foreground"}`}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill={liked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
-              <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
-            </svg>
-            {likeCount}
-          </button>
-          <span className="flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" />
-            </svg>
-            {commentCount}
-          </span>
-        </div>
 
         {/* Comments */}
         {comments.length > 0 && (
@@ -420,6 +426,7 @@ export function PostDetailSheet({
             </div>
           </div>
         )}
+        </div>
       </div>
 
       {/* Comment Input */}
