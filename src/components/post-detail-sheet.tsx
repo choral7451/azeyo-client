@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/components/auth-context";
 import { useToast } from "@/components/toast";
 import { BottomSheet } from "@/components/bottom-sheet";
@@ -20,6 +20,8 @@ export interface PostDetailData {
   authorIconImageUrl: string | null;
   title: string;
   contents: string;
+  imageUrls: string[] | null;
+  imageRatio: string | null;
   voteOptionA: string | null;
   voteOptionB: string | null;
   voteCountA: number;
@@ -244,6 +246,12 @@ export function PostDetailSheet({
         <h3 className="text-[16px] font-bold text-foreground leading-snug mb-2">{post.title}</h3>
         <p className="text-[13px] text-muted-foreground leading-relaxed mb-4 whitespace-pre-line">{post.contents}</p>
 
+        {post.imageUrls && post.imageUrls.length > 0 && (
+          <div className="mb-4 rounded-xl overflow-hidden">
+            <ImageCarousel images={post.imageUrls} ratio={post.imageRatio ?? "4:5"} />
+          </div>
+        )}
+
         {hasVote && (
           <div className="rounded-xl border border-border overflow-hidden bg-secondary/50 mb-4">
             <div className="flex items-center justify-between px-3.5 py-2 border-b border-border">
@@ -452,5 +460,102 @@ export function PostDetailSheet({
         </div>
       )}
     </BottomSheet>
+  );
+}
+
+function ImageCarousel({ images, ratio = "4:5" }: { images: string[]; ratio?: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const touchDeltaX = useRef(0);
+  const [offsetX, setOffsetX] = useState(0);
+  const isDragging = useRef(false);
+  const directionLocked = useRef<"h" | "v" | null>(null);
+  const activeIdxRef = useRef(activeIdx);
+  activeIdxRef.current = activeIdx;
+
+  const handleTouchStart = useCallback((e: TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    isDragging.current = true;
+    directionLocked.current = null;
+  }, []);
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (!isDragging.current) return;
+    const dx = e.touches[0].clientX - touchStartX.current;
+    const dy = e.touches[0].clientY - touchStartY.current;
+    if (!directionLocked.current) {
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+        directionLocked.current = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
+      }
+      return;
+    }
+    if (directionLocked.current === "v") return;
+    e.preventDefault();
+    touchDeltaX.current = dx;
+    setOffsetX(dx);
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    isDragging.current = false;
+    directionLocked.current = null;
+    const threshold = 50;
+    if (touchDeltaX.current < -threshold && activeIdxRef.current < images.length - 1) {
+      setActiveIdx((i) => i + 1);
+    } else if (touchDeltaX.current > threshold && activeIdxRef.current > 0) {
+      setActiveIdx((i) => i - 1);
+    }
+    touchDeltaX.current = 0;
+    setOffsetX(0);
+  }, [images.length]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    el.addEventListener("touchstart", handleTouchStart, { passive: true });
+    el.addEventListener("touchmove", handleTouchMove, { passive: false });
+    el.addEventListener("touchend", handleTouchEnd, { passive: true });
+    return () => {
+      el.removeEventListener("touchstart", handleTouchStart);
+      el.removeEventListener("touchmove", handleTouchMove);
+      el.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
+
+  const aspectClass = ratio === "1:1" ? "aspect-square" : "aspect-[4/5]";
+
+  if (images.length === 1) {
+    return (
+      <div className={`relative w-full ${aspectClass}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={images[0]} alt="게시글 이미지" className="absolute inset-0 w-full h-full object-cover" loading="lazy" draggable={false} />
+      </div>
+    );
+  }
+
+  return (
+    <div ref={containerRef} className="relative overflow-hidden">
+      <div
+        className="flex transition-transform duration-300 ease-out"
+        style={{
+          transform: `translateX(calc(-${activeIdx * 100}% + ${offsetX}px))`,
+          transition: offsetX !== 0 ? "none" : "transform 0.3s ease-out",
+        }}
+      >
+        {images.map((src, i) => (
+          <div key={i} className={`flex-shrink-0 w-full relative ${aspectClass}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={src} alt={`게시글 이미지 ${i + 1}`} className="absolute inset-0 w-full h-full object-cover select-none" loading="lazy" draggable={false} />
+          </div>
+        ))}
+      </div>
+      <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
+        {images.map((_, i) => (
+          <div key={i} className={`h-1.5 rounded-full transition-all duration-200 ${i === activeIdx ? "bg-white w-3" : "bg-white/50 w-1.5"}`} />
+        ))}
+      </div>
+    </div>
   );
 }
