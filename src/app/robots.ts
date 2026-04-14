@@ -5,8 +5,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/mypage/", "/api/"],
+      disallow: ["/mypage/", "/admin/", "/api/"],
     },
-    sitemap: "https://azeyo.kr/sitemap.xml",
+    sitemap: "https://azeyo.co.kr/sitemap.xml",
   };
 }
