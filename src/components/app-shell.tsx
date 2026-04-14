@@ -8,11 +8,13 @@ import { NotificationListener } from "@/components/notification-listener";
 import { AuthProvider } from "@/components/auth-context";
 import { ToastProvider } from "@/components/toast";
 
-const AUTH_ROUTES = ["/login", "/signup", "/auth", "/terms", "/privacy", "/admin"];
+const AUTH_ROUTES = ["/login", "/signup", "/auth", "/terms", "/privacy"];
+const NO_SHELL_ROUTES = ["/admin"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuth = AUTH_ROUTES.some((r) => pathname.startsWith(r));
+  const isNoShell = NO_SHELL_ROUTES.some((r) => pathname.startsWith(r));
 
   if (isAuth) {
     return (
@@ -20,6 +22,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="mx-auto max-w-[480px] min-h-dvh relative">
           {children}
         </div>
+      </AuthProvider>
+    );
+  }
+
+  if (isNoShell) {
+    return (
+      <AuthProvider>
+        <ToastProvider>
+          {children}
+        </ToastProvider>
       </AuthProvider>
     );
   }
