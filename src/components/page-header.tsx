@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useHeaderExtra } from "./header-context";
 import { useAuth } from "./auth-context";
+import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 
 const BellIcon = () => (
@@ -32,8 +33,9 @@ function emitCreate() {
   window.dispatchEvent(new CustomEvent("header:create"));
 }
 
-function HeaderContent({ compact, config, unreadCount }: { compact: boolean; config: typeof PAGE_CONFIG[string]; unreadCount: number }) {
+function HeaderContent({ compact, config, unreadCount, isAdmin, pathname }: { compact: boolean; config: typeof PAGE_CONFIG[string]; unreadCount: number; isAdmin: boolean; pathname: string }) {
   const { title, hasCreate } = config;
+  const router = useRouter();
 
   return (
     <div className="flex items-center justify-between">
@@ -44,6 +46,17 @@ function HeaderContent({ compact, config, unreadCount }: { compact: boolean; con
           className="w-9 h-9 flex items-center justify-center rounded-full text-foreground active:scale-90 transition-transform"
         >
           <WriteIcon />
+        </button>
+      ) : isAdmin && pathname === "/" ? (
+        <button
+          onClick={() => router.push("/admin")}
+          aria-label="관리자"
+          className="w-9 h-9 flex items-center justify-center rounded-full text-foreground active:scale-90 transition-transform"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+          </svg>
         </button>
       ) : (
         <div className="w-9" />
@@ -71,7 +84,7 @@ export function PageHeader() {
   const pathname = usePathname();
   const config = PAGE_CONFIG[pathname] ?? PAGE_CONFIG["/"];
   const { stickyExtra } = useHeaderExtra();
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isAdmin } = useAuth();
 
   const [visible, setVisible] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -135,14 +148,14 @@ export function PageHeader() {
         `}
       >
         <div className="mx-auto max-w-[480px] px-5 py-3">
-          <HeaderContent compact config={config} unreadCount={unreadCount} />
+          <HeaderContent compact config={config} unreadCount={unreadCount} isAdmin={isAdmin} pathname={pathname} />
           {stickyExtra}
         </div>
       </div>
 
       {/* Static header */}
       <header className="px-5 pt-4 pb-3 animate-fade-up">
-        <HeaderContent compact={false} config={config} unreadCount={unreadCount} />
+        <HeaderContent compact={false} config={config} unreadCount={unreadCount} isAdmin={isAdmin} pathname={pathname} />
         {config.subtitle && (
           <p className="text-[12px] text-muted-foreground mt-1 text-center">
             {config.subtitle}
