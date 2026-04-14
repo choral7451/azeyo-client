@@ -79,7 +79,7 @@ export default function ProfileEditPage() {
     try {
       await apiFetch("/azeyo/users/me", {
         method: "PUT",
-        body: JSON.stringify({ nickname: name, email: email || null, phone: phone || null }),
+        body: JSON.stringify({ name: realName || null, nickname: name, email: email || null, phone: phone || null }),
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -148,9 +148,10 @@ export default function ProfileEditPage() {
           <div>
             <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">이름</label>
             <input
-              type="text" value={realName} disabled
-              className="w-full px-4 py-3 rounded-xl text-[14px] text-muted-foreground outline-none cursor-not-allowed"
-              style={{ backgroundColor: "hsl(36 30% 93%)", opacity: 0.6 }}
+              type="text" value={realName} onChange={(e) => setRealName(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl text-[14px] text-foreground outline-none transition-all focus:ring-2 focus:ring-primary/20"
+              style={{ backgroundColor: "hsl(36 30% 93%)" }}
+              maxLength={20}
             />
           </div>
 
