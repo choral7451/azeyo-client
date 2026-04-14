@@ -117,8 +117,8 @@ function PostsManager() {
       const params = new URLSearchParams({ page: String(p), size: "20" });
       if (kw) params.set("keyword", kw);
       const data = await apiFetch<{ posts: AdminPost[]; totalCount: number }>(`/azeyo/admin/posts?${params}`);
-      setPosts(data.posts);
-      setTotalCount(data.totalCount);
+      setPosts(data?.posts ?? []);
+      setTotalCount(data?.totalCount ?? 0);
     } catch { /* */ }
     setLoading(false);
   }, []);
@@ -249,8 +249,8 @@ function WriteAsUser() {
   const fetchUsers = useCallback(async (p: number) => {
     try {
       const data = await apiFetch<{ users: AdminUser[]; totalCount: number }>(`/azeyo/admin/users?page=${p}&size=50`);
-      setUsers(data.users);
-      setUserTotal(data.totalCount);
+      setUsers(data?.users ?? []);
+      setUserTotal(data?.totalCount ?? 0);
     } catch { /* */ }
   }, []);
 
@@ -411,7 +411,7 @@ function CommentAsUser() {
   const fetchUsers = useCallback(async () => {
     try {
       const data = await apiFetch<{ users: AdminUser[]; totalCount: number }>("/azeyo/admin/users?page=1&size=50");
-      setUsers(data.users);
+      setUsers(data?.users ?? []);
     } catch { /* */ }
   }, []);
 
@@ -422,7 +422,7 @@ function CommentAsUser() {
     setPostsLoading(true);
     try {
       const data = await apiFetch<{ posts: AdminPost[]; totalCount: number }>(`/azeyo/admin/posts?page=1&size=10&keyword=${encodeURIComponent(postId)}`);
-      setPosts(data.posts);
+      setPosts(data?.posts ?? []);
     } catch { /* */ }
     setPostsLoading(false);
   }
