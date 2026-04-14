@@ -108,8 +108,6 @@ function PostsManager() {
   const [keyword, setKeyword] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [editingPost, setEditingPost] = useState<AdminPost | null>(null);
-  const [editTitle, setEditTitle] = useState("");
-  const [editContents, setEditContents] = useState("");
 
   const fetchPosts = useCallback(async (p: number, kw: string) => {
     setLoading(true);
@@ -136,20 +134,6 @@ function PostsManager() {
 
   function startEdit(post: AdminPost) {
     setEditingPost(post);
-    setEditTitle(post.title);
-    setEditContents(post.contents);
-  }
-
-  async function handleEdit() {
-    if (!editingPost) return;
-    try {
-      await apiFetch(`/azeyo/admin/posts/${editingPost.id}`, {
-        method: "PUT",
-        body: JSON.stringify({ title: editTitle, contents: editContents }),
-      });
-      setPosts(prev => prev.map(p => p.id === editingPost.id ? { ...p, title: editTitle, contents: editContents } : p));
-      setEditingPost(null);
-    } catch { /* */ }
   }
 
   const totalPages = Math.ceil(totalCount / 20);
@@ -207,25 +191,14 @@ function PostsManager() {
 
       {/* Edit Modal */}
       {editingPost && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40" onClick={() => setEditingPost(null)}>
-          <div className="bg-white rounded-2xl p-6 w-[90%] max-w-[500px] space-y-4" onClick={e => e.stopPropagation()}>
-            <h3 className="text-[16px] font-bold">게시글 수정 (#{editingPost.id})</h3>
-            <div>
-              <label className="text-[12px] font-semibold text-muted-foreground block mb-1">제목</label>
-              <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)}
-                className="w-full rounded-xl px-4 py-2.5 text-[14px] outline-none border border-border" />
-            </div>
-            <div>
-              <label className="text-[12px] font-semibold text-muted-foreground block mb-1">내용</label>
-              <textarea value={editContents} onChange={e => setEditContents(e.target.value)} rows={6}
-                className="w-full rounded-xl px-4 py-2.5 text-[14px] outline-none border border-border resize-none leading-relaxed" />
-            </div>
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setEditingPost(null)} className="px-4 py-2 rounded-xl text-[13px] font-medium text-muted-foreground bg-secondary">취소</button>
-              <button onClick={handleEdit} className="px-4 py-2 rounded-xl text-[13px] font-semibold text-white bg-primary">저장</button>
-            </div>
-          </div>
-        </div>
+        <EditPostModal
+          post={editingPost}
+          onClose={() => setEditingPost(null)}
+          onSave={(title, contents) => {
+            setPosts(prev => prev.map(p => p.id === editingPost.id ? { ...p, title, contents } : p));
+            setEditingPost(null);
+          }}
+        />
       )}
     </div>
   );
@@ -545,6 +518,131 @@ function CommentAsUser() {
           </button>
         </>
       )}
+    </div>
+  );
+}
+
+/* ==================== 게시글 수정 모달 ==================== */
+interface AdminComment {
+  id: number;
+  contents: string;
+  userId: number;
+  userNickname: string;
+  childrenCount: number;
+  createdAt: string;
+}
+
+function EditPostModal({ post, onClose, onSave }: {
+  post: AdminPost;
+  onClose: () => void;
+  onSave: (title: string, contents: string) => void;
+}) {
+  const [title, setTitle] = useState(post.title);
+  const [contents, setContents] = useState(post.contents);
+  const [comments, setComments] = useState<AdminComment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(true);
+
+  useEffect(() => {
+    apiFetch<{ comments: AdminComment[]; totalCount: number }>(`/azeyo/communities/${post.id}/comments?page=1&size=100`)
+      .then(data => setComments(data?.comments ?? []))
+      .catch(() => {})
+      .finally(() => setCommentsLoading(false));
+  }, [post.id]);
+
+  async function handleSave() {
+    try {
+      await apiFetch(`/azeyo/admin/posts/${post.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ title, contents }),
+      });
+      onSave(title, contents);
+    } catch { /* */ }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div className="bg-white rounded-2xl w-[90%] max-w-[500px] max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 pt-5 pb-3 flex-shrink-0">
+          <h3 className="text-[16px] font-bold">게시글 수정 (#{post.id})</h3>
+          <button onClick={onClose} className="text-muted-foreground text-[20px] leading-none">&times;</button>
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto px-6 pb-5 space-y-4">
+          {/* Images */}
+          {post.imageUrls && post.imageUrls.length > 0 && (
+            <div>
+              <label className="text-[12px] font-semibold text-muted-foreground block mb-1.5">이미지</label>
+              <div className="flex gap-2 overflow-x-auto">
+                {post.imageUrls.map((url, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={i} src={url} alt={`이미지 ${i + 1}`}
+                    className="w-24 h-24 rounded-xl object-cover flex-shrink-0" />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Title */}
+          <div>
+            <label className="text-[12px] font-semibold text-muted-foreground block mb-1">제목</label>
+            <input type="text" value={title} onChange={e => setTitle(e.target.value)}
+              className="w-full rounded-xl px-4 py-2.5 text-[14px] outline-none border border-border" />
+          </div>
+
+          {/* Contents */}
+          <div>
+            <label className="text-[12px] font-semibold text-muted-foreground block mb-1">내용</label>
+            <textarea value={contents} onChange={e => setContents(e.target.value)} rows={6}
+              className="w-full rounded-xl px-4 py-2.5 text-[14px] outline-none border border-border resize-none leading-relaxed" />
+          </div>
+
+          {/* Vote */}
+          {post.voteOptionA && post.voteOptionB && (
+            <div>
+              <label className="text-[12px] font-semibold text-muted-foreground block mb-1">투표</label>
+              <div className="flex gap-2">
+                <div className="flex-1 rounded-xl px-3 py-2 text-[13px] bg-secondary text-center">A: {post.voteOptionA}</div>
+                <div className="flex-1 rounded-xl px-3 py-2 text-[13px] bg-secondary text-center">B: {post.voteOptionB}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Comments */}
+          <div>
+            <label className="text-[12px] font-semibold text-muted-foreground block mb-1.5">
+              댓글 {!commentsLoading && `(${comments.length})`}
+            </label>
+            {commentsLoading ? (
+              <p className="text-[12px] text-muted-foreground py-2">불러오는 중...</p>
+            ) : comments.length === 0 ? (
+              <p className="text-[12px] text-muted-foreground py-2">댓글이 없습니다</p>
+            ) : (
+              <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                {comments.map(c => (
+                  <div key={c.id} className="rounded-lg px-3 py-2" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-[12px] font-semibold text-foreground">{c.userNickname}</span>
+                      <span className="text-[10px] text-muted-foreground">{new Date(c.createdAt).toLocaleString("ko-KR")}</span>
+                    </div>
+                    <p className="text-[12px] text-muted-foreground leading-relaxed">{c.contents}</p>
+                    {c.childrenCount > 0 && (
+                      <span className="text-[10px] text-primary mt-0.5 inline-block">답글 {c.childrenCount}개</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2 justify-end pt-2">
+            <button onClick={onClose} className="px-4 py-2 rounded-xl text-[13px] font-medium text-muted-foreground bg-secondary">취소</button>
+            <button onClick={handleSave} className="px-4 py-2 rounded-xl text-[13px] font-semibold text-white bg-primary">저장</button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
