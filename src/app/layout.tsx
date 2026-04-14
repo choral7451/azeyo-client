@@ -53,6 +53,9 @@ export const metadata: Metadata = {
     googleBot: { index: true, follow: true, "max-video-preview": -1, "max-image-preview": "large", "max-snippet": -1 },
   },
   alternates: { canonical: SITE_URL },
+  other: {
+    "naver-site-verification": "5a35197dbe0e541c2272ec99042e183a144904d9",
+  },
 };
 
 export const viewport: Viewport = {
