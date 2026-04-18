@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-context";
 import { useToast } from "@/components/toast";
 
-const AUTH_REQUIRED = ["/schedule", "/jokbo", "/mypage"];
+const AUTH_REQUIRED = ["/jokbo", "/mypage"];
 
 const tabs = [
   {
@@ -46,8 +46,8 @@ const tabs = [
     ),
   },
   {
-    label: "일정",
-    href: "/schedule",
+    label: "테스트",
+    href: "/test",
     icon: (active: boolean) => (
       <svg
         width="22"
@@ -59,8 +59,8 @@ const tabs = [
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        <rect x="3" y="4" width="18" height="18" rx="2" />
-        <path d="M16 2v4M8 2v4M3 10h18" />
+        <path d="M9 11l3 3L22 4" />
+        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
       </svg>
     ),
   },

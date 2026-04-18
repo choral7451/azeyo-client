@@ -50,6 +50,7 @@ export default function MyPage() {
     : 100;
 
   const menuItems = [
+    { icon: "📅", label: "일정 관리", href: "/schedule" },
     { icon: "📝", label: "내 게시글", href: "/mypage/posts" },
     { icon: "📋", label: "내가 올린 족보", href: "/mypage/jokbo" },
     { icon: "🏅", label: "등급 안내", href: "/mypage/grade" },
