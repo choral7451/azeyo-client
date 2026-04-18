@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-context";
 import { useToast } from "@/components/toast";
+import { apiFetch } from "@/lib/api";
 
 const QUESTIONS = [
   "아내를 잘 웃기고, 수다쟁이처럼 이야기가 많다",
@@ -120,10 +121,20 @@ export default function GoodHusbandTestPage() {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [done, setDone] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   const { isLoggedIn } = useAuth();
   const { show } = useToast();
   const router = useRouter();
+
+  useEffect(() => {
+    apiFetch<{ tests: { slug: string; imageUrl: string | null }[] }>("/azeyo/contents/tests", { noAuth: true })
+      .then((data) => {
+        const found = data.tests.find((t) => t.slug === "good-husband");
+        if (found?.imageUrl) setImageUrl(found.imageUrl);
+      })
+      .catch(() => {});
+  }, []);
 
   const totalScore = answers.reduce((sum, a) => sum + a, 0);
   const result = getResult(totalScore);
@@ -181,16 +192,15 @@ export default function GoodHusbandTestPage() {
       <div className="px-5 pt-8 pb-10 animate-fade-up">
         {/* 대표 이미지 */}
         <div className="rounded-2xl overflow-hidden mb-6 aspect-[4/3] bg-secondary flex items-center justify-center">
-          <img
-            src="/test/good-husband.png"
-            alt="좋은 남편 진단 테스트"
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-              e.currentTarget.parentElement!.querySelector(".fallback")?.classList.remove("hidden");
-            }}
-          />
-          <span className="fallback hidden text-6xl">💍</span>
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt="좋은 남편 진단 테스트"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span className="text-6xl">💍</span>
+          )}
         </div>
 
         <div className="text-center mb-8">
