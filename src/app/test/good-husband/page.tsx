@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/auth-context";
+import { useToast } from "@/components/toast";
 
 const QUESTIONS = [
   "아내를 잘 웃기고, 수다쟁이처럼 이야기가 많다",
@@ -111,15 +114,29 @@ function getResult(score: number): ResultInfo {
 }
 
 export default function GoodHusbandTestPage() {
+  const [started, setStarted] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [done, setDone] = useState(false);
 
+  const { isLoggedIn } = useAuth();
+  const { show } = useToast();
+  const router = useRouter();
+
   const totalScore = answers.reduce((sum, a) => sum + a, 0);
   const result = getResult(totalScore);
   const progress = ((currentQuestion) / QUESTIONS.length) * 100;
+
+  function handleStart() {
+    if (!isLoggedIn) {
+      show("로그인 후 테스트할 수 있어요");
+      setTimeout(() => router.push("/login"), 1200);
+      return;
+    }
+    setStarted(true);
+  }
 
   function handleSelect(score: number) {
     if (isAnimating) return;
@@ -141,6 +158,7 @@ export default function GoodHusbandTestPage() {
   }
 
   function handleRetry() {
+    setStarted(false);
     setCurrentQuestion(0);
     setAnswers([]);
     setSelectedOption(null);
@@ -155,6 +173,44 @@ export default function GoodHusbandTestPage() {
       navigator.clipboard.writeText(text);
       alert("결과가 복사되었습니다!");
     }
+  }
+
+  // --- Intro ---
+  if (!started) {
+    return (
+      <div className="px-5 pt-8 pb-10 animate-fade-up">
+        {/* 대표 이미지 */}
+        <div className="rounded-2xl overflow-hidden mb-6 aspect-[4/3] bg-secondary flex items-center justify-center">
+          <img
+            src="/test/good-husband.png"
+            alt="좋은 남편 진단 테스트"
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+              e.currentTarget.parentElement!.querySelector(".fallback")?.classList.remove("hidden");
+            }}
+          />
+          <span className="fallback hidden text-6xl">💍</span>
+        </div>
+
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-foreground leading-tight mb-3">
+            좋은 남편 진단 테스트
+          </h1>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            나는 과연 좋은 남편일까?<br />솔직하게 답해보세요
+          </p>
+        </div>
+
+        <button
+          onClick={handleStart}
+          className="w-full py-4 rounded-2xl text-base font-semibold text-primary-foreground active:scale-[0.97] transition-transform"
+          style={{ backgroundColor: "hsl(22 60% 42%)" }}
+        >
+          테스트 시작하기
+        </button>
+      </div>
+    );
   }
 
   // --- Quiz ---
