@@ -97,18 +97,6 @@ export default function TestListPage() {
           <p className="text-sm text-muted-foreground">아직 등록된 테스트가 없어요</p>
         </div>
       )}
-
-      {/* Coming Soon */}
-      <div className="mt-8 text-center animate-fade-up" style={{ animationDelay: "0.15s" }}>
-        <div
-          className="rounded-2xl p-6 border-2 border-dashed"
-          style={{ borderColor: "hsl(30 15% 88%)" }}
-        >
-          <span className="text-3xl mb-2 block">🧪</span>
-          <p className="text-sm font-medium text-muted-foreground">새로운 테스트 준비 중...</p>
-          <p className="text-xs text-muted-foreground mt-1">곧 더 재밌는 테스트가 추가돼요</p>
-        </div>
-      </div>
     </main>
   );
 }
