@@ -110,22 +110,16 @@ function getResult(score: number): ResultInfo {
   };
 }
 
-export default function TestPage() {
-  const [currentStep, setCurrentStep] = useState<"intro" | "quiz" | "result">("intro");
+export default function GoodHusbandTestPage() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [done, setDone] = useState(false);
 
   const totalScore = answers.reduce((sum, a) => sum + a, 0);
   const result = getResult(totalScore);
   const progress = ((currentQuestion) / QUESTIONS.length) * 100;
-
-  function handleStart() {
-    setCurrentStep("quiz");
-    setCurrentQuestion(0);
-    setAnswers([]);
-  }
 
   function handleSelect(score: number) {
     if (isAnimating) return;
@@ -139,7 +133,7 @@ export default function TestPage() {
       setIsAnimating(false);
 
       if (currentQuestion + 1 >= QUESTIONS.length) {
-        setCurrentStep("result");
+        setDone(true);
       } else {
         setCurrentQuestion(currentQuestion + 1);
       }
@@ -147,10 +141,10 @@ export default function TestPage() {
   }
 
   function handleRetry() {
-    setCurrentStep("intro");
     setCurrentQuestion(0);
     setAnswers([]);
     setSelectedOption(null);
+    setDone(false);
   }
 
   function handleShare() {
@@ -163,81 +157,8 @@ export default function TestPage() {
     }
   }
 
-  // --- Intro ---
-  if (currentStep === "intro") {
-    return (
-      <div className="px-5 pt-8 pb-10 animate-fade-up">
-        {/* 대표 이미지 */}
-        <div className="rounded-2xl overflow-hidden mb-6 aspect-[4/3] bg-secondary flex items-center justify-center">
-          <img
-            src="/test/good-husband.png"
-            alt="좋은 남편 진단 테스트"
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-              e.currentTarget.parentElement!.innerHTML = '<span class="text-6xl">💍</span>';
-            }}
-          />
-        </div>
-
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium mb-4"
-            style={{ backgroundColor: "hsl(35 25% 93%)", color: "hsl(22 60% 42%)" }}>
-            아재요 콘텐츠
-          </div>
-          <h1 className="text-2xl font-bold text-foreground leading-tight mb-2">
-            좋은 남편 진단 테스트
-          </h1>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            15개 질문으로 알아보는<br />나의 남편 점수는?
-          </p>
-        </div>
-
-        <div className="rounded-2xl p-6 mb-6" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
-          <div className="text-center mb-5">
-            <span className="text-5xl">💍</span>
-          </div>
-          <div className="space-y-3 text-sm text-muted-foreground">
-            <div className="flex items-start gap-2.5">
-              <span className="text-primary font-bold mt-0.5">Q</span>
-              <span>총 <strong className="text-foreground">15개</strong> 질문</span>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <span className="text-primary font-bold mt-0.5">T</span>
-              <span>소요시간 약 <strong className="text-foreground">2~3분</strong></span>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <span className="text-primary font-bold mt-0.5">S</span>
-              <span>5점 척도 (확실히 그렇다 ~ 그렇지 않다)</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-2xl p-5 mb-8" style={{ backgroundColor: "hsl(36 30% 93%)" }}>
-          <h3 className="text-sm font-semibold text-foreground mb-3">등급 안내</h3>
-          <div className="space-y-2 text-xs text-muted-foreground">
-            <div className="flex justify-between"><span>👑 70점 이상</span><span className="text-foreground font-medium">신뢰 돈독한 남편</span></div>
-            <div className="flex justify-between"><span>💛 60~69점</span><span className="text-foreground font-medium">공감을 잘하는 남편</span></div>
-            <div className="flex justify-between"><span>💪 50~59점</span><span className="text-foreground font-medium">변화하려는 남편</span></div>
-            <div className="flex justify-between"><span>😥 40~49점</span><span className="text-foreground font-medium">소통이 부족한 남편</span></div>
-            <div className="flex justify-between"><span>🚨 30~39점</span><span className="text-foreground font-medium">독박육아 시키는 남편</span></div>
-            <div className="flex justify-between"><span>💀 30점 미만</span><span className="text-foreground font-medium">무늬만 남편</span></div>
-          </div>
-        </div>
-
-        <button
-          onClick={handleStart}
-          className="w-full py-4 rounded-2xl text-base font-semibold text-primary-foreground active:scale-[0.97] transition-transform"
-          style={{ backgroundColor: "hsl(22 60% 42%)" }}
-        >
-          테스트 시작하기
-        </button>
-      </div>
-    );
-  }
-
   // --- Quiz ---
-  if (currentStep === "quiz") {
+  if (!done) {
     return (
       <div className="px-5 pt-6 pb-10">
         {/* Progress */}
