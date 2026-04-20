@@ -1,102 +1,84 @@
-"use client";
+import type { Metadata } from "next";
+import TestListClient from "./TestListClient";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { apiFetch } from "@/lib/api";
+const PAGE_URL = "https://azeyo.co.kr/test";
+const PAGE_TITLE = "아재 자가진단 테스트 모음";
+const PAGE_DESCRIPTION =
+  "좋은 남편 진단, 좋은 아빠 진단 등 유부남을 위한 심리 테스트 모음. 재미로 해보는 아재 자가진단, 솔직하게 체크하고 결과를 친구들과 공유하세요.";
 
-interface TestItem {
-  id: number;
-  slug: string;
-  title: string;
-  description: string;
-  imageUrl: string | null;
-  questionCount: number;
-  duration: string;
-  badge: string | null;
-}
+export const metadata: Metadata = {
+  title: PAGE_TITLE,
+  description: PAGE_DESCRIPTION,
+  keywords: [
+    "아재 테스트", "유부남 테스트", "좋은 남편 테스트", "좋은 아빠 테스트",
+    "남편 자가진단", "아빠 자가진단", "부부 심리 테스트", "육아 테스트", "아재요 테스트",
+  ],
+  alternates: { canonical: PAGE_URL },
+  openGraph: {
+    type: "website",
+    url: PAGE_URL,
+    siteName: "아재요",
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
+    locale: "ko_KR",
+    images: [{ url: "/AZY1200630.png", width: 1200, height: 630, alt: PAGE_TITLE }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: PAGE_TITLE,
+    description: PAGE_DESCRIPTION,
+    images: ["/AZY1200630.png"],
+  },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: PAGE_TITLE,
+  description: PAGE_DESCRIPTION,
+  url: PAGE_URL,
+  inLanguage: "ko-KR",
+  isPartOf: { "@type": "WebSite", name: "아재요", url: "https://azeyo.co.kr" },
+  mainEntity: {
+    "@type": "ItemList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        url: "https://azeyo.co.kr/test/good-husband",
+        name: "좋은 남편 진단 테스트",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        url: "https://azeyo.co.kr/test/good-dad",
+        name: "좋은 아빠 진단 테스트",
+      },
+    ],
+  },
+};
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "홈", item: "https://azeyo.co.kr" },
+    { "@type": "ListItem", position: 2, name: "테스트", item: PAGE_URL },
+  ],
+};
 
 export default function TestListPage() {
-  const [tests, setTests] = useState<TestItem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    apiFetch<{ tests: TestItem[] }>("/azeyo/contents/tests", { noAuth: true })
-      .then((data) => setTests(data.tests))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) {
-    return (
-      <main className="px-5 pb-10">
-        <div className="text-center py-16">
-          <p className="text-[13px] text-muted-foreground">불러오는 중...</p>
-        </div>
-      </main>
-    );
-  }
-
   return (
-    <main className="px-5 pb-10">
-      {/* Header */}
-      <div className="mb-6 animate-fade-up">
-        <h1 className="text-xl font-bold text-foreground mb-1">테스트</h1>
-        <p className="text-sm text-muted-foreground">재미로 해보는 아재 자가진단</p>
-      </div>
-
-      {/* Test List */}
-      <div className="space-y-4">
-        {tests.map((test, i) => (
-          <Link
-            key={test.id}
-            href={`/test/${test.slug}`}
-            className="block rounded-2xl overflow-hidden active:scale-[0.98] transition-transform animate-fade-up"
-            style={{
-              backgroundColor: "hsl(36 30% 93%)",
-              animationDelay: `${0.05 + i * 0.05}s`,
-            }}
-          >
-            {/* Image */}
-            <div className="aspect-[2/1] bg-secondary flex items-center justify-center overflow-hidden relative">
-              {test.imageUrl ? (
-                <img
-                  src={test.imageUrl}
-                  alt={test.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-5xl">🧪</span>
-              )}
-              {test.badge && (
-                <span
-                  className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full text-[11px] font-bold text-primary-foreground"
-                  style={{ backgroundColor: "hsl(22 60% 42%)" }}
-                >
-                  {test.badge}
-                </span>
-              )}
-            </div>
-
-            {/* Info */}
-            <div className="p-4">
-              <h2 className="text-[15px] font-bold text-foreground mb-1">{test.title}</h2>
-              <p className="text-[13px] text-muted-foreground mb-3">{test.description}</p>
-              <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-                <span>{test.questionCount}문항</span>
-                <span className="w-0.5 h-0.5 rounded-full bg-muted-foreground" />
-                <span>{test.duration}</span>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
-
-      {tests.length === 0 && !loading && (
-        <div className="text-center py-16 animate-fade-up">
-          <span className="text-4xl mb-3 block">🧪</span>
-          <p className="text-sm text-muted-foreground">아직 등록된 테스트가 없어요</p>
-        </div>
-      )}
-    </main>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <TestListClient />
+    </>
   );
 }
