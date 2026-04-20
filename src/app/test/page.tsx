@@ -54,6 +54,12 @@ const jsonLd = {
         url: "https://azeyo.co.kr/test/good-dad",
         name: "좋은 아빠 진단 테스트",
       },
+      {
+        "@type": "ListItem",
+        position: 3,
+        url: "https://azeyo.co.kr/test/marriage-satisfaction",
+        name: "결혼 생활 만족도 테스트",
+      },
     ],
   },
 };
